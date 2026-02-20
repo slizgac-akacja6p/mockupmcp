@@ -303,4 +303,78 @@ describe('ProjectStore', () => {
       );
     });
   });
+
+  describe('applyTemplate', () => {
+    it('adds elements to screen from template array', async () => {
+      const project = await store.createProject('Template Test');
+      const screen = await store.addScreen(project.id, 'Login');
+
+      const elements = [
+        { type: 'navbar', x: 0, y: 0, width: 393, height: 56, z_index: 10, properties: { title: 'Sign In' } },
+        { type: 'input', x: 24, y: 120, width: 345, height: 56, z_index: 0, properties: { label: 'Email' } },
+      ];
+
+      const result = await store.applyTemplate(project.id, screen.id, elements, true);
+
+      assert.equal(result.elements.length, 2);
+      assert.ok(result.elements[0].id.startsWith('el_'));
+      assert.ok(result.elements[1].id.startsWith('el_'));
+      assert.equal(result.elements[0].type, 'navbar');
+      assert.equal(result.elements[1].type, 'input');
+      assert.deepEqual(result.elements[0].properties, { title: 'Sign In' });
+    });
+
+    it('clears existing elements when clear=true', async () => {
+      const project = await store.createProject('Template Clear Test');
+      const screen = await store.addScreen(project.id, 'Home');
+      await store.addElement(project.id, screen.id, 'button', 10, 20, 100, 40, { label: 'Old' });
+
+      const newElements = [
+        { type: 'text', x: 0, y: 0, width: 200, height: 30, z_index: 0, properties: { content: 'New' } },
+      ];
+
+      const result = await store.applyTemplate(project.id, screen.id, newElements, true);
+      assert.equal(result.elements.length, 1);
+      assert.equal(result.elements[0].type, 'text');
+    });
+
+    it('preserves existing elements when clear=false', async () => {
+      const project = await store.createProject('Template Append Test');
+      const screen = await store.addScreen(project.id, 'Home');
+      await store.addElement(project.id, screen.id, 'button', 10, 20, 100, 40, { label: 'Keep' });
+
+      const newElements = [
+        { type: 'text', x: 0, y: 0, width: 200, height: 30, z_index: 0, properties: { content: 'Added' } },
+      ];
+
+      const result = await store.applyTemplate(project.id, screen.id, newElements, false);
+      assert.equal(result.elements.length, 2);
+      assert.equal(result.elements[0].type, 'button');
+      assert.equal(result.elements[1].type, 'text');
+    });
+
+    it('throws for nonexistent screen', async () => {
+      const project = await store.createProject('Template Error Test');
+      await assert.rejects(
+        () => store.applyTemplate(project.id, 'scr_nonexistent', [], true),
+        /not found/i,
+      );
+    });
+
+    it('generates unique IDs for each element', async () => {
+      const project = await store.createProject('Template IDs Test');
+      const screen = await store.addScreen(project.id, 'Screen');
+
+      const elements = [
+        { type: 'text', x: 0, y: 0, width: 100, height: 30, z_index: 0, properties: {} },
+        { type: 'text', x: 0, y: 40, width: 100, height: 30, z_index: 0, properties: {} },
+        { type: 'text', x: 0, y: 80, width: 100, height: 30, z_index: 0, properties: {} },
+      ];
+
+      const result = await store.applyTemplate(project.id, screen.id, elements, true);
+      const ids = result.elements.map(e => e.id);
+      const unique = new Set(ids);
+      assert.equal(unique.size, ids.length, 'Element IDs must be unique');
+    });
+  });
 });

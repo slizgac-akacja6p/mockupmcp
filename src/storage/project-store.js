@@ -182,6 +182,26 @@ export class ProjectStore {
     return newScreen;
   }
 
+  async applyTemplate(projectId, screenId, elements, clear = true) {
+    this._validateId(screenId);
+    const project = await this.getProject(projectId);
+    const screen = this._findScreen(project, screenId);
+
+    if (clear) {
+      screen.elements = [];
+    }
+
+    for (const el of elements) {
+      screen.elements.push({
+        ...el,
+        id: generateId('el'),
+      });
+    }
+
+    await this._save(project);
+    return screen;
+  }
+
   // --- Element methods ---
 
   async addElement(projectId, screenId, type, x, y, width, height, properties = {}, zIndex = 0) {
@@ -266,15 +286,15 @@ export class ProjectStore {
 
   // --- Export ---
 
-  async saveExport(projectId, screenId, pngBuffer) {
+  async saveExport(projectId, screenId, buffer, format = 'png') {
     this._validateId(projectId);
     this._validateId(screenId);
 
     const exportDir = join(this.exportsDir, projectId);
     await mkdir(exportDir, { recursive: true });
 
-    const filePath = join(exportDir, `${screenId}.png`);
-    await writeFile(filePath, pngBuffer);
+    const filePath = join(exportDir, `${screenId}.${format}`);
+    await writeFile(filePath, buffer);
     return filePath;
   }
 }
