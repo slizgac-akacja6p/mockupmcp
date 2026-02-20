@@ -17,5 +17,5 @@ export function registerAllTools(server) {
   registerTemplateTools(server, store);
   registerLayoutTools(server, store);
   registerGroupTools(server, store);
-  console.error('[MockupMCP] 22 tools registered');
+  console.error('[MockupMCP] 24 tools registered');
 }

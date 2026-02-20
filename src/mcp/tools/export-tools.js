@@ -3,6 +3,7 @@ import { buildScreenHtml } from '../../renderer/html-builder.js';
 import { takeScreenshot, takePdfExport, htmlToSvg } from '../../renderer/screenshot.js';
 import { config } from '../../config.js';
 import { generateMermaid } from '../../codegen/flow.js';
+import { getGenerator, getAvailableFrameworks } from '../../codegen/index.js';
 
 export function registerExportTools(server, store) {
   server.tool(
@@ -137,6 +138,46 @@ export function registerExportTools(server, store) {
               screens: project.screens.length,
               links: linkCount,
               diagram: mermaid,
+            }, null, 2),
+          }],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: 'text', text: `Error: ${error.message}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.tool(
+    'mockup_to_code',
+    'Generate framework code from a screen mockup. Supports: html, react, flutter, swiftui.',
+    {
+      project_id: z.string().describe('Project ID'),
+      screen_id: z.string().describe('Screen ID'),
+      framework: z.enum(['html', 'react', 'flutter', 'swiftui']).describe('Target framework'),
+    },
+    async ({ project_id, screen_id, framework }) => {
+      try {
+        const project = await store.getProject(project_id);
+        const screen = project.screens.find(s => s.id === screen_id);
+        if (!screen) {
+          throw new Error(`Screen ${screen_id} not found in project ${project_id}`);
+        }
+        const gen = getGenerator(framework);
+        if (!gen) {
+          throw new Error(`Unknown framework: ${framework}. Available: ${getAvailableFrameworks().join(', ')}`);
+        }
+        const code = gen.generate(screen);
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              code,
+              framework,
+              component_count: (screen.elements || []).length,
+              screen_name: screen.name,
             }, null, 2),
           }],
         };

@@ -48,6 +48,22 @@
 **Status:** DONE (M2a + M2b)
 **Scope:** Full component library, multiple styles, templates, auto-layout, SVG/PDF
 
+## M3a — Code Export, Navigation, Grouping (Phase 3, Sprint 1)
+**Status:** DONE
+**Branch:** `feature/m3a-codegen-navigation`
+**Scope:** Code generation (HTML/React/Flutter/SwiftUI), navigation links, Mermaid flow export, element grouping, opacity
+**Tasks:** `PM/tasks/M3a.md`
+**DoD:**
+- [x] Codegen registry + 4 generators (html, react, flutter, swiftui)
+- [x] Navigation: addLink/removeLink storage + mockup_add_link/remove_link MCP tools
+- [x] Flow export: generateMermaid + mockup_export_flow tool
+- [x] Element grouping: group/ungroup/moveGroup + 3 MCP tools
+- [x] Opacity CSS in html-builder + link data attributes
+- [x] Preview clickable links + back navigation
+- [x] mockup_to_code MCP tool
+- [x] 24 MCP tools total (17→24)
+- [x] 520+ tests pass
+
 ## M3 — Zaawansowane (Phase 3)
-**Status:** PLANNED
+**Status:** IN PROGRESS (M3a done, M3b planned)
 **Scope:** Code export, navigation flow, SSE, grouping, Docker Hub
