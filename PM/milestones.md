@@ -85,3 +85,16 @@
 ## M3 — Zaawansowane (Phase 3)
 **Status:** DONE (M3a + M3b)
 **Scope:** Code export, navigation flow, SSE, grouping, Docker Hub
+
+## M4 — Screen Generation (Phase 4)
+**Status:** IN PROGRESS
+**Branch:** `feature/m4-generate-screen`
+**Scope:** NLP-based screen generation from natural language descriptions
+**DoD:**
+- [x] parseDescription — keyword extraction (screen/component/modifier)
+- [x] matchTemplate — scoring engine against 7 template profiles
+- [x] augmentElements — keyword-based element injection with dedup
+- [x] generateScreen — orchestrator with template fallback
+- [x] mockup_generate_screen MCP tool (25 tools total)
+- [x] Integration tests (login, fallback, all 7 templates)
+- [x] 578 tests pass (30 new, 0 failures)
