@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { buildScreenHtml } from '../../renderer/html-builder.js';
 import { takeScreenshot, takePdfExport, htmlToSvg } from '../../renderer/screenshot.js';
 import { config } from '../../config.js';
+import { generateMermaid } from '../../codegen/flow.js';
 
 export function registerExportTools(server, store) {
   server.tool(
@@ -105,6 +106,39 @@ export function registerExportTools(server, store) {
         const url = `http://localhost:${config.previewPort}/preview/${project_id}/${screen_id}`;
         return {
           content: [{ type: 'text', text: url }],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: 'text', text: `Error: ${error.message}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.tool(
+    'mockup_export_flow',
+    'Export the navigation flow diagram for a project as Mermaid text. Shows all screens as nodes and navigation links as edges.',
+    {
+      project_id: z.string().describe('Project ID'),
+    },
+    async ({ project_id }) => {
+      try {
+        const project = await store.getProject(project_id);
+        const mermaid = generateMermaid(project);
+        const linkCount = project.screens.reduce((sum, s) =>
+          sum + (s.elements || []).filter(e => e.properties?.link_to?.screen_id).length, 0);
+
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              format: 'mermaid',
+              screens: project.screens.length,
+              links: linkCount,
+              diagram: mermaid,
+            }, null, 2),
+          }],
         };
       } catch (error) {
         return {
