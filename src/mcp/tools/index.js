@@ -6,6 +6,7 @@ import { registerElementTools } from './element-tools.js';
 import { registerExportTools } from './export-tools.js';
 import { registerTemplateTools } from './template-tools.js';
 import { registerLayoutTools } from './layout-tools.js';
+import { registerGroupTools } from './group-tools.js';
 
 export function registerAllTools(server) {
   const store = new ProjectStore(config.dataDir);
@@ -15,5 +16,6 @@ export function registerAllTools(server) {
   registerExportTools(server, store);
   registerTemplateTools(server, store);
   registerLayoutTools(server, store);
-  console.error('[MockupMCP] 17 tools registered');
+  registerGroupTools(server, store);
+  console.error('[MockupMCP] 22 tools registered');
 }

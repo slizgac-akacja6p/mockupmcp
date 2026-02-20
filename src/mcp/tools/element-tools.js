@@ -167,4 +167,53 @@ export function registerElementTools(server, store) {
       }
     }
   );
+
+  server.tool(
+    'mockup_add_link',
+    'Add a navigation link from an element to another screen. When the element is clicked in preview, it navigates to the target screen.',
+    {
+      project_id: z.string().describe('Project ID'),
+      screen_id: z.string().describe('Screen containing the element'),
+      element_id: z.string().describe('Element to add link to'),
+      target_screen_id: z.string().describe('Screen to navigate to when clicked'),
+      transition: z.enum(['push', 'fade', 'slide', 'none']).optional().default('push')
+        .describe('Transition animation type'),
+    },
+    async ({ project_id, screen_id, element_id, target_screen_id, transition }) => {
+      try {
+        const element = await store.addLink(project_id, screen_id, element_id, target_screen_id, transition);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(element, null, 2) }],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: 'text', text: `Error: ${error.message}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.tool(
+    'mockup_remove_link',
+    'Remove a navigation link from an element',
+    {
+      project_id: z.string().describe('Project ID'),
+      screen_id: z.string().describe('Screen containing the element'),
+      element_id: z.string().describe('Element to remove link from'),
+    },
+    async ({ project_id, screen_id, element_id }) => {
+      try {
+        const element = await store.removeLink(project_id, screen_id, element_id);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(element, null, 2) }],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: 'text', text: `Error: ${error.message}` }],
+          isError: true,
+        };
+      }
+    }
+  );
 }

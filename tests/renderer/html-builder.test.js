@@ -77,3 +77,73 @@ describe('buildScreenHtml', () => {
     assert.ok((html.match(/overflow:hidden/g) || []).length >= 2, 'Should have overflow:hidden on screen and element');
   });
 });
+
+describe('opacity support', () => {
+  it('applies opacity style when element has opacity property', () => {
+    const screen = {
+      width: 393, height: 852, background: '#FFF',
+      elements: [
+        { id: 'el_1', type: 'text', x: 0, y: 0, width: 100, height: 30, z_index: 0,
+          properties: { content: 'Faded', opacity: 0.5 } },
+      ],
+    };
+    const html = buildScreenHtml(screen);
+    assert.ok(html.includes('opacity:0.5'));
+  });
+
+  it('omits opacity when not set or 1.0', () => {
+    const screen = {
+      width: 393, height: 852, background: '#FFF',
+      elements: [
+        { id: 'el_1', type: 'text', x: 0, y: 0, width: 100, height: 30, z_index: 0,
+          properties: { content: 'Solid' } },
+      ],
+    };
+    const html = buildScreenHtml(screen);
+    // Check that no inline opacity is injected into the element wrapper div style
+    // (CSS keyframes may contain "opacity:" with a space, so we look for the compact form)
+    assert.ok(!html.includes('opacity:0') && !html.includes('opacity:1'));
+  });
+
+  it('omits opacity when value is 1', () => {
+    const screen = {
+      width: 393, height: 852, background: '#FFF',
+      elements: [
+        { id: 'el_1', type: 'text', x: 0, y: 0, width: 100, height: 30, z_index: 0,
+          properties: { content: 'Full', opacity: 1 } },
+      ],
+    };
+    const html = buildScreenHtml(screen);
+    // Check that no inline opacity is injected into the element wrapper div style
+    // (CSS keyframes may contain "opacity:" with a space, so we look for the compact form)
+    assert.ok(!html.includes('opacity:0') && !html.includes('opacity:1'));
+  });
+});
+
+describe('link data attributes', () => {
+  it('adds data-link-to attribute when element has link_to', () => {
+    const screen = {
+      width: 393, height: 852, background: '#FFF',
+      elements: [
+        { id: 'el_1', type: 'button', x: 0, y: 0, width: 100, height: 40, z_index: 0,
+          properties: { label: 'Go', link_to: { screen_id: 'scr_abc', transition: 'push' } } },
+      ],
+    };
+    const html = buildScreenHtml(screen);
+    assert.ok(html.includes('data-link-to="scr_abc"'));
+    assert.ok(html.includes('data-transition="push"'));
+    assert.ok(html.includes('cursor:pointer'));
+  });
+
+  it('does not add link attributes when no link_to', () => {
+    const screen = {
+      width: 393, height: 852, background: '#FFF',
+      elements: [
+        { id: 'el_1', type: 'button', x: 0, y: 0, width: 100, height: 40, z_index: 0,
+          properties: { label: 'Stay' } },
+      ],
+    };
+    const html = buildScreenHtml(screen);
+    assert.ok(!html.includes('data-link-to'));
+  });
+});
