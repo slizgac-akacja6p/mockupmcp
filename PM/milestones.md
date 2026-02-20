@@ -29,8 +29,23 @@
 - [x] ios.css — iOS HIG (928 lines)
 - [x] 321 tests pass (216 unit + 105 integration: 3 styles x 35 components)
 
+## M2b — Templates, Auto-Layout, Export Formats (Phase 2, Sprint 2)
+**Status:** DONE
+**Branch:** `feature/m2b-templates-layout`
+**Scope:** 7 templates, auto-layout engine (vertical/horizontal/grid), SVG/PDF export
+**Tasks:** `PM/tasks/M2b.md`
+**DoD:**
+- [x] Template registry + 7 templates (login, dashboard, settings, list, form, profile, onboarding)
+- [x] applyTemplate storage method + mockup_apply_template + mockup_list_templates tools
+- [x] Auto-layout engine: vertical, horizontal, grid modes with z_index pinning
+- [x] bulkMoveElements storage method + mockup_auto_layout tool
+- [x] SVG export (foreignObject wrapping) + PDF export (Puppeteer)
+- [x] mockup_export format param (png/svg/pdf)
+- [x] 17 MCP tools total (14 → 17)
+- [x] 449 tests pass (321 existing + 128 new)
+
 ## M2 — Rozbudowa (Phase 2)
-**Status:** IN PROGRESS (M2a DONE)
+**Status:** DONE (M2a + M2b)
 **Scope:** Full component library, multiple styles, templates, auto-layout, SVG/PDF
 
 ## M3 — Zaawansowane (Phase 3)
