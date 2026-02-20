@@ -1,5 +1,6 @@
 // Screen generator — rule-based NLP parser for mockup_generate_screen tool.
 // Pure functions: no side effects, no storage access.
+import { getTemplate, getAvailableTemplates } from '../renderer/templates/index.js';
 
 const SCREEN_KEYWORDS = [
   'login', 'signin', 'signup', 'register',
@@ -207,4 +208,67 @@ export function augmentElements(elements, parsed, screenWidth, screenHeight) {
   }
 
   return result;
+}
+
+/**
+ * Generate a full screen element array from a natural language description.
+ * @param {string} description
+ * @param {number} screenWidth
+ * @param {number} screenHeight
+ * @param {string} style
+ * @returns {{ elements: object[], matchInfo: { template: string|null, confidence: string, score: number, augmentations: string[], suggestions?: string[] }, nameHint: string }}
+ */
+export function generateScreen(description, screenWidth, screenHeight, style) {
+  const parsed = parseDescription(description);
+  const match = matchTemplate(parsed);
+  const augmentations = [];
+
+  let elements;
+
+  if (match.template) {
+    // Use matched template
+    const template = getTemplate(match.template);
+    elements = template.generate(screenWidth, screenHeight, style);
+  } else {
+    // Fallback: basic screen with navbar + description text so the user sees
+    // something meaningful instead of an empty canvas.
+    const pad = 24;
+    elements = [
+      {
+        type: 'navbar', x: 0, y: 0,
+        width: screenWidth, height: 56, z_index: 10,
+        properties: { title: parsed.nameHint },
+      },
+      {
+        type: 'text', x: pad, y: 80,
+        width: screenWidth - pad * 2, height: 60, z_index: 0,
+        properties: { content: description, fontSize: 16, align: 'center' },
+      },
+    ];
+  }
+
+  // Apply augmentations based on keywords found in the description
+  const augmented = augmentElements(elements, parsed, screenWidth, screenHeight);
+  if (augmented.length > elements.length) {
+    const added = augmented.slice(elements.length);
+    for (const el of added) {
+      augmentations.push(`added ${el.type}${el.properties?.label ? ` "${el.properties.label}"` : ''}`);
+    }
+  }
+  elements = augmented;
+
+  // Discard elements that overflow screen height after augmentation
+  elements = elements.filter(el => el.y + el.height <= screenHeight);
+
+  const matchInfo = {
+    template: match.template,
+    confidence: match.confidence,
+    score: match.score,
+    augmentations,
+  };
+  if (match.confidence === 'low') {
+    matchInfo.suggestions = getAvailableTemplates();
+  }
+
+  return { elements, matchInfo, nameHint: parsed.nameHint };
 }

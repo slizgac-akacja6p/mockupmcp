@@ -38,7 +38,7 @@ async function main() {
   // Start stdio MCP transport if configured (blocks on stdin)
   if (transport === 'stdio' || transport === 'both') {
     const mcpServer = createMcpServer();
-    registerAllTools(mcpServer, store);
+    await registerAllTools(mcpServer, store);
     console.error('[MockupMCP] MCP server ready (stdio)');
     await startMcpServer(mcpServer);
   } else {

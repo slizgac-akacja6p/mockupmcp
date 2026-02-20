@@ -165,7 +165,7 @@ async function createSession(sessions, store) {
     version: '0.1.0',
   });
 
-  registerAllTools(server, store);
+  await registerAllTools(server, store);
 
   const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: () => randomUUID(),

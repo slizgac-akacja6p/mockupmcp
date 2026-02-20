@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseDescription, matchTemplate, augmentElements } from '../../src/mcp/screen-generator.js';
+import { parseDescription, matchTemplate, augmentElements, generateScreen } from '../../src/mcp/screen-generator.js';
 
 describe('parseDescription', () => {
   it('extracts screen type keywords', () => {
@@ -135,5 +135,51 @@ describe('augmentElements', () => {
   it('returns original elements unchanged when no augmentations apply', () => {
     const result = augmentElements(baseElements, { modifierKeywords: [], componentKeywords: [], screenKeywords: [] }, 393, 852);
     assert.equal(result.length, baseElements.length);
+  });
+});
+
+describe('generateScreen', () => {
+  it('generates login screen from description', () => {
+    const result = generateScreen('login screen with email and password', 393, 852, 'wireframe');
+    assert.equal(result.matchInfo.template, 'login');
+    assert.equal(result.matchInfo.confidence, 'high');
+    assert.ok(result.elements.length >= 5);
+    assert.ok(result.elements.some(el => el.type === 'input'));
+    assert.ok(result.elements.some(el => el.type === 'button'));
+  });
+
+  it('generates dashboard screen', () => {
+    const result = generateScreen('dashboard with stats', 393, 852, 'wireframe');
+    assert.equal(result.matchInfo.template, 'dashboard');
+    assert.ok(result.elements.some(el => el.type === 'card'));
+  });
+
+  it('generates fallback for unknown description', () => {
+    const result = generateScreen('a 3D rotating globe', 393, 852, 'wireframe');
+    assert.equal(result.matchInfo.confidence, 'low');
+    assert.ok(result.elements.some(el => el.type === 'navbar'));
+    assert.ok(result.elements.some(el => el.type === 'text'));
+    assert.ok(result.matchInfo.suggestions.length > 0);
+  });
+
+  it('applies augmentations for "social" modifier', () => {
+    const result = generateScreen('login screen with social auth', 393, 852, 'wireframe');
+    const socialButtons = result.elements.filter(
+      el => el.type === 'button' && (el.properties?.label?.includes('Google') || el.properties?.label?.includes('Apple'))
+    );
+    assert.equal(socialButtons.length, 2);
+    assert.ok(result.matchInfo.augmentations.length > 0);
+  });
+
+  it('returns nameHint', () => {
+    const result = generateScreen('user profile screen', 393, 852, 'wireframe');
+    assert.ok(result.nameHint.length > 0);
+  });
+
+  it('respects screenHeight bounds — no elements overflow', () => {
+    const result = generateScreen('login with social buttons', 393, 400, 'wireframe');
+    for (const el of result.elements) {
+      assert.ok(el.y + el.height <= 400, `Element at y=${el.y} h=${el.height} overflows 400px`);
+    }
   });
 });
