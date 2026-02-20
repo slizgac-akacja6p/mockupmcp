@@ -1,7 +1,7 @@
 # MockupMCP Milestones
 
 ## M1 — MVP (Phase 1)
-**Status:** DONE — pending PR to develop
+**Status:** DONE — merged to develop (PR #1)
 **Branch:** `feature/m1-mvp`
 **Scope:** Docker container + MCP server (stdio) + 13 tools + 10 element types + wireframe style + PNG export + preview server
 **DoD:**
@@ -14,8 +14,23 @@
 - [x] 108 tests pass (0 failures)
 - [x] Code review passed (5 critical XSS fixed, security hardened)
 
+## M2a — Components + Styles (Phase 2, Sprint 1)
+**Status:** DONE
+**Branch:** `feature/m2a-components-styles`
+**Scope:** 25 new components (10 → 35 total), 3 styles (wireframe/material/ios), style registry, duplicate_screen tool
+**Tasks:** `PM/tasks/M2a.md`
+**DoD:**
+- [x] Style registry with loadStyle + getAvailableStyles
+- [x] html-builder refactored for multi-style support
+- [x] style field on project + screen, mockup_duplicate_screen tool
+- [x] 25 new components across 6 categories
+- [x] wireframe.css extended (260 → 858 lines)
+- [x] material.css — Material Design 3 (903 lines)
+- [x] ios.css — iOS HIG (928 lines)
+- [x] 321 tests pass (216 unit + 105 integration: 3 styles x 35 components)
+
 ## M2 — Rozbudowa (Phase 2)
-**Status:** PLANNED
+**Status:** IN PROGRESS (M2a DONE)
 **Scope:** Full component library, multiple styles, templates, auto-layout, SVG/PDF
 
 ## M3 — Zaawansowane (Phase 3)
