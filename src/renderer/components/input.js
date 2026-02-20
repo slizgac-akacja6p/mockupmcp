@@ -1,0 +1,17 @@
+import { escapeHtml } from './utils.js';
+
+export function defaults() {
+  return {
+    placeholder: 'Enter text...',
+    label:       null,
+    type:        'text',
+  };
+}
+
+export function render(props) {
+  const p = { ...defaults(), ...props };
+  const labelHtml = p.label
+    ? `<span class="mockup-input-label">${escapeHtml(p.label)}</span>`
+    : '';
+  return `<div>${labelHtml}<div class="mockup-input">${escapeHtml(p.placeholder)}</div></div>`;
+}

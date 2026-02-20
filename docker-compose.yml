@@ -1,0 +1,17 @@
+services:
+  mockupmcp:
+    build: .
+    image: mggs/mockupmcp:latest
+    container_name: mockupmcp
+    ports:
+      - "3100:3100"
+      - "3200:3200"
+    volumes:
+      - ./mockups:/data
+    environment:
+      - MCP_TRANSPORT=both
+      - PREVIEW_PORT=3100
+      - MCP_PORT=3200
+      - DEFAULT_STYLE=wireframe
+    stdin_open: true
+    tty: true
