@@ -1,0 +1,4 @@
+node_modules/
+mockups/
+*.png
+.DS_Store

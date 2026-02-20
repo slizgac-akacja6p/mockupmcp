@@ -1,0 +1,16 @@
+import { escapeHtml } from './utils.js';
+
+export function defaults() {
+  return {
+    content:    'Text',
+    fontSize:   16,
+    fontWeight: 'normal',
+    color:      '#333333',
+    align:      'left',
+  };
+}
+
+export function render(props) {
+  const p = { ...defaults(), ...props };
+  return `<span style="font-size:${p.fontSize}px;font-weight:${p.fontWeight};color:${p.color};text-align:${p.align};display:block;">${escapeHtml(p.content)}</span>`;
+}

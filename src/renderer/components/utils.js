@@ -1,0 +1,9 @@
+// Shared HTML escaping — content comes from user-supplied JSON, never trust it.
+export function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}

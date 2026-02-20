@@ -1,0 +1,15 @@
+services:
+  mockupmcp:
+    build: .
+    image: mockupmcp:latest
+    container_name: mockupmcp
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./mockups:/data
+    environment:
+      - MCP_TRANSPORT=stdio
+      - PREVIEW_PORT=3100
+      - DEFAULT_STYLE=wireframe
+    stdin_open: true
+    tty: true

@@ -1,0 +1,259 @@
+/* Wireframe palette — intentionally flat/greyscale to keep focus on layout, not aesthetics */
+:root {
+  --color-text-primary:    #333333;
+  --color-text-secondary:  #666666;
+  --color-text-placeholder:#999999;
+  --color-border:          #DDDDDD;
+  --color-bg-light:        #F5F5F5;
+  --color-bg-white:        #FFFFFF;
+  --color-btn-primary-bg:  #333333;
+  --color-btn-primary-fg:  #FFFFFF;
+  --color-disabled:        #CCCCCC;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--color-text-primary);
+  background: var(--color-bg-white);
+}
+
+/* ── Button ─────────────────────────────────────────────────────────────── */
+
+.mockup-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  font-family: inherit;
+  cursor: pointer;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* sizes */
+.mockup-button--sm  { padding: 6px 12px;  font-size: 12px; }
+.mockup-button--md  { padding: 8px 16px;  font-size: 14px; }
+.mockup-button--lg  { padding: 12px 24px; font-size: 16px; }
+
+/* variants */
+.mockup-button--primary {
+  background: var(--color-btn-primary-bg);
+  color:      var(--color-btn-primary-fg);
+  border-color: var(--color-btn-primary-bg);
+}
+
+.mockup-button--secondary {
+  background: var(--color-bg-light);
+  color:      var(--color-text-primary);
+  border-color: var(--color-border);
+}
+
+.mockup-button--outline {
+  background: transparent;
+  color:      var(--color-text-primary);
+  border-color: var(--color-text-primary);
+}
+
+.mockup-button--ghost {
+  background:   transparent;
+  color:        var(--color-text-secondary);
+  border-color: transparent;
+}
+
+/* ── Input ──────────────────────────────────────────────────────────────── */
+
+.mockup-input {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--color-text-placeholder);
+  background: var(--color-bg-white);
+}
+
+.mockup-input-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+/* ── Navbar ─────────────────────────────────────────────────────────────── */
+
+.mockup-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-white);
+}
+
+.mockup-navbar__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  flex: 1;
+  text-align: center;
+}
+
+.mockup-navbar__side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 32px;
+}
+
+/* ── Tab Bar ────────────────────────────────────────────────────────────── */
+
+.mockup-tabbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  width: 100%;
+  padding: 8px 0;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg-white);
+}
+
+.mockup-tabbar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.mockup-tabbar-item--active {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+/* ── Card ───────────────────────────────────────────────────────────────── */
+
+.mockup-card {
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg-white);
+  overflow: hidden;
+}
+
+.mockup-card__body {
+  padding: 12px 16px;
+}
+
+.mockup-card__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 4px;
+}
+
+.mockup-card__subtitle {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+}
+
+.mockup-card__actions {
+  display: flex;
+  gap: 8px;
+  padding: 8px 16px 12px;
+  border-top: 1px solid var(--color-border);
+}
+
+/* ── List ───────────────────────────────────────────────────────────────── */
+
+.mockup-list {
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg-white);
+  overflow: hidden;
+}
+
+.mockup-list-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 14px;
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mockup-list-item:last-child {
+  border-bottom: none;
+}
+
+.mockup-list-item__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-light);
+  flex-shrink: 0;
+}
+
+/* ── Image placeholder ──────────────────────────────────────────────────── */
+
+.mockup-image-placeholder {
+  width: 100%;
+  height: 100%;
+  background: var(--color-bg-light);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Icon ───────────────────────────────────────────────────────────────── */
+
+.mockup-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── Badge ──────────────────────────────────────────────────────────────── */
+
+.mockup-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--color-bg-light);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+}
+
+/* ── Alert ──────────────────────────────────────────────────────────────── */
+
+.mockup-alert {
+  padding: 12px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg-light);
+  font-size: 14px;
+  color: var(--color-text-primary);
+}
