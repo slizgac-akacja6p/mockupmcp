@@ -304,6 +304,72 @@ describe('ProjectStore', () => {
     });
   });
 
+  describe('bulkMoveElements', () => {
+    it('updates positions of multiple elements', async () => {
+      const project = await store.createProject('Bulk Move Test');
+      const screen = await store.addScreen(project.id, 'Main');
+      const el1 = await store.addElement(project.id, screen.id, 'text', 10, 20, 100, 30, {});
+      const el2 = await store.addElement(project.id, screen.id, 'button', 50, 60, 120, 40, {});
+
+      const updates = [
+        { id: el1.id, x: 0, y: 0, width: 393, height: 30 },
+        { id: el2.id, x: 0, y: 46, width: 393, height: 40 },
+      ];
+
+      const result = await store.bulkMoveElements(project.id, screen.id, updates);
+
+      const updatedEl1 = result.elements.find(e => e.id === el1.id);
+      const updatedEl2 = result.elements.find(e => e.id === el2.id);
+
+      assert.equal(updatedEl1.x, 0);
+      assert.equal(updatedEl1.y, 0);
+      assert.equal(updatedEl1.width, 393);
+      assert.equal(updatedEl2.x, 0);
+      assert.equal(updatedEl2.y, 46);
+    });
+
+    it('skips nonexistent element IDs silently', async () => {
+      const project = await store.createProject('Bulk Skip Test');
+      const screen = await store.addScreen(project.id, 'Main');
+      const el1 = await store.addElement(project.id, screen.id, 'text', 10, 20, 100, 30, {});
+
+      const updates = [
+        { id: el1.id, x: 0, y: 0 },
+        { id: 'el_nonexistent', x: 50, y: 50 },
+      ];
+
+      const result = await store.bulkMoveElements(project.id, screen.id, updates);
+      assert.equal(result.elements.length, 1);
+      assert.equal(result.elements[0].x, 0);
+    });
+
+    it('only updates provided fields', async () => {
+      const project = await store.createProject('Bulk Partial Test');
+      const screen = await store.addScreen(project.id, 'Main');
+      const el1 = await store.addElement(project.id, screen.id, 'text', 10, 20, 100, 30, {});
+
+      const updates = [
+        { id: el1.id, x: 50 }, // only x, keep y/width/height
+      ];
+
+      const result = await store.bulkMoveElements(project.id, screen.id, updates);
+      const updated = result.elements.find(e => e.id === el1.id);
+
+      assert.equal(updated.x, 50);
+      assert.equal(updated.y, 20);  // unchanged
+      assert.equal(updated.width, 100);  // unchanged
+      assert.equal(updated.height, 30);  // unchanged
+    });
+
+    it('throws for nonexistent screen', async () => {
+      const project = await store.createProject('Bulk Error Test');
+      await assert.rejects(
+        () => store.bulkMoveElements(project.id, 'scr_nonexistent', []),
+        /not found/i,
+      );
+    });
+  });
+
   describe('applyTemplate', () => {
     it('adds elements to screen from template array', async () => {
       const project = await store.createProject('Template Test');

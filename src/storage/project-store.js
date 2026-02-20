@@ -182,6 +182,24 @@ export class ProjectStore {
     return newScreen;
   }
 
+  async bulkMoveElements(projectId, screenId, updates) {
+    this._validateId(screenId);
+    const project = await this.getProject(projectId);
+    const screen = this._findScreen(project, screenId);
+
+    for (const update of updates) {
+      const el = screen.elements.find(e => e.id === update.id);
+      if (!el) continue;
+      if (update.x !== undefined) el.x = update.x;
+      if (update.y !== undefined) el.y = update.y;
+      if (update.width !== undefined) el.width = update.width;
+      if (update.height !== undefined) el.height = update.height;
+    }
+
+    await this._save(project);
+    return screen;
+  }
+
   async applyTemplate(projectId, screenId, elements, clear = true) {
     this._validateId(screenId);
     const project = await this.getProject(projectId);
