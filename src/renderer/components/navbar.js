@@ -1,4 +1,5 @@
 import { render as renderIcon } from './icon.js';
+import { escapeHtml } from './utils.js';
 
 export function defaults() {
   return {
@@ -18,5 +19,5 @@ export function render(props) {
   const rightIcons = Array.isArray(p.rightIcons) ? p.rightIcons : [];
   const rightHtml = `<div class="mockup-navbar__side">${rightIcons.map(name => renderIcon({ name, size: 20, color: '#333333' })).join('')}</div>`;
 
-  return `<div class="mockup-navbar">${leftHtml}<span class="mockup-navbar__title">${p.title}</span>${rightHtml}</div>`;
+  return `<div class="mockup-navbar">${leftHtml}<span class="mockup-navbar__title">${escapeHtml(p.title)}</span>${rightHtml}</div>`;
 }

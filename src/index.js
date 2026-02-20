@@ -5,7 +5,6 @@ import { closeBrowser } from './renderer/screenshot.js';
 import { config } from './config.js';
 
 // Redirect all console.log to stderr to keep stdout clean for MCP protocol
-const originalLog = console.log;
 console.log = (...args) => console.error(...args);
 
 async function main() {

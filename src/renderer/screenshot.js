@@ -23,8 +23,7 @@ export async function takeScreenshot(html, width, height, scale = config.screens
     const buffer = await page.screenshot({ type: 'png', clip: { x: 0, y: 0, width, height } });
     return buffer;
   } catch (err) {
-    // If browser crashed, try reinit once
-    if (page) try { await page.close(); } catch (_) {}
+    // If browser crashed, close browser (page is handled by finally).
     try { await browser.close(); } catch (_) {}
     browser = null;
     throw err;

@@ -1,3 +1,5 @@
+import { escapeHtml } from './utils.js';
+
 export function defaults() {
   return {
     title:    'Card Title',
@@ -19,13 +21,13 @@ export function render(props) {
     : '';
 
   const subtitleHtml = p.subtitle
-    ? `<p class="mockup-card__subtitle">${p.subtitle}</p>`
+    ? `<p class="mockup-card__subtitle">${escapeHtml(p.subtitle)}</p>`
     : '';
 
   const actions = Array.isArray(p.actions) ? p.actions : [];
   const actionsHtml = actions.length > 0
-    ? `<div class="mockup-card__actions">${actions.map(a => `<button class="mockup-button mockup-button--secondary mockup-button--sm">${a}</button>`).join('')}</div>`
+    ? `<div class="mockup-card__actions">${actions.map(a => `<button class="mockup-button mockup-button--secondary mockup-button--sm">${escapeHtml(a)}</button>`).join('')}</div>`
     : '';
 
-  return `<div class="mockup-card">${imageHtml}<div class="mockup-card__body"><p class="mockup-card__title">${p.title}</p>${subtitleHtml}</div>${actionsHtml}</div>`;
+  return `<div class="mockup-card">${imageHtml}<div class="mockup-card__body"><p class="mockup-card__title">${escapeHtml(p.title)}</p>${subtitleHtml}</div>${actionsHtml}</div>`;
 }

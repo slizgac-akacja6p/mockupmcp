@@ -1,11 +1,7 @@
-// Label is user-supplied — escape to prevent XSS in rendered HTML.
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
+import { escapeHtml } from './utils.js';
+
+const VARIANTS = ['primary', 'secondary', 'outline', 'ghost'];
+const SIZES = ['sm', 'md', 'lg'];
 
 export function defaults() {
   return {
@@ -17,6 +13,8 @@ export function defaults() {
 
 export function render(props) {
   const p = { ...defaults(), ...props };
-  const cls = `mockup-button mockup-button--${p.variant} mockup-button--${p.size}`;
+  const variant = VARIANTS.includes(p.variant) ? p.variant : 'primary';
+  const size = SIZES.includes(p.size) ? p.size : 'md';
+  const cls = `mockup-button mockup-button--${variant} mockup-button--${size}`;
   return `<button class="${cls}">${escapeHtml(p.label)}</button>`;
 }

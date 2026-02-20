@@ -22,6 +22,8 @@ const ICON_PATHS = {
   'image':            '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>',
   'check':            '<polyline points="20 6 9 17 4 12"/>',
   'more-horizontal':  '<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>',
+  // Alias — common alternative name for the bell icon.
+  'notifications':    '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
   // Fallback circle used for unknown icon names.
   'circle':           '<circle cx="12" cy="12" r="10"/>',
 };

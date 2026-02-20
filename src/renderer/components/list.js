@@ -1,3 +1,5 @@
+import { escapeHtml } from './utils.js';
+
 const DEFAULT_ITEMS = ['Item 1', 'Item 2', 'Item 3'];
 
 export function defaults() {
@@ -8,19 +10,19 @@ export function defaults() {
 }
 
 function renderSimple(items) {
-  return items.map(item => `<div class="mockup-list-item">${item}</div>`).join('');
+  return items.map(item => `<div class="mockup-list-item">${escapeHtml(item)}</div>`).join('');
 }
 
 function renderDetailed(items) {
   // Circle placeholder communicates avatar slot without requiring real content.
   return items.map(item =>
-    `<div class="mockup-list-item"><div class="mockup-list-item__avatar"></div><span>${item}</span></div>`
+    `<div class="mockup-list-item"><div class="mockup-list-item__avatar"></div><span>${escapeHtml(item)}</span></div>`
   ).join('');
 }
 
 function renderCard(items) {
   return items.map(item =>
-    `<div style="border:1px solid #DDDDDD;border-radius:4px;padding:12px 16px;margin-bottom:8px;background:#FFFFFF;font-size:14px;color:#333333;">${item}</div>`
+    `<div style="border:1px solid #DDDDDD;border-radius:4px;padding:12px 16px;margin-bottom:8px;background:#FFFFFF;font-size:14px;color:#333333;">${escapeHtml(item)}</div>`
   ).join('');
 }
 

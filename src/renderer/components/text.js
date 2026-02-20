@@ -1,11 +1,4 @@
-// Escaping is required here — content comes from user-supplied JSON, never trust it.
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
+import { escapeHtml } from './utils.js';
 
 export function defaults() {
   return {

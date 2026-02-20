@@ -1,4 +1,4 @@
-import { readFile, writeFile, rename, mkdir, readdir, unlink } from 'fs/promises';
+import { readFile, writeFile, rename, mkdir, readdir, unlink, rm } from 'fs/promises';
 import { join } from 'path';
 import { generateId, validateId } from './id-generator.js';
 
@@ -86,7 +86,7 @@ export class ProjectStore {
     }
     const summaries = await Promise.all(
       files
-        .filter((f) => f.endsWith('.json') && !f.endsWith('.tmp.json'))
+        .filter((f) => f.endsWith('.json'))
         .map(async (f) => {
           const projectId = f.slice(0, -5); // strip .json
           const project = await this.getProject(projectId);
@@ -111,6 +111,9 @@ export class ProjectStore {
       }
       throw err;
     }
+    // Clean up exported screenshots for this project.
+    const exportDir = join(this.exportsDir, projectId);
+    await rm(exportDir, { recursive: true, force: true }).catch(() => {});
   }
 
   // --- Screen methods ---

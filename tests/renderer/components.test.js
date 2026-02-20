@@ -185,6 +185,13 @@ describe('icon component', () => {
       assert.ok(html.includes('<svg'), `icon "${name}" should produce SVG`);
     }
   });
+
+  it('resolves "notifications" alias to the bell icon', () => {
+    const { render, defaults } = getComponent('icon');
+    const html = render({ ...defaults(), name: 'notifications' });
+    assert.ok(html.includes('<svg'), 'notifications alias should produce SVG');
+    assert.ok(!html.includes('<circle'), 'should not fall back to circle');
+  });
 });
 
 // ── navbar ───────────────────────────────────────────────────────────────────
@@ -327,5 +334,113 @@ describe('list component', () => {
     const html = render({ ...defaults(), items: ['Foo', 'Bar'] });
     assert.ok(html.includes('Foo'));
     assert.ok(html.includes('Bar'));
+  });
+});
+
+// ── XSS escaping across ALL components with user-supplied text ──────────────
+
+describe('XSS escaping: all components escape user-supplied text', () => {
+  const XSS = '<img src=x onerror=alert(1)>';
+
+  it('input: escapes label', () => {
+    const { render, defaults } = getComponent('input');
+    const html = render({ ...defaults(), label: XSS });
+    assert.ok(!html.includes('<img'), 'raw <img> must not appear in input label');
+    assert.ok(html.includes('&lt;img'));
+  });
+
+  it('input: escapes placeholder', () => {
+    const { render, defaults } = getComponent('input');
+    const html = render({ ...defaults(), placeholder: XSS });
+    assert.ok(!html.includes('<img'), 'raw <img> must not appear in input placeholder');
+    assert.ok(html.includes('&lt;img'));
+  });
+
+  it('navbar: escapes title', () => {
+    const { render, defaults } = getComponent('navbar');
+    const html = render({ ...defaults(), title: XSS });
+    assert.ok(!html.includes('<img'), 'raw <img> must not appear in navbar title');
+    assert.ok(html.includes('&lt;img'));
+  });
+
+  it('card: escapes title', () => {
+    const { render, defaults } = getComponent('card');
+    const html = render({ ...defaults(), title: XSS });
+    assert.ok(!html.includes('<img'), 'raw <img> must not appear in card title');
+    assert.ok(html.includes('&lt;img'));
+  });
+
+  it('card: escapes subtitle', () => {
+    const { render, defaults } = getComponent('card');
+    const html = render({ ...defaults(), subtitle: XSS });
+    assert.ok(!html.includes('<img'), 'raw <img> must not appear in card subtitle');
+    assert.ok(html.includes('&lt;img'));
+  });
+
+  it('card: escapes action labels', () => {
+    const { render, defaults } = getComponent('card');
+    const html = render({ ...defaults(), actions: [XSS] });
+    assert.ok(!html.includes('<img'), 'raw <img> must not appear in card actions');
+    assert.ok(html.includes('&lt;img'));
+  });
+
+  it('list: escapes items in simple variant', () => {
+    const { render, defaults } = getComponent('list');
+    const html = render({ ...defaults(), items: [XSS], variant: 'simple' });
+    assert.ok(!html.includes('<img'), 'raw <img> must not appear in simple list');
+    assert.ok(html.includes('&lt;img'));
+  });
+
+  it('list: escapes items in detailed variant', () => {
+    const { render, defaults } = getComponent('list');
+    const html = render({ ...defaults(), items: [XSS], variant: 'detailed' });
+    assert.ok(!html.includes('<img'), 'raw <img> must not appear in detailed list');
+    assert.ok(html.includes('&lt;img'));
+  });
+
+  it('list: escapes items in card variant', () => {
+    const { render, defaults } = getComponent('list');
+    const html = render({ ...defaults(), items: [XSS], variant: 'card' });
+    assert.ok(!html.includes('<img'), 'raw <img> must not appear in card list');
+    assert.ok(html.includes('&lt;img'));
+  });
+
+  it('tabbar: escapes tab labels', () => {
+    const { render } = getComponent('tabbar');
+    const html = render({ tabs: [{ icon: 'home', label: XSS }] });
+    assert.ok(!html.includes('<img'), 'raw <img> must not appear in tabbar label');
+    assert.ok(html.includes('&lt;img'));
+  });
+
+  it('text: escapes content (existing coverage confirmation)', () => {
+    const { render, defaults } = getComponent('text');
+    const html = render({ ...defaults(), content: XSS });
+    assert.ok(!html.includes('<img'), 'raw <img> must not appear in text content');
+    assert.ok(html.includes('&lt;img'));
+  });
+
+  it('button: escapes label (existing coverage confirmation)', () => {
+    const { render, defaults } = getComponent('button');
+    const html = render({ ...defaults(), label: XSS });
+    assert.ok(!html.includes('<img'), 'raw <img> must not appear in button label');
+    assert.ok(html.includes('&lt;img'));
+  });
+});
+
+// ── button: variant and size validation ─────────────────────────────────────
+
+describe('button: variant and size allowlist validation', () => {
+  it('falls back to primary for unknown variant', () => {
+    const { render, defaults } = getComponent('button');
+    const html = render({ ...defaults(), variant: 'evil"><script>' });
+    assert.ok(html.includes('mockup-button--primary'), 'should fall back to primary');
+    assert.ok(!html.includes('evil'), 'injected variant must not appear');
+  });
+
+  it('falls back to md for unknown size', () => {
+    const { render, defaults } = getComponent('button');
+    const html = render({ ...defaults(), size: 'xxl' });
+    assert.ok(html.includes('mockup-button--md'), 'should fall back to md');
+    assert.ok(!html.includes('xxl'), 'unknown size must not appear');
   });
 });
