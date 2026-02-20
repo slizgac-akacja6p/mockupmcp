@@ -64,6 +64,24 @@
 - [x] 24 MCP tools total (17→24)
 - [x] 520+ tests pass
 
+## M3b — SSE Transport, Docker Hub, Animated Transitions (Phase 3, Sprint 2)
+**Status:** DONE
+**Branch:** `feature/m3b-sse-transitions`
+**Scope:** Streamable HTTP transport (port 3200), Docker Hub CI/CD, CSS animated transitions in preview
+**Tasks:** `PM/tasks/M3b.md`
+**DoD:**
+- [x] HTTP transport on port 3200 (StreamableHTTPServerTransport, session management)
+- [x] Config: MCP_TRANSPORT (stdio|http|both), MCP_PORT
+- [x] Shared ProjectStore between stdio and HTTP transports
+- [x] GitHub Actions: multi-arch Docker Hub publish (amd64+arm64)
+- [x] Dockerfile + docker-compose updated for port 3200
+- [x] Screen fragment endpoint for SPA transitions
+- [x] CSS animated transitions: push, fade, slide-up, none
+- [x] SPA fetch+swap navigation (no page reload)
+- [x] history.pushState + popstate for back/forward
+- [x] Integration tests for HTTP transport
+- [x] 550+ tests pass
+
 ## M3 — Zaawansowane (Phase 3)
-**Status:** IN PROGRESS (M3a done, M3b planned)
+**Status:** DONE (M3a + M3b)
 **Scope:** Code export, navigation flow, SSE, grouping, Docker Hub
