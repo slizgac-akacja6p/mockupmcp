@@ -8,8 +8,8 @@ import { registerTemplateTools } from './template-tools.js';
 import { registerLayoutTools } from './layout-tools.js';
 import { registerGroupTools } from './group-tools.js';
 
-export function registerAllTools(server) {
-  const store = new ProjectStore(config.dataDir);
+export function registerAllTools(server, store) {
+  if (!store) store = new ProjectStore(config.dataDir);
   registerProjectTools(server, store);
   registerScreenTools(server, store);
   registerElementTools(server, store);
