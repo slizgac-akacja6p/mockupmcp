@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>MockupMCP Preview</title>
+  <style>
+    body { margin: 0; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; background: #E0E0E0; padding: 20px; }
+    .frame { box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+  </style>
+</head>
+<body>
+  <div class="frame">{{CONTENT}}</div>
+  <script>
+    const projectId = '{{PROJECT_ID}}';
+    let lastMod = '{{LAST_MOD}}';
+    setInterval(async () => {
+      try {
+        const r = await fetch('/api/lastmod/' + projectId);
+        const data = await r.json();
+        if (data.updated_at !== lastMod) location.reload();
+      } catch (_) {}
+    }, 2000);
+  </script>
+</body>
+</html>
