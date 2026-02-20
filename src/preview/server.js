@@ -60,6 +60,16 @@ function injectPreviewAssets(html, projectId, updatedAt) {
   return html;
 }
 
+// Extracts the <body> content from a full HTML document so the SPA transition
+// layer can swap screen content without replacing the whole document (avoids
+// re-running scripts and losing scroll position on each navigation).
+function buildScreenFragment(screen, style) {
+  const fullHtml = buildScreenHtml(screen, style);
+  const bodyMatch = fullHtml.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+  if (!bodyMatch) return '';
+  return bodyMatch[1].trim();
+}
+
 export function startPreviewServer(port = config.previewPort) {
   const app = express();
   const store = new ProjectStore(config.dataDir);
@@ -89,6 +99,22 @@ export function startPreviewServer(port = config.previewPort) {
       res.json({ updated_at: project.updated_at });
     } catch (err) {
       res.status(404).json({ error: err.message });
+    }
+  });
+
+  // Returns only the screen body content so the SPA transition layer can
+  // swap .screen divs in-place without a full page reload (used by Task 8).
+  app.get('/api/screen-fragment/:projectId/:screenId', async (req, res) => {
+    try {
+      const project = await store.getProject(req.params.projectId);
+      const screen = project.screens.find(s => s.id === req.params.screenId);
+      if (!screen) return res.status(404).send('Screen not found');
+
+      const style = screen.style || project.style || 'wireframe';
+      const fragment = buildScreenFragment(screen, style);
+      res.type('html').send(fragment);
+    } catch (err) {
+      res.status(500).send('Error: ' + err.message);
     }
   });
 
