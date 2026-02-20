@@ -1,18 +1,16 @@
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
 import { getComponent } from './components/index.js';
+import { loadStyle } from './styles/index.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const wireframeCss = readFileSync(join(__dirname, 'styles', 'wireframe.css'), 'utf-8');
+export function buildScreenHtml(screen, style = 'wireframe') {
+  const css = loadStyle(style);
 
-export function buildScreenHtml(screen) {
   const elementsHtml = (screen.elements || [])
     .sort((a, b) => (a.z_index || 0) - (b.z_index || 0))
     .map(el => {
       const component = getComponent(el.type);
       if (!component) return `<!-- unknown type: ${el.type} -->`;
-      const innerHtml = component.render(el.properties || {});
+      // Pass _style so components can render style-specific markup when needed
+      const innerHtml = component.render({ ...el.properties, _style: style });
       return `<div class="element" style="position:absolute;left:${el.x}px;top:${el.y}px;width:${el.width}px;height:${el.height}px;z-index:${el.z_index || 0};overflow:hidden;">${innerHtml}</div>`;
     })
     .join('\n    ');
@@ -23,8 +21,8 @@ export function buildScreenHtml(screen) {
   <meta charset="utf-8">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-    ${wireframeCss}
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    ${css}
   </style>
 </head>
 <body>

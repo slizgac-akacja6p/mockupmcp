@@ -24,7 +24,9 @@ export function registerExportTools(server, store) {
           throw new Error(`Screen ${screen_id} not found in project ${project_id}`);
         }
 
-        const html = buildScreenHtml(screen);
+        // Screen-level style overrides project default; both fall back to wireframe
+        const style = screen.style || project.style || 'wireframe';
+        const html = buildScreenHtml(screen, style);
         const buffer = await takeScreenshot(html, screen.width, screen.height, scale);
         const filePath = await store.saveExport(project_id, screen_id, buffer);
 

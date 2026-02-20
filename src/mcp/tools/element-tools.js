@@ -4,11 +4,11 @@ import { getAvailableTypes } from '../../renderer/components/index.js';
 export function registerElementTools(server, store) {
   server.tool(
     'mockup_add_element',
-    'Add a UI element (button, text, input, image, icon, rectangle, navbar, tabbar, card, list) to a screen',
+    'Add a UI element to a screen. Types: text, rectangle, circle, line, image, icon, avatar, badge, chip, skeleton, progress, tooltip, button, input, textarea, checkbox, radio, toggle, select, slider, navbar, tabbar, sidebar, breadcrumb, card, list, table, alert, modal, login_form, search_bar, header, footer, data_table, chart_placeholder',
     {
       project_id: z.string().describe('Project ID'),
       screen_id: z.string().describe('Screen ID'),
-      type: z.string().describe('Element type (text, rectangle, button, input, image, icon, navbar, tabbar, card, list)'),
+      type: z.string().describe('Element type — see tool description for available types'),
       x: z.number().describe('X position in pixels'),
       y: z.number().describe('Y position in pixels'),
       width: z.number().describe('Element width in pixels'),

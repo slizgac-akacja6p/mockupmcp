@@ -46,13 +46,14 @@ export class ProjectStore {
 
   // --- Project methods ---
 
-  async createProject(name, description = '', viewport = { width: 393, height: 852, preset: 'mobile' }) {
+  async createProject(name, description = '', viewport = { width: 393, height: 852, preset: 'mobile' }, style = 'wireframe') {
     const id = generateId('proj');
     const now = new Date().toISOString();
     const project = {
       id,
       name,
       description,
+      style,
       created_at: now,
       updated_at: now,
       viewport,
@@ -118,7 +119,7 @@ export class ProjectStore {
 
   // --- Screen methods ---
 
-  async addScreen(projectId, name, width, height, background = '#FFFFFF') {
+  async addScreen(projectId, name, width, height, background = '#FFFFFF', style = null) {
     const project = await this.getProject(projectId);
 
     // Fall back to project viewport dimensions when caller omits explicit size.
@@ -131,6 +132,7 @@ export class ProjectStore {
       width: resolvedWidth,
       height: resolvedHeight,
       background,
+      style,
       elements: [],
     };
     project.screens.push(screen);
@@ -158,6 +160,26 @@ export class ProjectStore {
     }
     project.screens.splice(index, 1);
     await this._save(project);
+  }
+
+  async duplicateScreen(projectId, screenId, newName) {
+    this._validateId(screenId);
+    const project = await this.getProject(projectId);
+    const source = this._findScreen(project, screenId);
+
+    const newScreen = {
+      ...structuredClone(source),
+      id: generateId('scr'),
+      name: newName || `${source.name} (copy)`,
+      elements: source.elements.map(el => ({
+        ...structuredClone(el),
+        id: generateId('el'),
+      })),
+    };
+
+    project.screens.push(newScreen);
+    await this._save(project);
+    return newScreen;
   }
 
   // --- Element methods ---

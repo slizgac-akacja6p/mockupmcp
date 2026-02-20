@@ -51,6 +51,24 @@ describe('buildScreenHtml', () => {
     assert.ok(html.includes('<!DOCTYPE html>'));
   });
 
+  it('uses wireframe style by default', () => {
+    const html = buildScreenHtml({ width: 393, height: 852, elements: [] });
+    assert.ok(html.includes('mockup-button'));
+  });
+
+  it('accepts a style parameter', () => {
+    const html = buildScreenHtml({ width: 393, height: 852, elements: [] }, 'material');
+    assert.ok(html.includes('mockup-button'));
+  });
+
+  it('passes _style to component render', () => {
+    const html = buildScreenHtml({
+      width: 393, height: 852,
+      elements: [{ type: 'button', x: 0, y: 0, width: 100, height: 40, z_index: 0, properties: { label: 'Test' } }],
+    }, 'material');
+    assert.ok(html.includes('Test'));
+  });
+
   it('applies overflow hidden on screen and elements', () => {
     const html = buildScreenHtml({
       width: 393, height: 852, background: '#FFF',

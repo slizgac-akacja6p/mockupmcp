@@ -46,8 +46,10 @@ export function startPreviewServer(port = config.previewPort) {
       const screen = project.screens.find(s => s.id === req.params.screenId);
       if (!screen) return res.status(404).send('Screen not found');
 
+      // Screen-level style overrides project default; both fall back to wireframe
+      const style = screen.style || project.style || 'wireframe';
       const html = injectPreviewAssets(
-        buildScreenHtml(screen),
+        buildScreenHtml(screen, style),
         project.id,
         project.updated_at,
       );

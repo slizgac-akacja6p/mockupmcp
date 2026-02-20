@@ -14,10 +14,14 @@ export function registerScreenTools(server, store) {
         .optional()
         .default('#FFFFFF')
         .describe('Background color (hex), defaults to #FFFFFF'),
+      style: z
+        .enum(['wireframe', 'material', 'ios'])
+        .optional()
+        .describe('Style override for this screen (defaults to project style)'),
     },
-    async ({ project_id, name, width, height, background }) => {
+    async ({ project_id, name, width, height, background, style }) => {
       try {
-        const screen = await store.addScreen(project_id, name, width, height, background);
+        const screen = await store.addScreen(project_id, name, width, height, background, style);
         return {
           content: [{ type: 'text', text: JSON.stringify(screen, null, 2) }],
         };
@@ -63,6 +67,29 @@ export function registerScreenTools(server, store) {
         await store.deleteScreen(project_id, screen_id);
         return {
           content: [{ type: 'text', text: `Screen ${screen_id} deleted successfully` }],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: 'text', text: `Error: ${error.message}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.tool(
+    'mockup_duplicate_screen',
+    'Duplicate an existing screen with all its elements. All IDs are regenerated.',
+    {
+      project_id: z.string().describe('Project ID'),
+      screen_id: z.string().describe('Screen ID to duplicate'),
+      new_name: z.string().optional().describe('Name for the copy (defaults to "Original Name (copy)")'),
+    },
+    async ({ project_id, screen_id, new_name }) => {
+      try {
+        const screen = await store.duplicateScreen(project_id, screen_id, new_name);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(screen, null, 2) }],
         };
       } catch (error) {
         return {

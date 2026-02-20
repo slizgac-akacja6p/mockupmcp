@@ -240,4 +240,67 @@ describe('ProjectStore', () => {
       assert.ok(filePath.endsWith(`${screen.id}.png`));
     });
   });
+
+  describe('Style support', () => {
+    it('createProject stores style field', async () => {
+      const project = await store.createProject('Styled', '', {
+        width: 393, height: 852, preset: 'mobile',
+      }, 'material');
+      assert.equal(project.style, 'material');
+
+      const retrieved = await store.getProject(project.id);
+      assert.equal(retrieved.style, 'material');
+    });
+
+    it('createProject defaults style to wireframe', async () => {
+      const project = await store.createProject('Default Style');
+      assert.equal(project.style, 'wireframe');
+    });
+
+    it('addScreen stores style override', async () => {
+      const project = await store.createProject('Screen Style Test');
+      const screen = await store.addScreen(project.id, 'iOS Screen', null, null, '#FFFFFF', 'ios');
+      assert.equal(screen.style, 'ios');
+    });
+
+    it('addScreen defaults style to null', async () => {
+      const project = await store.createProject('Screen Null Style');
+      const screen = await store.addScreen(project.id, 'Default Screen');
+      assert.equal(screen.style, null);
+    });
+  });
+
+  describe('duplicateScreen', () => {
+    it('duplicates screen with new IDs', async () => {
+      const project = await store.createProject('Dup Test');
+      const screen = await store.addScreen(project.id, 'Original');
+      await store.addElement(project.id, screen.id, 'button', 10, 20, 100, 40, { label: 'Click' });
+      await store.addElement(project.id, screen.id, 'text', 10, 70, 200, 30, { content: 'Hello' });
+
+      const copy = await store.duplicateScreen(project.id, screen.id, 'Copy');
+
+      assert.notEqual(copy.id, screen.id);
+      assert.equal(copy.name, 'Copy');
+      assert.equal(copy.elements.length, 2);
+      assert.notEqual(copy.elements[0].id, screen.elements?.[0]?.id);
+      assert.equal(copy.elements[0].type, 'button');
+      assert.deepEqual(copy.elements[0].properties, { label: 'Click' });
+    });
+
+    it('uses default name when new_name not provided', async () => {
+      const project = await store.createProject('Dup Name Test');
+      const screen = await store.addScreen(project.id, 'Main Screen');
+
+      const copy = await store.duplicateScreen(project.id, screen.id);
+      assert.equal(copy.name, 'Main Screen (copy)');
+    });
+
+    it('throws for nonexistent screen', async () => {
+      const project = await store.createProject('Dup Error Test');
+      await assert.rejects(
+        () => store.duplicateScreen(project.id, 'scr_nonexistent'),
+        /not found/i,
+      );
+    });
+  });
 });

@@ -11,5 +11,5 @@ export function registerAllTools(server) {
   registerScreenTools(server, store);
   registerElementTools(server, store);
   registerExportTools(server, store);
-  console.error('[MockupMCP] 13 tools registered');
+  console.error('[MockupMCP] 14 tools registered');
 }
