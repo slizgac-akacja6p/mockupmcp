@@ -75,3 +75,74 @@ describe('screen fragment endpoint', () => {
     assert.ok(res.body.includes('Hello'), 'should contain element text');
   });
 });
+
+describe('preview page transition support', () => {
+  let tmpDir, server, port, projectId, screenId;
+
+  beforeEach(async () => {
+    tmpDir = mkdtempSync(join(tmpdir(), 'preview-trans2-'));
+    const origDataDir = config.dataDir;
+    config.dataDir = tmpDir;
+
+    const store = new ProjectStore(tmpDir);
+    await store.init();
+
+    const project = await store.createProject(
+      'NavTest',
+      '',
+      { width: 393, height: 852, preset: 'mobile' },
+    );
+    projectId = project.id;
+
+    const s1 = await store.addScreen(project.id, 'Home', 393, 852, '#FFFFFF');
+    screenId = s1.id;
+
+    const s2 = await store.addScreen(project.id, 'Detail', 393, 852, '#FFFFFF');
+
+    await store.addElement(project.id, s1.id, 'button', 0, 0, 100, 40, {
+      label: 'Go',
+    });
+    // Add link to the button element
+    const updatedProject = await store.getProject(project.id);
+    const btn = updatedProject.screens[0].elements[0];
+    if (btn && store.addLink) {
+      try { await store.addLink(project.id, s1.id, btn.id, s2.id, 'push'); } catch (_) {}
+    }
+
+    server = startPreviewServer(0);
+    port = server.address().port;
+    config.dataDir = origDataDir;
+  });
+
+  afterEach(async () => {
+    if (server) await new Promise(r => server.close(r));
+    rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it('preview HTML contains transition CSS classes', async () => {
+    const res = await get(port, `/preview/${projectId}/${screenId}`);
+    assert.equal(res.status, 200);
+    assert.ok(res.body.includes('transition-container'), 'should have transition container CSS');
+  });
+
+  it('preview HTML uses fetch for navigation instead of redirect', async () => {
+    const res = await get(port, `/preview/${projectId}/${screenId}`);
+    assert.equal(res.status, 200);
+    assert.ok(res.body.includes('fetch('), 'should use fetch for navigation');
+    assert.ok(!res.body.includes("window.location.href = '/preview/'"), 'should NOT use redirect');
+  });
+
+  it('preview HTML contains history.pushState for URL management', async () => {
+    const res = await get(port, `/preview/${projectId}/${screenId}`);
+    assert.equal(res.status, 200);
+    assert.ok(res.body.includes('history.pushState'), 'should manage browser history');
+  });
+
+  it('preview HTML has CSS for all transition types', async () => {
+    const res = await get(port, `/preview/${projectId}/${screenId}`);
+    const body = res.body;
+    assert.ok(body.includes('trans-push'), 'should have push transition CSS');
+    assert.ok(body.includes('trans-fade'), 'should have fade transition CSS');
+    assert.ok(body.includes('trans-slide-up'), 'should have slide-up transition CSS');
+  });
+});

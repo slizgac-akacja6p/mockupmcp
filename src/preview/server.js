@@ -12,20 +12,130 @@ const PREVIEW_STYLE = `
   .screen { box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
 </style>`;
 
-// Intercepts clicks on elements that carry navigation metadata and redirects
-// the browser to the linked screen without requiring anchor tags in components.
+// CSS keyframe animations for screen-to-screen transitions (push, fade, slide-up).
+// Each transition type has forward and reverse variants for back navigation.
+const TRANSITION_CSS = `
+<style>
+  .transition-container {
+    position: relative;
+    overflow: hidden;
+  }
+  .screen { transition: none; }
+
+  /* Push — iOS-style slide */
+  .trans-push-out { animation: pushOut 300ms ease-in-out forwards; }
+  .trans-push-in { animation: pushIn 300ms ease-in-out forwards; }
+  .trans-push-back-out { animation: pushBackOut 300ms ease-in-out forwards; }
+  .trans-push-back-in { animation: pushBackIn 300ms ease-in-out forwards; }
+  @keyframes pushOut { from { transform: translateX(0); } to { transform: translateX(-100%); } }
+  @keyframes pushIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+  @keyframes pushBackOut { from { transform: translateX(0); } to { transform: translateX(100%); } }
+  @keyframes pushBackIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+
+  /* Fade — crossfade */
+  .trans-fade-out { animation: fadeOut 300ms ease-in-out forwards; }
+  .trans-fade-in { animation: fadeIn 300ms ease-in-out forwards; }
+  @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  /* Slide-up — modal-style */
+  .trans-slide-up-out { animation: slideUpOut 300ms ease-in-out forwards; }
+  .trans-slide-up-in { animation: slideUpIn 300ms ease-in-out forwards; }
+  .trans-slide-up-back-out { animation: slideDownOut 300ms ease-in-out forwards; }
+  .trans-slide-up-back-in { animation: slideDownIn 300ms ease-in-out forwards; }
+  @keyframes slideUpOut { from { transform: translateY(0); } to { transform: translateY(-100%); } }
+  @keyframes slideUpIn { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  @keyframes slideDownOut { from { transform: translateY(0); } to { transform: translateY(100%); } }
+  @keyframes slideDownIn { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+</style>`;
+
+// SPA-style navigation: fetch screen fragment, animate transition, swap DOM.
+// Uses innerHTML with trusted server-rendered content from our own fragment endpoint.
 const LINK_SCRIPT = `
 <script>
-  document.addEventListener('click', (e) => {
+  let isTransitioning = false;
+
+  document.addEventListener('click', async (e) => {
     const el = e.target.closest('[data-link-to]');
-    if (el) {
-      e.preventDefault();
-      const screenId = el.dataset.linkTo;
-      const currentPath = window.location.pathname;
-      const projectId = currentPath.split('/')[2];
-      window.location.href = '/preview/' + projectId + '/' + screenId;
-    }
+    if (!el || isTransitioning) return;
+    e.preventDefault();
+
+    const screenId = el.dataset.linkTo;
+    const transition = el.dataset.transition || 'push';
+    const currentPath = window.location.pathname;
+    const projectId = currentPath.split('/')[2];
+
+    await swapScreen(projectId, screenId, transition, false);
   });
+
+  window.addEventListener('popstate', async (e) => {
+    if (!e.state || isTransitioning) return;
+    const { projectId, screenId, transition } = e.state;
+    await swapScreen(projectId, screenId, transition || 'push', true, true);
+  });
+
+  async function swapScreen(projectId, screenId, transition, isBack, skipHistory) {
+    isTransitioning = true;
+    try {
+      const res = await fetch('/api/screen-fragment/' + projectId + '/' + screenId);
+      if (!res.ok) { isTransitioning = false; return; }
+      const newHtml = await res.text();
+
+      const container = document.querySelector('body');
+      const currentScreen = container.querySelector('.screen');
+      if (!currentScreen) { isTransitioning = false; return; }
+
+      const template = document.createElement('template');
+      template.innerHTML = newHtml;
+      const newScreen = template.content.querySelector('.screen');
+      if (!newScreen) { isTransitioning = false; return; }
+
+      if (transition === 'none') {
+        currentScreen.replaceWith(newScreen);
+      } else {
+        newScreen.style.position = 'absolute';
+        newScreen.style.top = '0';
+        newScreen.style.left = currentScreen.offsetLeft + 'px';
+        currentScreen.parentNode.style.position = 'relative';
+        currentScreen.parentNode.style.overflow = 'hidden';
+
+        const suffix = isBack ? '-back' : '';
+        const outClass = transition === 'fade' ? 'trans-fade-out' : ('trans-' + transition + suffix + '-out');
+        const inClass = transition === 'fade' ? 'trans-fade-in' : ('trans-' + transition + suffix + '-in');
+
+        currentScreen.parentNode.appendChild(newScreen);
+        currentScreen.classList.add(outClass);
+        newScreen.classList.add(inClass);
+
+        await new Promise(r => setTimeout(r, 310));
+
+        currentScreen.remove();
+        newScreen.classList.remove(inClass);
+        newScreen.style.position = '';
+      }
+
+      if (!skipHistory) {
+        const newUrl = '/preview/' + projectId + '/' + screenId;
+        history.pushState({ projectId, screenId, transition }, '', newUrl);
+      }
+
+      const modRes = await fetch('/api/lastmod/' + projectId);
+      if (modRes.ok) {
+        const data = await modRes.json();
+        lastMod = data.updated_at;
+      }
+    } catch (err) {
+      console.error('Transition error:', err);
+    }
+    isTransitioning = false;
+  }
+
+  (function() {
+    const parts = window.location.pathname.split('/');
+    if (parts[1] === 'preview' && parts[2] && parts[3]) {
+      history.replaceState({ projectId: parts[2], screenId: parts[3], transition: 'push' }, '');
+    }
+  })();
 </script>`;
 
 // Fixed back button lets designers navigate the flow history without browser chrome.
@@ -55,7 +165,7 @@ function buildReloadScript(projectId, updatedAt) {
 function injectPreviewAssets(html, projectId, updatedAt) {
   // buildScreenHtml returns a full HTML document, so we inject into it
   // rather than nesting docs (which is invalid HTML).
-  html = html.replace('</head>', PREVIEW_STYLE + '\n</head>');
+  html = html.replace('</head>', PREVIEW_STYLE + TRANSITION_CSS + '\n</head>');
   html = html.replace('</body>', BACK_BUTTON + LINK_SCRIPT + buildReloadScript(projectId, updatedAt) + '\n</body>');
   return html;
 }
