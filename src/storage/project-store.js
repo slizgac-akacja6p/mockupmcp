@@ -1,4 +1,5 @@
 import { readFile, writeFile, rename, mkdir, readdir, unlink, rm } from 'fs/promises';
+import { mkdirSync } from 'fs';
 import { join } from 'path';
 import { generateId, validateId } from './id-generator.js';
 
@@ -7,6 +8,10 @@ export class ProjectStore {
     this.dataDir = dataDir;
     this.projectsDir = join(dataDir, 'projects');
     this.exportsDir = join(dataDir, 'exports');
+
+    // Auto-create subdirectories on construction.
+    mkdirSync(this.projectsDir, { recursive: true });
+    mkdirSync(this.exportsDir, { recursive: true });
   }
 
   async init() {
@@ -46,13 +51,14 @@ export class ProjectStore {
 
   // --- Project methods ---
 
-  async createProject(name, description = '', viewport = { width: 393, height: 852, preset: 'mobile' }) {
+  async createProject(name, description = '', viewport = { width: 393, height: 852, preset: 'mobile' }, style = 'wireframe') {
     const id = generateId('proj');
     const now = new Date().toISOString();
     const project = {
       id,
       name,
       description,
+      style,
       created_at: now,
       updated_at: now,
       viewport,
@@ -118,7 +124,7 @@ export class ProjectStore {
 
   // --- Screen methods ---
 
-  async addScreen(projectId, name, width, height, background = '#FFFFFF') {
+  async addScreen(projectId, name, width, height, background = '#FFFFFF', style = null) {
     const project = await this.getProject(projectId);
 
     // Fall back to project viewport dimensions when caller omits explicit size.
@@ -131,6 +137,7 @@ export class ProjectStore {
       width: resolvedWidth,
       height: resolvedHeight,
       background,
+      style,
       elements: [],
     };
     project.screens.push(screen);
@@ -158,6 +165,64 @@ export class ProjectStore {
     }
     project.screens.splice(index, 1);
     await this._save(project);
+  }
+
+  async duplicateScreen(projectId, screenId, newName) {
+    this._validateId(screenId);
+    const project = await this.getProject(projectId);
+    const source = this._findScreen(project, screenId);
+
+    const newScreen = {
+      ...structuredClone(source),
+      id: generateId('scr'),
+      name: newName || `${source.name} (copy)`,
+      elements: source.elements.map(el => ({
+        ...structuredClone(el),
+        id: generateId('el'),
+      })),
+    };
+
+    project.screens.push(newScreen);
+    await this._save(project);
+    return newScreen;
+  }
+
+  async bulkMoveElements(projectId, screenId, updates) {
+    this._validateId(screenId);
+    const project = await this.getProject(projectId);
+    const screen = this._findScreen(project, screenId);
+
+    for (const update of updates) {
+      const el = screen.elements.find(e => e.id === update.id);
+      if (!el) continue;
+      if (update.x !== undefined) el.x = update.x;
+      if (update.y !== undefined) el.y = update.y;
+      if (update.width !== undefined) el.width = update.width;
+      if (update.height !== undefined) el.height = update.height;
+    }
+
+    await this._save(project);
+    return screen;
+  }
+
+  async applyTemplate(projectId, screenId, elements, clear = true) {
+    this._validateId(screenId);
+    const project = await this.getProject(projectId);
+    const screen = this._findScreen(project, screenId);
+
+    if (clear) {
+      screen.elements = [];
+    }
+
+    for (const el of elements) {
+      screen.elements.push({
+        ...el,
+        id: generateId('el'),
+      });
+    }
+
+    await this._save(project);
+    return screen;
   }
 
   // --- Element methods ---
@@ -242,17 +307,138 @@ export class ProjectStore {
     return screen.elements;
   }
 
+  // --- Link methods ---
+
+  async addLink(projectId, screenId, elementId, targetScreenId, transition = 'push') {
+    this._validateId(screenId);
+    this._validateId(elementId);
+    this._validateId(targetScreenId);
+    const project = await this.getProject(projectId);
+    const screen = this._findScreen(project, screenId);
+
+    const targetExists = project.screens.some(s => s.id === targetScreenId);
+    if (!targetExists) {
+      throw new Error(`Target screen ${targetScreenId} not found in project ${projectId}`);
+    }
+
+    const element = screen.elements.find(e => e.id === elementId);
+    if (!element) {
+      throw new Error(`Element ${elementId} not found in screen ${screenId}`);
+    }
+
+    element.properties.link_to = { screen_id: targetScreenId, transition };
+    await this._save(project);
+    return element;
+  }
+
+  async removeLink(projectId, screenId, elementId) {
+    this._validateId(screenId);
+    this._validateId(elementId);
+    const project = await this.getProject(projectId);
+    const screen = this._findScreen(project, screenId);
+    const element = screen.elements.find(e => e.id === elementId);
+    if (!element) {
+      throw new Error(`Element ${elementId} not found in screen ${screenId}`);
+    }
+    delete element.properties.link_to;
+    await this._save(project);
+    return element;
+  }
+
+  async getLinksForProject(projectId) {
+    const project = await this.getProject(projectId);
+    const links = [];
+    for (const screen of project.screens) {
+      for (const el of screen.elements) {
+        if (el.properties.link_to) {
+          links.push({
+            from_screen: screen.id,
+            from_screen_name: screen.name,
+            from_element: el.id,
+            from_element_type: el.type,
+            to_screen: el.properties.link_to.screen_id,
+            to_screen_name: project.screens.find(s => s.id === el.properties.link_to.screen_id)?.name || 'Unknown',
+            transition: el.properties.link_to.transition,
+          });
+        }
+      }
+    }
+    return links;
+  }
+
+  // --- Group methods ---
+
+  async groupElements(projectId, screenId, elementIds, name = 'Group') {
+    this._validateId(screenId);
+    const project = await this.getProject(projectId);
+    const screen = this._findScreen(project, screenId);
+
+    if (elementIds.length < 2) {
+      throw new Error('Group requires at least 2 elements');
+    }
+
+    for (const elId of elementIds) {
+      if (!screen.elements.find(e => e.id === elId)) {
+        throw new Error(`Element ${elId} not found in screen ${screenId}`);
+      }
+    }
+
+    if (!screen.groups) screen.groups = [];
+
+    const group = {
+      id: generateId('grp'),
+      name,
+      element_ids: [...elementIds],
+    };
+    screen.groups.push(group);
+    await this._save(project);
+    return group;
+  }
+
+  async ungroupElements(projectId, screenId, groupId) {
+    this._validateId(screenId);
+    const project = await this.getProject(projectId);
+    const screen = this._findScreen(project, screenId);
+    if (!screen.groups) throw new Error(`Group ${groupId} not found`);
+
+    const idx = screen.groups.findIndex(g => g.id === groupId);
+    if (idx === -1) throw new Error(`Group ${groupId} not found in screen ${screenId}`);
+
+    screen.groups.splice(idx, 1);
+    await this._save(project);
+  }
+
+  async moveGroup(projectId, screenId, groupId, deltaX, deltaY) {
+    this._validateId(screenId);
+    const project = await this.getProject(projectId);
+    const screen = this._findScreen(project, screenId);
+    if (!screen.groups) throw new Error(`Group ${groupId} not found`);
+
+    const group = screen.groups.find(g => g.id === groupId);
+    if (!group) throw new Error(`Group ${groupId} not found in screen ${screenId}`);
+
+    for (const elId of group.element_ids) {
+      const el = screen.elements.find(e => e.id === elId);
+      if (el) {
+        el.x += deltaX;
+        el.y += deltaY;
+      }
+    }
+    await this._save(project);
+    return screen;
+  }
+
   // --- Export ---
 
-  async saveExport(projectId, screenId, pngBuffer) {
+  async saveExport(projectId, screenId, buffer, format = 'png') {
     this._validateId(projectId);
     this._validateId(screenId);
 
     const exportDir = join(this.exportsDir, projectId);
     await mkdir(exportDir, { recursive: true });
 
-    const filePath = join(exportDir, `${screenId}.png`);
-    await writeFile(filePath, pngBuffer);
+    const filePath = join(exportDir, `${screenId}.${format}`);
+    await writeFile(filePath, buffer);
     return filePath;
   }
 }

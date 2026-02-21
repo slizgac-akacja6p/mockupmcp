@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export function registerScreenTools(server, store) {
+export async function registerScreenTools(server, store) {
   server.tool(
     'mockup_add_screen',
     'Add a new screen to a project. Width/height default to the project viewport if omitted.',
@@ -14,10 +14,14 @@ export function registerScreenTools(server, store) {
         .optional()
         .default('#FFFFFF')
         .describe('Background color (hex), defaults to #FFFFFF'),
+      style: z
+        .enum(['wireframe', 'material', 'ios'])
+        .optional()
+        .describe('Style override for this screen (defaults to project style)'),
     },
-    async ({ project_id, name, width, height, background }) => {
+    async ({ project_id, name, width, height, background, style }) => {
       try {
-        const screen = await store.addScreen(project_id, name, width, height, background);
+        const screen = await store.addScreen(project_id, name, width, height, background, style);
         return {
           content: [{ type: 'text', text: JSON.stringify(screen, null, 2) }],
         };
@@ -63,6 +67,81 @@ export function registerScreenTools(server, store) {
         await store.deleteScreen(project_id, screen_id);
         return {
           content: [{ type: 'text', text: `Screen ${screen_id} deleted successfully` }],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: 'text', text: `Error: ${error.message}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.tool(
+    'mockup_duplicate_screen',
+    'Duplicate an existing screen with all its elements. All IDs are regenerated.',
+    {
+      project_id: z.string().describe('Project ID'),
+      screen_id: z.string().describe('Screen ID to duplicate'),
+      new_name: z.string().optional().describe('Name for the copy (defaults to "Original Name (copy)")'),
+    },
+    async ({ project_id, screen_id, new_name }) => {
+      try {
+        const screen = await store.duplicateScreen(project_id, screen_id, new_name);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(screen, null, 2) }],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: 'text', text: `Error: ${error.message}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // --- Screen generator (NLP -> template-based) ---
+
+  const { generateScreen } = await import('../screen-generator.js');
+
+  server.tool(
+    'mockup_generate_screen',
+    'Generate a complete UI screen from a natural language description. Matches to the closest template (login, dashboard, settings, list, form, profile, onboarding) and augments with additional elements based on keywords. Example: "login screen with social auth buttons".',
+    {
+      project_id: z.string().describe('Project ID'),
+      description: z.string().describe('Natural language screen description, e.g. "login screen with email and password fields"'),
+      name: z.string().optional().describe('Screen name (auto-derived from description if omitted)'),
+      style: z
+        .enum(['wireframe', 'material', 'ios'])
+        .optional()
+        .describe('Style override (defaults to project style)'),
+    },
+    async ({ project_id, description, name, style }) => {
+      try {
+        const project = await store.getProject(project_id);
+        const resolvedStyle = style || project.style || 'wireframe';
+        const { width, height } = project.viewport;
+
+        const { elements, matchInfo, nameHint } = generateScreen(description, width, height, resolvedStyle);
+
+        const screenName = name || nameHint;
+        const screen = await store.addScreen(project_id, screenName, width, height, '#FFFFFF', resolvedStyle !== project.style ? resolvedStyle : null);
+        const populated = await store.applyTemplate(project_id, screen.id, elements, true);
+
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              screen: {
+                id: populated.id,
+                name: populated.name,
+                width: populated.width,
+                height: populated.height,
+                elements: populated.elements.length,
+              },
+              match_info: matchInfo,
+            }, null, 2),
+          }],
         };
       } catch (error) {
         return {

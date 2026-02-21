@@ -1,6 +1,8 @@
 export const config = {
   dataDir: process.env.DATA_DIR || './mockups',
   previewPort: parseInt(process.env.PREVIEW_PORT || '3100', 10),
+  mcpPort: parseInt(process.env.MCP_PORT || '3200', 10),
+  mcpTransport: process.env.MCP_TRANSPORT || 'stdio',
   chromiumPath: process.env.CHROMIUM_PATH || '/usr/bin/chromium-browser',
   defaultStyle: process.env.DEFAULT_STYLE || 'wireframe',
   defaultViewport: { width: 393, height: 852, preset: 'mobile' },

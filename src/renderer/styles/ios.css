@@ -1,0 +1,935 @@
+/* iOS Human Interface Guidelines style */
+:root {
+  --color-primary:         #007AFF;
+  --color-primary-light:   #E5F1FF;
+  --color-on-primary:      #FFFFFF;
+  --color-text-primary:    #000000;
+  --color-text-secondary:  #3C3C43;
+  --color-text-placeholder:#8E8E93;
+  --color-border:          #C6C6C8;
+  --color-bg-light:        #F2F2F7;
+  --color-bg-white:        #FFFFFF;
+  --color-btn-primary-bg:  #007AFF;
+  --color-btn-primary-fg:  #FFFFFF;
+  --color-disabled:        #E5E5EA;
+  --color-separator:       #C6C6C8;
+  --color-green:           #34C759;
+  --color-red:             #FF3B30;
+  --color-orange:          #FF9500;
+  --color-grouped-bg:      #F2F2F7;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'SF Pro Text', BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  color: var(--color-text-primary);
+  background: var(--color-grouped-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Button ─────────────────────────────────────────────────────────────── */
+
+.mockup-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.mockup-button--sm  { padding: 8px 16px;  font-size: 14px; }
+.mockup-button--md  { padding: 10px 20px; font-size: 16px; }
+.mockup-button--lg  { padding: 14px 28px; font-size: 17px; }
+
+.mockup-button--primary {
+  background: var(--color-btn-primary-bg);
+  color: var(--color-btn-primary-fg);
+}
+
+.mockup-button--secondary {
+  background: var(--color-bg-light);
+  color: var(--color-primary);
+}
+
+.mockup-button--outline {
+  background: transparent;
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+}
+
+.mockup-button--ghost {
+  background: transparent;
+  color: var(--color-primary);
+}
+
+/* ── Input ──────────────────────────────────────────────────────────────── */
+
+.mockup-input {
+  display: block;
+  width: 100%;
+  padding: 11px 16px;
+  border: none;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 17px;
+  color: var(--color-text-placeholder);
+  background: var(--color-bg-light);
+}
+
+.mockup-input-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: -0.08px;
+}
+
+/* ── Navbar ─────────────────────────────────────────────────────────────── */
+
+.mockup-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(249,249,249,0.94);
+  border-bottom: 0.5px solid var(--color-separator);
+  backdrop-filter: blur(20px);
+}
+
+.mockup-navbar__title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  flex: 1;
+  text-align: center;
+}
+
+.mockup-navbar__side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 32px;
+}
+
+/* ── Tab Bar ────────────────────────────────────────────────────────────── */
+
+.mockup-tabbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  width: 100%;
+  padding: 6px 0 2px;
+  background: rgba(249,249,249,0.94);
+  border-top: 0.5px solid var(--color-separator);
+  backdrop-filter: blur(20px);
+}
+
+.mockup-tabbar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  font-size: 10px;
+  color: var(--color-text-placeholder);
+  cursor: pointer;
+}
+
+.mockup-tabbar-item--active {
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+/* ── Card ───────────────────────────────────────────────────────────────── */
+
+/* iOS grouped inset cards: no border, white bg, large radius, subtle shadow */
+.mockup-card {
+  border: none;
+  border-radius: 10px;
+  background: var(--color-bg-white);
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.mockup-card__body {
+  padding: 16px;
+}
+
+.mockup-card__title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 4px;
+}
+
+.mockup-card__value {
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 4px;
+}
+
+.mockup-card__subtitle {
+  font-size: 15px;
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+}
+
+.mockup-card__actions {
+  display: flex;
+  gap: 8px;
+  padding: 8px 16px 16px;
+}
+
+/* ── List ───────────────────────────────────────────────────────────────── */
+
+/* Inset grouped table view style */
+.mockup-list {
+  border: none;
+  border-radius: 10px;
+  background: var(--color-bg-white);
+  overflow: hidden;
+}
+
+.mockup-list-item {
+  padding: 11px 16px;
+  border-bottom: 0.5px solid var(--color-separator);
+  font-size: 17px;
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mockup-list-item:last-child {
+  border-bottom: none;
+}
+
+.mockup-list-item__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-bg-light);
+  flex-shrink: 0;
+}
+
+/* ── Image placeholder ──────────────────────────────────────────────────── */
+
+.mockup-image-placeholder {
+  width: 100%;
+  height: 100%;
+  background: var(--color-bg-light);
+  border: none;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Icon ───────────────────────────────────────────────────────────────── */
+
+.mockup-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── Badge ──────────────────────────────────────────────────────────────── */
+
+.mockup-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--color-bg-light);
+  color: var(--color-text-secondary);
+  border: none;
+}
+
+/* ── Alert ──────────────────────────────────────────────────────────────── */
+
+.mockup-alert {
+  padding: 12px 16px;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  color: var(--color-text-primary);
+  background: var(--color-bg-white);
+}
+
+.mockup-alert--info {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.mockup-alert--success {
+  background: #E8F8ED;
+  color: var(--color-green);
+}
+
+.mockup-alert--warning {
+  background: #FFF3E0;
+  color: var(--color-orange);
+}
+
+.mockup-alert--error {
+  background: #FFEBEE;
+  color: var(--color-red);
+}
+
+/* ── Textarea ──────────────────────────────────────────────────────────── */
+
+.mockup-textarea {
+  font-family: inherit;
+  line-height: 1.4;
+  background: var(--color-bg-light);
+  border-radius: 10px;
+}
+
+/* ── Checkbox ──────────────────────────────────────────────────────────── */
+
+.mockup-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 17px;
+}
+
+/* Checked state uses primary blue fill, matching iOS checkmark circle */
+.mockup-checkbox__box {
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--color-border);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--color-bg-white);
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.mockup-checkbox__label {
+  color: var(--color-text-primary);
+}
+
+/* ── Radio ─────────────────────────────────────────────────────────────── */
+
+.mockup-radio {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 17px;
+}
+
+.mockup-radio__circle {
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--color-border);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.mockup-radio__dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-primary);
+}
+
+.mockup-radio__label {
+  color: var(--color-text-primary);
+}
+
+/* ── Toggle ────────────────────────────────────────────────────────────── */
+
+/* iOS pill toggle: 51x31px track, white thumb with drop shadow */
+.mockup-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 17px;
+}
+
+.mockup-toggle__track {
+  width: 51px;
+  height: 31px;
+  border-radius: 15.5px;
+  background: var(--color-disabled);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.mockup-toggle--on .mockup-toggle__track {
+  background: var(--color-green);
+}
+
+.mockup-toggle__thumb {
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: var(--color-bg-white);
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.15), 0 1px 1px rgba(0,0,0,0.16);
+  transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mockup-toggle--on .mockup-toggle__thumb {
+  left: 22px;
+}
+
+.mockup-toggle__label {
+  color: var(--color-text-primary);
+}
+
+/* ── Select ────────────────────────────────────────────────────────────── */
+
+.mockup-select {
+  width: 100%;
+}
+
+.mockup-select__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 16px;
+  border: none;
+  border-radius: 10px;
+  font-size: 17px;
+  color: var(--color-text-placeholder);
+  background: var(--color-bg-light);
+  cursor: pointer;
+}
+
+.mockup-select__arrow {
+  font-size: 12px;
+  color: var(--color-text-placeholder);
+}
+
+/* ── Slider ────────────────────────────────────────────────────────────── */
+
+/* iOS slider: thin 4px track, large 28px thumb with shadow (matches UISlider) */
+.mockup-slider {
+  width: 100%;
+  padding: 8px 0;
+}
+
+.mockup-slider__track {
+  width: 100%;
+  height: 4px;
+  background: var(--color-disabled);
+  border-radius: 2px;
+  position: relative;
+}
+
+.mockup-slider__fill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 2px;
+}
+
+.mockup-slider__thumb {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--color-bg-white);
+  border: none;
+  position: absolute;
+  top: -12px;
+  transform: translateX(-50%);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.15), 0 1px 1px rgba(0,0,0,0.16);
+}
+
+/* ── Sidebar ───────────────────────────────────────────────────────────── */
+
+/* Sidebar uses grouped bg with rounded active pill — sidebar list pattern */
+.mockup-sidebar {
+  width: 100%;
+  height: 100%;
+  background: var(--color-bg-light);
+  border-right: none;
+  padding: 8px 0;
+}
+
+.mockup-sidebar__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  font-size: 17px;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  margin: 0 8px;
+  border-radius: 10px;
+}
+
+.mockup-sidebar__item--active {
+  color: var(--color-primary);
+  font-weight: 600;
+  background: var(--color-bg-white);
+}
+
+/* ── Breadcrumb ────────────────────────────────────────────────────────── */
+
+.mockup-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 15px;
+}
+
+.mockup-breadcrumb__item {
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+.mockup-breadcrumb__item--current {
+  color: var(--color-text-primary);
+  font-weight: 600;
+  cursor: default;
+}
+
+.mockup-breadcrumb__sep {
+  color: var(--color-text-placeholder);
+  margin: 0 2px;
+}
+
+/* ── Table ─────────────────────────────────────────────────────────────── */
+
+/* Inset grouped table: uppercase section headers, hairline separators */
+.mockup-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+
+.mockup-table__th {
+  padding: 10px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  border-bottom: 0.5px solid var(--color-separator);
+  background: var(--color-bg-light);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: -0.08px;
+}
+
+.mockup-table__td {
+  padding: 10px 16px;
+  border-bottom: 0.5px solid var(--color-separator);
+  color: var(--color-text-primary);
+}
+
+.mockup-table__row--striped {
+  background: var(--color-bg-light);
+}
+
+/* ── Avatar ────────────────────────────────────────────────────────────── */
+
+.mockup-avatar {
+  flex-shrink: 0;
+}
+
+/* ── Chip ──────────────────────────────────────────────────────────────── */
+
+.mockup-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border-radius: 16px;
+  font-size: 15px;
+  background: var(--color-bg-light);
+  color: var(--color-text-primary);
+  border: none;
+}
+
+.mockup-chip--selected {
+  background: var(--color-primary);
+  color: var(--color-bg-white);
+  border-color: var(--color-primary);
+}
+
+.mockup-chip__remove {
+  font-size: 16px;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  line-height: 1;
+}
+
+/* ── Modal ─────────────────────────────────────────────────────────────── */
+
+/* iOS alert sheet: centered 270px dialog, centered text, action row with hairlines */
+.mockup-modal__backdrop {
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.mockup-modal {
+  background: var(--color-bg-white);
+  border-radius: 14px;
+  border: none;
+  width: 100%;
+  max-width: 270px;
+  overflow: hidden;
+}
+
+.mockup-modal__header {
+  padding: 20px 16px 4px;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  border-bottom: none;
+  text-align: center;
+}
+
+.mockup-modal__body {
+  padding: 4px 16px 20px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.mockup-modal__footer {
+  display: flex;
+  border-top: 0.5px solid var(--color-separator);
+}
+
+/* Action buttons share equal width with hairline dividers between them */
+.mockup-modal__footer .mockup-button {
+  flex: 1;
+  border-radius: 0;
+  padding: 12px;
+  border: none;
+  border-right: 0.5px solid var(--color-separator);
+  box-shadow: none;
+  font-size: 17px;
+}
+
+.mockup-modal__footer .mockup-button:last-child {
+  border-right: none;
+}
+
+/* ── Skeleton ──────────────────────────────────────────────────────────── */
+
+.mockup-skeleton {
+  background: var(--color-disabled);
+  border-radius: 8px;
+  width: 100%;
+  height: 100%;
+  animation: mockup-pulse 1.5s ease-in-out infinite;
+}
+
+.mockup-skeleton--circle {
+  border-radius: 50%;
+}
+
+.mockup-skeleton--text {
+  height: 16px;
+  border-radius: 4px;
+}
+
+@keyframes mockup-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ── Progress ──────────────────────────────────────────────────────────── */
+
+/* iOS progress bar: thin 4px track matching UIProgressView */
+.mockup-progress {
+  width: 100%;
+  height: 4px;
+  background: var(--color-disabled);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.mockup-progress__bar {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 2px;
+}
+
+/* ── Tooltip ───────────────────────────────────────────────────────────── */
+
+.mockup-tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.mockup-tooltip__content {
+  background: rgba(0,0,0,0.75);
+  color: var(--color-bg-white);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+/* ── Search Bar ────────────────────────────────────────────────────────── */
+
+/* iOS search bar: frosted capsule with system grey fill, no explicit border */
+.mockup-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(118,118,128,0.12);
+  width: 100%;
+}
+
+.mockup-search-bar__icon {
+  display: flex;
+  flex-shrink: 0;
+}
+
+.mockup-search-bar__input {
+  font-size: 17px;
+  color: var(--color-text-placeholder);
+}
+
+/* ── Login Form ────────────────────────────────────────────────────────── */
+
+.mockup-login {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 32px 20px;
+  width: 100%;
+}
+
+.mockup-login__title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  text-align: center;
+  margin-bottom: 12px;
+  letter-spacing: 0.36px;
+}
+
+.mockup-login__field {
+  width: 100%;
+}
+
+.mockup-login__forgot {
+  font-size: 15px;
+  color: var(--color-primary);
+  text-align: right;
+}
+
+.mockup-login__action {
+  margin-top: 8px;
+}
+
+.mockup-login__action .mockup-button {
+  width: 100%;
+}
+
+/* ── Header ────────────────────────────────────────────────────────────── */
+
+/* Large nav bar variant: frosted glass matching iOS navigation controller */
+.mockup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(249,249,249,0.94);
+  border-bottom: 0.5px solid var(--color-separator);
+  width: 100%;
+  backdrop-filter: blur(20px);
+}
+
+.mockup-header__logo {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.mockup-header__nav {
+  display: flex;
+  gap: 20px;
+}
+
+.mockup-header__nav-item {
+  font-size: 17px;
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+.mockup-header__right {
+  display: flex;
+  align-items: center;
+}
+
+/* ── Footer ────────────────────────────────────────────────────────────── */
+
+.mockup-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  background: var(--color-bg-light);
+  width: 100%;
+}
+
+.mockup-footer__links {
+  display: flex;
+  gap: 20px;
+}
+
+.mockup-footer__link {
+  font-size: 15px;
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+.mockup-footer__text {
+  font-size: 13px;
+  color: var(--color-text-placeholder);
+}
+
+/* ── Data Table ────────────────────────────────────────────────────────── */
+
+.mockup-data-table {
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--color-bg-white);
+}
+
+.mockup-data-table__toolbar {
+  padding: 8px 16px;
+  border-bottom: 0.5px solid var(--color-separator);
+  background: var(--color-bg-light);
+}
+
+.mockup-data-table__search {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  color: var(--color-text-placeholder);
+  background: rgba(118,118,128,0.12);
+}
+
+/* Section headers match iOS table view section header style */
+.mockup-data-table__th {
+  padding: 10px 16px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: -0.08px;
+  color: var(--color-text-secondary);
+  border-bottom: 0.5px solid var(--color-separator);
+  background: var(--color-bg-light);
+}
+
+.mockup-data-table__sort {
+  font-size: 8px;
+  margin-left: 4px;
+  color: var(--color-text-placeholder);
+}
+
+.mockup-data-table__td {
+  padding: 10px 16px;
+  border-bottom: 0.5px solid var(--color-separator);
+  font-size: 15px;
+}
+
+.mockup-data-table__row:last-child .mockup-data-table__td {
+  border-bottom: none;
+}
+
+.mockup-data-table__pagination {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  border-top: 0.5px solid var(--color-separator);
+}
+
+.mockup-data-table__page-btn {
+  cursor: pointer;
+  padding: 4px 8px;
+  color: var(--color-primary);
+}
+
+/* ── Chart Placeholder ─────────────────────────────────────────────────── */
+
+.mockup-chart {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border: none;
+  border-radius: 10px;
+  background: var(--color-bg-white);
+  overflow: hidden;
+}
+
+.mockup-chart__title {
+  padding: 16px;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  border-bottom: 0.5px solid var(--color-separator);
+}
+
+.mockup-chart__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px;
+}
+
+.mockup-chart__label {
+  font-size: 13px;
+  color: var(--color-text-placeholder);
+  text-transform: capitalize;
+}

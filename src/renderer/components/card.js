@@ -4,6 +4,7 @@ export function defaults() {
   return {
     title:    'Card Title',
     subtitle: null,
+    value:    null,
     image:    false,
     actions:  [],
   };
@@ -20,6 +21,10 @@ export function render(props) {
        </div>`
     : '';
 
+  const valueHtml = p.value
+    ? `<p class="mockup-card__value">${escapeHtml(String(p.value))}</p>`
+    : '';
+
   const subtitleHtml = p.subtitle
     ? `<p class="mockup-card__subtitle">${escapeHtml(p.subtitle)}</p>`
     : '';
@@ -29,5 +34,5 @@ export function render(props) {
     ? `<div class="mockup-card__actions">${actions.map(a => `<button class="mockup-button mockup-button--secondary mockup-button--sm">${escapeHtml(a)}</button>`).join('')}</div>`
     : '';
 
-  return `<div class="mockup-card">${imageHtml}<div class="mockup-card__body"><p class="mockup-card__title">${escapeHtml(p.title)}</p>${subtitleHtml}</div>${actionsHtml}</div>`;
+  return `<div class="mockup-card">${imageHtml}<div class="mockup-card__body"><p class="mockup-card__title">${escapeHtml(p.title)}</p>${valueHtml}${subtitleHtml}</div>${actionsHtml}</div>`;
 }

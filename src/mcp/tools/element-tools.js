@@ -4,11 +4,11 @@ import { getAvailableTypes } from '../../renderer/components/index.js';
 export function registerElementTools(server, store) {
   server.tool(
     'mockup_add_element',
-    'Add a UI element (button, text, input, image, icon, rectangle, navbar, tabbar, card, list) to a screen',
+    'Add a UI element to a screen. Types: text, rectangle, circle, line, image, icon, avatar, badge, chip, skeleton, progress, tooltip, button, input, textarea, checkbox, radio, toggle, select, slider, navbar, tabbar, sidebar, breadcrumb, card, list, table, alert, modal, login_form, search_bar, header, footer, data_table, chart_placeholder',
     {
       project_id: z.string().describe('Project ID'),
       screen_id: z.string().describe('Screen ID'),
-      type: z.string().describe('Element type (text, rectangle, button, input, image, icon, navbar, tabbar, card, list)'),
+      type: z.string().describe('Element type — see tool description for available types'),
       x: z.number().describe('X position in pixels'),
       y: z.number().describe('Y position in pixels'),
       width: z.number().describe('Element width in pixels'),
@@ -158,6 +158,55 @@ export function registerElementTools(server, store) {
         const elements = await store.listElements(project_id, screen_id);
         return {
           content: [{ type: 'text', text: JSON.stringify(elements, null, 2) }],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: 'text', text: `Error: ${error.message}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.tool(
+    'mockup_add_link',
+    'Add a navigation link from an element to another screen. When the element is clicked in preview, it navigates to the target screen.',
+    {
+      project_id: z.string().describe('Project ID'),
+      screen_id: z.string().describe('Screen containing the element'),
+      element_id: z.string().describe('Element to add link to'),
+      target_screen_id: z.string().describe('Screen to navigate to when clicked'),
+      transition: z.enum(['push', 'fade', 'slide', 'none']).optional().default('push')
+        .describe('Transition animation type'),
+    },
+    async ({ project_id, screen_id, element_id, target_screen_id, transition }) => {
+      try {
+        const element = await store.addLink(project_id, screen_id, element_id, target_screen_id, transition);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(element, null, 2) }],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: 'text', text: `Error: ${error.message}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.tool(
+    'mockup_remove_link',
+    'Remove a navigation link from an element',
+    {
+      project_id: z.string().describe('Project ID'),
+      screen_id: z.string().describe('Screen containing the element'),
+      element_id: z.string().describe('Element to remove link from'),
+    },
+    async ({ project_id, screen_id, element_id }) => {
+      try {
+        const element = await store.removeLink(project_id, screen_id, element_id);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(element, null, 2) }],
         };
       } catch (error) {
         return {
