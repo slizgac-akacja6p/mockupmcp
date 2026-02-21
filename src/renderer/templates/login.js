@@ -1,9 +1,12 @@
 export const description = 'Login screen with email/password fields and submit button.';
 
-export function generate(screenWidth, screenHeight, _style) {
+export function generate(screenWidth, screenHeight, _style, contentHints = []) {
   const pad = 24;
   const fieldWidth = screenWidth - pad * 2;
-  const centerX = Math.floor(screenWidth / 2);
+
+  // Content slots: [0] heading, [1] button label
+  const heading = contentHints[0] || 'Welcome back';
+  const buttonLabel = contentHints[1] || 'Sign In';
 
   return [
     {
@@ -22,7 +25,7 @@ export function generate(screenWidth, screenHeight, _style) {
       width: fieldWidth,
       height: 40,
       z_index: 0,
-      properties: { content: 'Welcome back', fontSize: 24, align: 'center' },
+      properties: { content: heading, fontSize: 24, align: 'center' },
     },
     {
       type: 'input',
@@ -49,7 +52,7 @@ export function generate(screenWidth, screenHeight, _style) {
       width: fieldWidth,
       height: 48,
       z_index: 0,
-      properties: { label: 'Sign In', variant: 'primary' },
+      properties: { label: buttonLabel, variant: 'primary' },
     },
     {
       type: 'text',

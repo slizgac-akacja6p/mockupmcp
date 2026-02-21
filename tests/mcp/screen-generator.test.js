@@ -215,4 +215,45 @@ describe('generateScreen', () => {
       assert.ok(el.y + el.height <= 400, `Element at y=${el.y} h=${el.height} overflows 400px`);
     }
   });
+
+  it('passes contentHints to template — dashboard cards use hint content', () => {
+    const result = generateScreen('fitness dashboard with steps, calories', 393, 852, 'wireframe');
+    assert.equal(result.matchInfo.template, 'dashboard');
+    const cards = result.elements.filter(el => el.type === 'card');
+    assert.ok(cards.length >= 2);
+    // First card should use first hint
+    assert.ok(cards[0].properties.title.includes('Steps'));
+  });
+
+  it('dashboard uses contentHints for card titles and chart label', () => {
+    const result = generateScreen(
+      'fitness dashboard with steps count, calories burned, weekly progress',
+      393, 852, 'wireframe'
+    );
+    const cards = result.elements.filter(el => el.type === 'card');
+    assert.ok(cards[0].properties.title.includes('Steps'));
+    assert.ok(cards[1].properties.title.includes('Calories'));
+    const chart = result.elements.find(el => el.type === 'chart_placeholder');
+    assert.ok(chart.properties.label.includes('Weekly'));
+  });
+
+  it('dashboard falls back to defaults when no contentHints', () => {
+    const result = generateScreen('dashboard', 393, 852, 'wireframe');
+    const cards = result.elements.filter(el => el.type === 'card');
+    assert.equal(cards[0].properties.title, 'Total Users');
+  });
+
+  it('login uses contentHints for heading and button', () => {
+    const result = generateScreen('login for gym members, start workout', 393, 852, 'wireframe');
+    const heading = result.elements.find(el => el.type === 'text' && el.properties.fontSize === 24);
+    assert.ok(heading.properties.content.includes('Gym'));
+    const button = result.elements.find(el => el.type === 'button' && el.properties.variant === 'primary');
+    assert.ok(button.properties.label.includes('Start'));
+  });
+
+  it('login falls back to defaults when no contentHints', () => {
+    const result = generateScreen('login screen', 393, 852, 'wireframe');
+    const heading = result.elements.find(el => el.type === 'text' && el.properties.fontSize === 24);
+    assert.equal(heading.properties.content, 'Welcome back');
+  });
 });

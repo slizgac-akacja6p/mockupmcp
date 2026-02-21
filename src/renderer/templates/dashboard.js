@@ -1,12 +1,21 @@
 export const description = 'Dashboard with stats cards, a chart placeholder, and a recent activity list.';
 
-export function generate(screenWidth, screenHeight, _style) {
+export function generate(screenWidth, screenHeight, _style, contentHints = []) {
   const pad = 16;
   const contentWidth = screenWidth - pad * 2;
   // Two-column card layout on wide screens, single column on narrow ones.
   const isWide = screenWidth >= 768;
   const cardWidth = isWide ? Math.floor((contentWidth - pad) / 2) : contentWidth;
   const cardHeight = 80;
+
+  // Content slots: [0] card1 title, [1] card2 title, [2] chart label, [3] activity title
+  const card1Title = contentHints[0] || 'Total Users';
+  const card2Title = contentHints[1] || 'Revenue';
+  const chartLabel = contentHints[2] || 'Monthly Revenue';
+  const activityTitle = contentHints[3] || 'Recent Activity';
+  const listItems = contentHints.length > 4
+    ? contentHints.slice(4)
+    : ['User signed up', 'Payment received', 'Report exported'];
 
   const elements = [
     {
@@ -18,7 +27,6 @@ export function generate(screenWidth, screenHeight, _style) {
       z_index: 10,
       properties: { title: 'Dashboard' },
     },
-    // Stat card 1
     {
       type: 'card',
       x: pad,
@@ -26,7 +34,7 @@ export function generate(screenWidth, screenHeight, _style) {
       width: cardWidth,
       height: cardHeight,
       z_index: 0,
-      properties: { title: 'Total Users', value: '1,240' },
+      properties: { title: card1Title, value: '1,240' },
     },
     // Stat card 2 — next to card 1 on wide, below on narrow
     {
@@ -36,7 +44,7 @@ export function generate(screenWidth, screenHeight, _style) {
       width: cardWidth,
       height: cardHeight,
       z_index: 0,
-      properties: { title: 'Revenue', value: '$8,320' },
+      properties: { title: card2Title, value: '$8,320' },
     },
     // Chart area
     {
@@ -46,7 +54,7 @@ export function generate(screenWidth, screenHeight, _style) {
       width: contentWidth,
       height: Math.min(200, screenHeight - 400),
       z_index: 0,
-      properties: { label: 'Monthly Revenue' },
+      properties: { label: chartLabel },
     },
     // Recent activity header
     {
@@ -56,7 +64,7 @@ export function generate(screenWidth, screenHeight, _style) {
       width: contentWidth,
       height: 28,
       z_index: 0,
-      properties: { content: 'Recent Activity', fontSize: 16 },
+      properties: { content: activityTitle, fontSize: 16 },
     },
     // Recent activity list
     {
@@ -66,7 +74,7 @@ export function generate(screenWidth, screenHeight, _style) {
       width: contentWidth,
       height: Math.min(160, screenHeight - (isWide ? 72 + cardHeight + pad + Math.min(200, screenHeight - 400) + pad + 36 + 16 : 72 + (cardHeight + pad) * 2 + Math.min(200, screenHeight - 400) + pad + 36 + 16)),
       z_index: 0,
-      properties: { items: ['User signed up', 'Payment received', 'Report exported'] },
+      properties: { items: listItems },
     },
   ];
 
