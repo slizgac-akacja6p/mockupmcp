@@ -68,3 +68,42 @@ describe('mockup_generate_screen integration', () => {
     }
   });
 });
+
+describe('content hints integration', () => {
+  it('fitness dashboard with steps shows "Steps" in card title, not "Total Users"', async () => {
+    const { generateScreen } = await import('../../src/mcp/screen-generator.js');
+    const { elements } = generateScreen(
+      'fitness dashboard with steps count, calories burned, active minutes, and weekly bar chart',
+      393, 852, 'wireframe'
+    );
+    const cards = elements.filter(el => el.type === 'card');
+    assert.ok(cards.length >= 2);
+    assert.ok(cards[0].properties.title.includes('Steps'));
+    assert.ok(cards[1].properties.title.includes('Calories'));
+  });
+
+  it('empty description still produces valid screen (regression)', async () => {
+    const { generateScreen } = await import('../../src/mcp/screen-generator.js');
+    const { elements, matchInfo } = generateScreen('', 393, 852, 'wireframe');
+    assert.ok(elements.length >= 1);
+    assert.equal(matchInfo.confidence, 'low');
+  });
+
+  it('all 7 templates with contentHints produce valid elements', async () => {
+    const { generateScreen } = await import('../../src/mcp/screen-generator.js');
+    const cases = [
+      'login for gym members, start workout',
+      'dashboard with steps, calories, weekly chart',
+      'settings with workout reminders, calorie tracking, GPS',
+      'list with running, cycling, yoga, swimming',
+      'form with weight, height, age, submit',
+      'profile for John Runner, marathons completed, total miles',
+      'onboarding for fitness tracker, track your daily steps',
+    ];
+    for (const desc of cases) {
+      const { elements, matchInfo } = generateScreen(desc, 393, 852, 'wireframe');
+      assert.ok(elements.length >= 2, `Too few elements for "${desc}"`);
+      assert.notEqual(matchInfo.confidence, 'low', `Should match template for "${desc}"`);
+    }
+  });
+});
