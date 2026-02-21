@@ -228,6 +228,28 @@ export function startPreviewServer(port = config.previewPort) {
     }
   });
 
+  // Read config.dataDir at request time so tests can swap data directories
+  // between requests without restarting the server.
+  app.get('/api/projects', async (_req, res) => {
+    try {
+      const projectStore = new ProjectStore(config.dataDir);
+      const projects = await projectStore.listProjects();
+      const result = [];
+      for (const proj of projects) {
+        const full = await projectStore.getProject(proj.id);
+        result.push({
+          id: full.id,
+          name: full.name,
+          style: full.style,
+          screens: (full.screens || []).map(s => ({ id: s.id, name: s.name })),
+        });
+      }
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   const server = app.listen(port, () => {
     console.error('[MockupMCP] Preview server: http://localhost:' + port);
   });
