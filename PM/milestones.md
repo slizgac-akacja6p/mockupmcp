@@ -112,3 +112,12 @@
 - [x] PreviewCache — MD5 content-hash invalidation
 - [x] Wired into both stdio and HTTP transports
 - [x] 588 tests pass (10 new, 0 failures)
+
+## M6 — Documentation + E2E (Phase 6)
+**Status:** DONE
+**Branch:** `feature/m6-readme-e2e`
+**Scope:** User-facing README, Docker E2E tests
+**DoD:**
+- [x] README.md — quick start, tools reference, resources, configuration
+- [x] Docker E2E tests — HTTP transport, resources, preview server (RUN_E2E=1)
+- [x] All unit tests pass (588)
