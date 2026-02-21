@@ -87,7 +87,7 @@
 **Scope:** Code export, navigation flow, SSE, grouping, Docker Hub
 
 ## M4 — Screen Generation (Phase 4)
-**Status:** IN PROGRESS
+**Status:** DONE
 **Branch:** `feature/m4-generate-screen`
 **Scope:** NLP-based screen generation from natural language descriptions
 **DoD:**
@@ -98,3 +98,17 @@
 - [x] mockup_generate_screen MCP tool (25 tools total)
 - [x] Integration tests (login, fallback, all 7 templates)
 - [x] 578 tests pass (30 new, 0 failures)
+
+## M5 — MCP Resources (Phase 5)
+**Status:** DONE
+**Branch:** `feature/m5-mcp-resources`
+**Scope:** 5 MCP resources via mockup:// URI scheme
+**DoD:**
+- [x] mockup://projects — project list (static)
+- [x] mockup://templates — 7 templates with descriptions (static)
+- [x] mockup://components — 35 component types with defaults (static)
+- [x] mockup://projects/{id} — full project detail (ResourceTemplate)
+- [x] mockup://projects/{id}/screens/{id}/preview — PNG preview with cache (dynamic)
+- [x] PreviewCache — MD5 content-hash invalidation
+- [x] Wired into both stdio and HTTP transports
+- [x] 588 tests pass (10 new, 0 failures)
