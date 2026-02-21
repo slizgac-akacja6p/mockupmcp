@@ -257,7 +257,7 @@ export function generateScreen(description, screenWidth, screenHeight, style) {
   if (match.template) {
     // Use matched template
     const template = getTemplate(match.template);
-    elements = template.generate(screenWidth, screenHeight, style);
+    elements = template.generate(screenWidth, screenHeight, style, parsed.contentHints);
   } else {
     // Fallback: basic screen with navbar + description text so the user sees
     // something meaningful instead of an empty canvas.
@@ -266,7 +266,7 @@ export function generateScreen(description, screenWidth, screenHeight, style) {
       {
         type: 'navbar', x: 0, y: 0,
         width: screenWidth, height: 56, z_index: 10,
-        properties: { title: parsed.nameHint },
+        properties: { title: parsed.contentHints[0] || parsed.nameHint },
       },
       {
         type: 'text', x: pad, y: 80,
