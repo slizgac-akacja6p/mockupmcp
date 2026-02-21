@@ -169,6 +169,39 @@ describe('augmentElements', () => {
     const result = augmentElements(baseElements, { modifierKeywords: [], componentKeywords: [], screenKeywords: [] }, 393, 852);
     assert.equal(result.length, baseElements.length);
   });
+
+  it('adds tabbar when keyword present and not already in elements', () => {
+    const base = [
+      { type: 'navbar', x: 0, y: 0, width: 393, height: 56, z_index: 10, properties: { title: 'Test' } },
+    ];
+    const parsed = {
+      screenKeywords: ['dashboard'],
+      componentKeywords: ['tabbar'],
+      modifierKeywords: [],
+      tokens: ['dashboard', 'tabbar'],
+    };
+    const result = augmentElements(base, parsed, 393, 852);
+    const tabbar = result.find(el => el.type === 'tabbar');
+    assert.ok(tabbar, 'should add tabbar element');
+    assert.equal(tabbar.y, 852 - 56, 'tabbar at bottom of screen');
+    assert.equal(tabbar.z_index, 10, 'tabbar is pinned');
+    assert.equal(tabbar.width, 393, 'tabbar is full width');
+  });
+
+  it('does not add tabbar if already present', () => {
+    const base = [
+      { type: 'tabbar', x: 0, y: 796, width: 393, height: 56, z_index: 10, properties: { tabs: [] } },
+    ];
+    const parsed = {
+      screenKeywords: [],
+      componentKeywords: ['tabbar'],
+      modifierKeywords: [],
+      tokens: ['tabbar'],
+    };
+    const result = augmentElements(base, parsed, 393, 852);
+    const tabbars = result.filter(el => el.type === 'tabbar');
+    assert.equal(tabbars.length, 1, 'should not duplicate tabbar');
+  });
 });
 
 describe('generateScreen', () => {
@@ -338,5 +371,13 @@ describe('generateScreen', () => {
     const texts = result.elements.filter(el => el.type === 'text');
     const headline = texts.find(t => t.properties.fontSize === 22);
     assert.equal(headline.properties.content, 'Welcome to MockupMCP');
+  });
+
+  it('dashboard template includes tabbar by default', () => {
+    const result = generateScreen('dashboard screen', 393, 852, 'wireframe');
+    const tabbar = result.elements.find(el => el.type === 'tabbar');
+    assert.ok(tabbar, 'dashboard should include tabbar');
+    assert.equal(tabbar.y, 852 - 56);
+    assert.equal(tabbar.z_index, 10);
   });
 });

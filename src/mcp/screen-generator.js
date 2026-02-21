@@ -236,6 +236,26 @@ export function augmentElements(elements, parsed, screenWidth, screenHeight) {
     });
   }
 
+  // Tabbar is pinned at the bottom — skip addIfFits height check since z_index >= 10 elements
+  // are excluded from auto-layout and always render at their absolute position.
+  if (parsed.componentKeywords.includes('tabbar') && !existingTypes.has('tabbar')) {
+    result.push({
+      type: 'tabbar',
+      x: 0,
+      y: screenHeight - 56,
+      width: screenWidth,
+      height: 56,
+      z_index: 10,
+      properties: {
+        tabs: [
+          { icon: 'home', label: 'Home', active: true },
+          { icon: 'search', label: 'Search' },
+          { icon: 'user', label: 'Profile' },
+        ],
+      },
+    });
+  }
+
   return result;
 }
 
