@@ -175,6 +175,13 @@ body {
   margin-bottom: 4px;
 }
 
+.mockup-card__value {
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 4px;
+}
+
 .mockup-card__subtitle {
   font-size: 15px;
   color: var(--color-text-secondary);
