@@ -1,18 +1,36 @@
 export const description = 'Generic data-entry form with labelled fields and action buttons.';
 
-export function generate(screenWidth, screenHeight, _style) {
+export function generate(screenWidth, screenHeight, _style, contentHints = []) {
   const pad = 24;
   const fieldWidth = screenWidth - pad * 2;
   const fieldH = 56;
   const gap = 8;
 
-  const fields = [
+  // Content slots: [0..N-2] field labels, [N-1] submit button label
+  let fieldHints = [];
+  let submitLabel = 'Save Contact';
+  if (contentHints.length === 1) {
+    submitLabel = contentHints[0];
+  } else if (contentHints.length >= 2) {
+    fieldHints = contentHints.slice(0, -1);
+    submitLabel = contentHints[contentHints.length - 1];
+  }
+
+  const defaultFields = [
     { label: 'Full Name', placeholder: 'Jane Doe', inputType: 'text' },
     { label: 'Email', placeholder: 'jane@example.com', inputType: 'email' },
     { label: 'Phone', placeholder: '+1 (555) 000-0000', inputType: 'tel' },
     { label: 'Company', placeholder: 'Acme Corp', inputType: 'text' },
     { label: 'Role', placeholder: 'Product Manager', inputType: 'text' },
   ];
+
+  const fields = fieldHints.length > 0
+    ? fieldHints.map((h, i) => ({
+        label: h,
+        placeholder: defaultFields[i]?.placeholder || '',
+        inputType: defaultFields[i]?.inputType || 'text',
+      }))
+    : defaultFields;
 
   const elements = [
     {
@@ -52,7 +70,7 @@ export function generate(screenWidth, screenHeight, _style) {
       width: fieldWidth,
       height: 48,
       z_index: 0,
-      properties: { label: 'Save Contact', variant: 'primary' },
+      properties: { label: submitLabel, variant: 'primary' },
     });
   }
 

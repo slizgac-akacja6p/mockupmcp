@@ -256,4 +256,87 @@ describe('generateScreen', () => {
     const heading = result.elements.find(el => el.type === 'text' && el.properties.fontSize === 24);
     assert.equal(heading.properties.content, 'Welcome back');
   });
+
+  it('settings uses contentHints for toggle labels', () => {
+    const result = generateScreen(
+      'settings with workout reminders, calorie tracking, GPS',
+      393, 852, 'wireframe'
+    );
+    const toggles = result.elements.filter(el => el.type === 'toggle');
+    assert.ok(toggles.length >= 3);
+    assert.ok(toggles[0].properties.label.includes('Workout'));
+  });
+
+  it('settings falls back to defaults when no contentHints', () => {
+    const result = generateScreen('settings page', 393, 852, 'wireframe');
+    const toggles = result.elements.filter(el => el.type === 'toggle');
+    assert.equal(toggles[0].properties.label, 'Notifications');
+  });
+
+  it('list uses contentHints for item titles', () => {
+    const result = generateScreen(
+      'list with running, cycling, yoga, swimming',
+      393, 852, 'wireframe'
+    );
+    const lists = result.elements.filter(el => el.type === 'list');
+    assert.ok(lists.length >= 3);
+    assert.ok(lists[0].properties.items[0].includes('Running'));
+  });
+
+  it('list falls back to defaults when no contentHints', () => {
+    const result = generateScreen('product list', 393, 852, 'wireframe');
+    const lists = result.elements.filter(el => el.type === 'list');
+    assert.ok(lists[0].properties.items[0].includes('Getting Started'));
+  });
+
+  it('form uses contentHints for field labels', () => {
+    const result = generateScreen(
+      'form with weight, height, age, submit',
+      393, 852, 'wireframe'
+    );
+    const inputs = result.elements.filter(el => el.type === 'input');
+    assert.ok(inputs[0].properties.label.includes('Weight'));
+  });
+
+  it('form falls back to defaults when no contentHints', () => {
+    const result = generateScreen('contact form', 393, 852, 'wireframe');
+    const inputs = result.elements.filter(el => el.type === 'input');
+    assert.equal(inputs[0].properties.label, 'Full Name');
+  });
+
+  it('profile uses contentHints for name and stat labels', () => {
+    const result = generateScreen(
+      'profile for John Runner, marathons completed, total miles, best time',
+      393, 852, 'wireframe'
+    );
+    const texts = result.elements.filter(el => el.type === 'text');
+    const nameText = texts.find(t => t.properties.fontSize === 20);
+    assert.ok(nameText.properties.content.includes('John'));
+    const cards = result.elements.filter(el => el.type === 'card');
+    assert.ok(cards[0].properties.title.includes('Marathons'));
+  });
+
+  it('profile falls back to defaults when no contentHints', () => {
+    const result = generateScreen('user profile', 393, 852, 'wireframe');
+    const texts = result.elements.filter(el => el.type === 'text');
+    const nameText = texts.find(t => t.properties.fontSize === 20);
+    assert.equal(nameText.properties.content, 'Jane Doe');
+  });
+
+  it('onboarding uses contentHints for headline and subtitle', () => {
+    const result = generateScreen(
+      'onboarding for fitness tracker, track your daily steps',
+      393, 852, 'wireframe'
+    );
+    const texts = result.elements.filter(el => el.type === 'text');
+    const headline = texts.find(t => t.properties.fontSize === 22);
+    assert.ok(headline.properties.content.includes('Fitness'));
+  });
+
+  it('onboarding falls back to defaults when no contentHints', () => {
+    const result = generateScreen('welcome onboarding', 393, 852, 'wireframe');
+    const texts = result.elements.filter(el => el.type === 'text');
+    const headline = texts.find(t => t.properties.fontSize === 22);
+    assert.equal(headline.properties.content, 'Welcome to MockupMCP');
+  });
 });

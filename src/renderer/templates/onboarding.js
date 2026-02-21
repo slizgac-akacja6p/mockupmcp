@@ -1,10 +1,13 @@
 export const description = 'Onboarding welcome screen with illustration placeholder, headline, and CTA.';
 
-export function generate(screenWidth, screenHeight, _style) {
+export function generate(screenWidth, screenHeight, _style, contentHints = []) {
   const pad = 24;
   const contentWidth = screenWidth - pad * 2;
 
-  // Illustration takes ~35% of screen height
+  // Content slots: [0] headline, [1] subtitle
+  const headline = contentHints[0] || 'Welcome to MockupMCP';
+  const subtitle = contentHints[1] || 'Design faster with AI-powered UI mockups';
+
   const illustrationH = Math.floor(screenHeight * 0.35);
   const illustrationY = Math.floor(screenHeight * 0.1);
 
@@ -15,7 +18,6 @@ export function generate(screenWidth, screenHeight, _style) {
   const skipY = ctaY + 56;
 
   const elements = [
-    // Illustration placeholder
     {
       type: 'image',
       x: pad,
@@ -25,7 +27,6 @@ export function generate(screenWidth, screenHeight, _style) {
       z_index: 0,
       properties: { src: '', alt: 'Welcome illustration' },
     },
-    // Headline
     {
       type: 'text',
       x: pad,
@@ -33,9 +34,8 @@ export function generate(screenWidth, screenHeight, _style) {
       width: contentWidth,
       height: 40,
       z_index: 0,
-      properties: { content: 'Welcome to MockupMCP', fontSize: 22, align: 'center' },
+      properties: { content: headline, fontSize: 22, align: 'center' },
     },
-    // Subtitle
     {
       type: 'text',
       x: pad,
@@ -43,9 +43,8 @@ export function generate(screenWidth, screenHeight, _style) {
       width: contentWidth,
       height: 48,
       z_index: 0,
-      properties: { content: 'Design faster with AI-powered UI mockups', fontSize: 15, align: 'center' },
+      properties: { content: subtitle, fontSize: 15, align: 'center' },
     },
-    // Progress dots (represented as text)
     {
       type: 'text',
       x: pad,
@@ -55,7 +54,6 @@ export function generate(screenWidth, screenHeight, _style) {
       z_index: 0,
       properties: { content: '• • •', align: 'center', fontSize: 12 },
     },
-    // CTA button
     {
       type: 'button',
       x: pad,
@@ -65,7 +63,6 @@ export function generate(screenWidth, screenHeight, _style) {
       z_index: 0,
       properties: { label: 'Get Started', variant: 'primary' },
     },
-    // Skip link
     {
       type: 'text',
       x: pad,

@@ -1,17 +1,26 @@
 export const description = 'Settings screen with grouped toggle rows for app preferences.';
 
-export function generate(screenWidth, screenHeight, _style) {
+export function generate(screenWidth, screenHeight, _style, contentHints = []) {
   const pad = 16;
   const contentWidth = screenWidth - pad * 2;
   const rowH = 52;
 
-  const rows = [
+  const defaultRows = [
     { label: 'Notifications', hint: 'Push & email' },
     { label: 'Dark Mode', hint: 'Use dark theme' },
     { label: 'Location', hint: 'Allow location access' },
     { label: 'Analytics', hint: 'Share usage data' },
     { label: 'Auto-update', hint: 'Install updates automatically' },
   ];
+
+  // All contentHints map directly to toggle labels — structural labels are fixed.
+  // This keeps "Preferences" as section title while letting hints drive the rows.
+  const rows = contentHints.length > 0
+    ? contentHints.map((h, i) => ({
+        label: h,
+        hint: defaultRows[i]?.hint || '',
+      }))
+    : defaultRows;
 
   const elements = [
     {
