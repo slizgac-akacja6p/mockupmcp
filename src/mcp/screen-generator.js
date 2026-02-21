@@ -31,10 +31,19 @@ const STOP_WORDS = new Set([
   'screen', 'page', 'view', 'app', 'application', 'ui',
 ]);
 
+// Union of all known domain vocabulary — used to isolate content-specific phrases.
+// Words that survive this filter are semantic data hints, not structural keywords.
+const ALL_KNOWN_KEYWORDS = new Set([
+  ...STOP_WORDS,
+  ...SCREEN_KEYWORDS,
+  ...COMPONENT_KEYWORDS,
+  ...MODIFIER_KEYWORDS.flatMap(m => m.split(' ')),
+]);
+
 /**
  * Parse a natural language description into categorized keywords.
  * @param {string} description - Free-text screen description.
- * @returns {{ screenKeywords: string[], componentKeywords: string[], modifierKeywords: string[], nameHint: string, tokens: string[] }}
+ * @returns {{ screenKeywords: string[], componentKeywords: string[], modifierKeywords: string[], nameHint: string, tokens: string[], contentHints: string[] }}
  */
 export function parseDescription(description) {
   const lower = description.toLowerCase();
@@ -57,7 +66,27 @@ export function parseDescription(description) {
     .slice(0, 2);
   const nameHint = nameWords.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') || 'Generated Screen';
 
-  return { screenKeywords, componentKeywords, modifierKeywords, nameHint, tokens };
+  // Extract content hints — semantic phrases from description segments.
+  // Split on commas and "and" conjunctions to isolate per-metric phrases,
+  // then strip all known structural vocabulary to surface data-specific words.
+  const segments = description
+    .split(/,|\band\b/)
+    .map(seg => seg.trim())
+    .filter(Boolean);
+
+  const contentHints = segments
+    .map(seg =>
+      seg
+        .replace(/[^a-zA-Z0-9\s]/g, '')
+        .split(/\s+/)
+        .filter(w => !ALL_KNOWN_KEYWORDS.has(w.toLowerCase()))
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(' ')
+        .trim()
+    )
+    .filter(h => h.length > 0);
+
+  return { screenKeywords, componentKeywords, modifierKeywords, nameHint, tokens, contentHints };
 }
 
 // Template keyword profiles with weights.

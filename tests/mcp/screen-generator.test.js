@@ -33,6 +33,39 @@ describe('parseDescription', () => {
     const result = parseDescription('user profile screen with avatar');
     assert.equal(result.nameHint, 'User Profile');
   });
+
+  it('extracts contentHints from comma-separated description', () => {
+    const result = parseDescription('fitness dashboard with steps count, calories burned, active minutes');
+    assert.ok(Array.isArray(result.contentHints));
+    assert.ok(result.contentHints.length >= 3);
+    assert.ok(result.contentHints.some(h => h.includes('Steps')));
+    assert.ok(result.contentHints.some(h => h.includes('Calories')));
+    assert.ok(result.contentHints.some(h => h.includes('Active')));
+  });
+
+  it('extracts contentHints from "and"-separated description', () => {
+    const result = parseDescription('login page for gym members and trainers');
+    assert.ok(result.contentHints.length >= 1);
+  });
+
+  it('returns empty contentHints for description with only keywords', () => {
+    const result = parseDescription('login screen');
+    assert.deepEqual(result.contentHints, []);
+  });
+
+  it('titleCases contentHints', () => {
+    const result = parseDescription('dashboard with monthly revenue, user growth');
+    for (const hint of result.contentHints) {
+      assert.match(hint, /^[A-Z]/);
+    }
+  });
+
+  it('removes stop words and known keywords from hints', () => {
+    const result = parseDescription('dashboard with the total users');
+    const joined = result.contentHints.join(' ').toLowerCase();
+    assert.ok(!joined.includes('the '));
+    assert.ok(!joined.includes('dashboard'));
+  });
 });
 
 describe('matchTemplate', () => {
