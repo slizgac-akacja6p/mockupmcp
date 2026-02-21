@@ -1,4 +1,5 @@
 import { readFile, writeFile, rename, mkdir, readdir, unlink, rm } from 'fs/promises';
+import { mkdirSync } from 'fs';
 import { join } from 'path';
 import { generateId, validateId } from './id-generator.js';
 
@@ -7,6 +8,10 @@ export class ProjectStore {
     this.dataDir = dataDir;
     this.projectsDir = join(dataDir, 'projects');
     this.exportsDir = join(dataDir, 'exports');
+
+    // Auto-create subdirectories on construction.
+    mkdirSync(this.projectsDir, { recursive: true });
+    mkdirSync(this.exportsDir, { recursive: true });
   }
 
   async init() {

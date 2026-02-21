@@ -22,7 +22,7 @@ async function main() {
   // Start HTTP MCP transport if configured
   let httpMcpServer = null;
   if (transport === 'http' || transport === 'both') {
-    httpMcpServer = startHttpTransport(store, config.mcpPort);
+    httpMcpServer = await startHttpTransport(store, config.mcpPort);
   }
 
   // Graceful shutdown

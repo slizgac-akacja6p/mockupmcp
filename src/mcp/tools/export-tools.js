@@ -67,6 +67,11 @@ export function registerExportTools(server, store) {
         const buffer = await takeScreenshot(html, screen.width, screen.height, scale);
         const filePath = await store.saveExport(project_id, screen_id, buffer, 'png');
 
+        // Puppeteer >=22 returns Uint8Array, not Buffer. Uint8Array.toString() ignores
+        // the encoding argument and returns a comma-separated decimal string which fails
+        // the SDK's Base64 validation (atob rejects commas). Wrap in Buffer to get real base64.
+        const base64 = Buffer.from(buffer).toString('base64');
+
         return {
           content: [
             {
@@ -75,7 +80,7 @@ export function registerExportTools(server, store) {
             },
             {
               type: 'image',
-              data: buffer.toString('base64'),
+              data: base64,
               mimeType: 'image/png',
             },
           ],
