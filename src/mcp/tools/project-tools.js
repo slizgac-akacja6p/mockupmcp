@@ -14,19 +14,20 @@ export function registerProjectTools(server, store) {
         .default('mobile')
         .describe('Viewport preset: mobile (393x852), tablet (834x1194), desktop (1440x900)'),
       style: z
-        .enum(['wireframe', 'material', 'ios'])
+        .enum(['wireframe', 'material', 'ios', 'blueprint', 'flat', 'hand-drawn'])
         .optional()
         .default('wireframe')
-        .describe('Visual style: wireframe (grey/sketch), material (Material Design 3), ios (iOS HIG)'),
+        .describe('Visual style: wireframe, material, ios, blueprint, flat, hand-drawn'),
+      folder: z.string().optional().describe('Optional folder path to organize the project (e.g. "MGGS/Audiobook Maker")'),
     },
-    async ({ name, description, viewport, style }) => {
+    async ({ name, description, viewport, style, folder }) => {
       try {
         const dims = config.viewportPresets[viewport];
         const project = await store.createProject(name, description || '', {
           width: dims.width,
           height: dims.height,
           preset: viewport,
-        }, style);
+        }, style, folder || null);
         return {
           content: [{ type: 'text', text: JSON.stringify(project, null, 2) }],
         };
@@ -41,7 +42,7 @@ export function registerProjectTools(server, store) {
 
   server.tool(
     'mockup_list_projects',
-    'List all mockup projects with their IDs, names, screen counts, and last update timestamps',
+    'List all mockup projects with their IDs, names, screen counts, folder paths, and last update timestamps',
     {},
     async () => {
       try {
