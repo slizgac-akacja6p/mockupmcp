@@ -18,6 +18,19 @@ function get(port, path) {
   });
 }
 
+// Same as get() but does NOT follow redirects (http.request vs http.get)
+function getRaw(port, path) {
+  return new Promise((resolve, reject) => {
+    const req = http.request({ hostname: '127.0.0.1', port, path, method: 'GET' }, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => resolve({ status: res.statusCode, body: data, headers: res.headers }));
+    });
+    req.on('error', reject);
+    req.end();
+  });
+}
+
 describe('projects API', () => {
   let tmpDir, server, port, origDataDir;
 
@@ -66,5 +79,86 @@ describe('projects API', () => {
     assert.deepEqual(JSON.parse(res.body), []);
     emptyServer.close();
     rmSync(emptyDir, { recursive: true, force: true });
+  });
+});
+
+describe('sidebar injection', () => {
+  let tmpDir, server, port, origDataDir;
+
+  beforeEach(async () => {
+    tmpDir = mkdtempSync(join(tmpdir(), 'preview-sidebar-inj-'));
+    origDataDir = config.dataDir;
+    config.dataDir = tmpDir;
+
+    const store = new ProjectStore(tmpDir);
+    await store.init();
+
+    const project = await store.createProject('Test Project', 'desc', { width: 393, height: 852, preset: 'mobile' });
+    await store.addScreen(project.id, 'Screen A', 393, 852, '#fff');
+
+    port = 3200 + Math.floor(Math.random() * 1000);
+    server = startPreviewServer(port);
+    await new Promise(r => setTimeout(r, 100));
+  });
+
+  afterEach(() => {
+    config.dataDir = origDataDir;
+    server.close();
+    rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it('preview page contains sidebar HTML', async () => {
+    const res = await get(port, '/api/projects');
+    const projects = JSON.parse(res.body);
+    const screenId = projects[0].screens[0].id;
+    const previewRes = await get(port, `/preview/${projects[0].id}/${screenId}`);
+    assert.equal(previewRes.status, 200);
+    assert.ok(previewRes.body.includes('mockup-sidebar'), 'should contain sidebar element');
+    assert.ok(previewRes.body.includes('mockup-sidebar-toggle'), 'should contain toggle button');
+  });
+
+  it('sidebar JS fetches project list', async () => {
+    const res = await get(port, '/api/projects');
+    const projects = JSON.parse(res.body);
+    const screenId = projects[0].screens[0].id;
+    const previewRes = await get(port, `/preview/${projects[0].id}/${screenId}`);
+    assert.ok(previewRes.body.includes('/api/projects'), 'sidebar JS fetches project list');
+  });
+});
+
+describe('landing page', () => {
+  let tmpDir, server, port, origDataDir;
+
+  beforeEach(async () => {
+    tmpDir = mkdtempSync(join(tmpdir(), 'preview-landing-'));
+    origDataDir = config.dataDir;
+    config.dataDir = tmpDir;
+
+    const store = new ProjectStore(tmpDir);
+    await store.init();
+    await store.createProject('Test Project', 'desc', { width: 393, height: 852, preset: 'mobile' });
+
+    port = 3300 + Math.floor(Math.random() * 1000);
+    server = startPreviewServer(port);
+    await new Promise(r => setTimeout(r, 100));
+  });
+
+  afterEach(() => {
+    config.dataDir = origDataDir;
+    server.close();
+    rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it('GET /preview returns landing page with sidebar', async () => {
+    const res = await get(port, '/preview');
+    assert.equal(res.status, 200);
+    assert.ok(res.body.includes('mockup-sidebar'));
+    assert.ok(res.body.includes('Select a screen'));
+  });
+
+  it('GET / redirects to /preview', async () => {
+    const res = await getRaw(port, '/');
+    assert.equal(res.status, 302);
+    assert.equal(res.headers.location, '/preview');
   });
 });
