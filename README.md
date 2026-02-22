@@ -6,7 +6,7 @@ Dockerized MCP server for creating UI mockups from Claude Code. Describe a scree
 
 ```bash
 # Pull the image
-docker pull maciek/mockupmcp:latest
+docker pull mggs/mockupmcp:latest
 
 # Add to ~/.claude/mcp.json:
 ```
@@ -20,7 +20,7 @@ docker pull maciek/mockupmcp:latest
         "run", "-i", "--rm",
         "-v", "./mockups:/data",
         "-p", "3100:3100",
-        "maciek/mockupmcp:latest"
+        "mggs/mockupmcp:latest"
       ]
     }
   }
@@ -39,8 +39,9 @@ Claude will call `mockup_create_project`, `mockup_generate_screen`, and `mockup_
 
 - **25 MCP tools** — full CRUD for projects, screens, elements, plus export, codegen, and layout
 - **5 MCP resources** — read project data, previews, and catalogs via `mockup://` URIs
+- **3 MCP prompts** — AI-assisted UX review, accessibility check, and screen comparison
 - **35 UI components** — buttons, inputs, cards, tables, modals, charts, and more
-- **3 styles** — wireframe, Material Design 3, iOS HIG
+- **6 styles** — wireframe, Material Design 3, iOS HIG, blueprint, flat, hand-drawn
 - **7 screen templates** — login, dashboard, settings, list, form, profile, onboarding
 - **Screen generation** — describe a screen in natural language, get a full mockup
 - **Code export** — generate HTML, React, Flutter, or SwiftUI from any screen
@@ -139,30 +140,32 @@ mockup_to_code({ project_id: "proj_...", screen_id: "scr_...", framework: "react
 | `mockup://templates` | Available templates with descriptions |
 | `mockup://components` | UI component types with default properties |
 
-## Configuration
+## MCP Prompts
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `MCP_TRANSPORT` | `stdio` | Transport mode: `stdio`, `http`, or `both` |
-| `PREVIEW_PORT` | `3100` | Preview server port |
-| `MCP_PORT` | `3200` | HTTP MCP transport port |
-| `DEFAULT_STYLE` | `wireframe` | Default style: `wireframe`, `material`, `ios` |
-| `DATA_DIR` | `/data` | Data directory for project storage |
+AI-assisted analysis prompts that provide screen data (JSON + PNG) for Claude to evaluate.
 
-### Docker Compose
+| Prompt | Description |
+|--------|-------------|
+| `mockup_design_review` | Review a mockup for UX quality — visual hierarchy, spacing, CTA placement, consistency |
+| `mockup_accessibility_check` | Check for accessibility issues — touch targets (44px min), text sizes, contrast, labels |
+| `mockup_compare_screens` | Compare two screens for visual consistency — typography, colors, spacing, components |
 
-```yaml
-services:
-  mockupmcp:
-    image: maciek/mockupmcp:latest
-    ports:
-      - "3100:3100"
-      - "3200:3200"
-    volumes:
-      - ./mockups:/data
-    environment:
-      - MCP_TRANSPORT=both
-```
+Each prompt takes `project_id` + `screen_id` (or `screen_id_a`/`screen_id_b` for compare) and returns the screen element data plus a rendered PNG screenshot for visual analysis.
+
+## Styles
+
+| Style | Description |
+|-------|-------------|
+| `wireframe` | Greyscale, minimal — focus on layout |
+| `material` | Material Design 3 — Android apps |
+| `ios` | iOS Human Interface Guidelines — Apple apps |
+| `blueprint` | Blue on white, monospace — technical drawings |
+| `flat` | Vibrant colors, zero shadows — modern flat design |
+| `hand-drawn` | Sketchy, Comic Neue font — Balsamiq-like wireframes |
+
+## Templates
+
+`login`, `dashboard`, `settings`, `list`, `form`, `profile`, `onboarding`
 
 ## UI Components
 
@@ -178,13 +181,49 @@ services:
 
 **Composite:** login_form, search_bar, header, footer, data_table, chart_placeholder
 
+## Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MCP_TRANSPORT` | `stdio` | Transport mode: `stdio`, `http`, or `both` |
+| `PREVIEW_PORT` | `3100` | Preview server port |
+| `MCP_PORT` | `3200` | HTTP MCP transport port |
+| `DEFAULT_STYLE` | `wireframe` | Default style: `wireframe`, `material`, `ios`, `blueprint`, `flat`, `hand-drawn` |
+| `DATA_DIR` | `/data` | Data directory for project storage |
+
+### HTTP Transport
+
+MockupMCP supports Streamable HTTP transport on port 3200 alongside stdio.
+
+```bash
+# Run with HTTP transport
+docker run -d -p 3100:3100 -p 3200:3200 -v ./mockups:/data -e MCP_TRANSPORT=both mggs/mockupmcp:latest
+```
+
+HTTP endpoint: `POST /mcp` with JSON-RPC messages. Each `initialize` request creates a new session. Use the `mcp-session-id` header for subsequent requests.
+
+### Docker Compose
+
+```yaml
+services:
+  mockupmcp:
+    image: mggs/mockupmcp:latest
+    ports:
+      - "3100:3100"
+      - "3200:3200"
+    volumes:
+      - ./mockups:/data
+    environment:
+      - MCP_TRANSPORT=both
+```
+
 ## Development
 
 ```bash
 # Install dependencies
 npm install
 
-# Run tests (588 tests)
+# Run tests (767 tests)
 node --test tests/**/*.test.js tests/**/**/*.test.js
 
 # Run Docker E2E tests (requires Docker)
@@ -200,7 +239,7 @@ node src/index.js
 MCP_TRANSPORT=http node src/index.js
 ```
 
-### Project Structure
+## Project Structure
 
 ```
 src/
@@ -210,13 +249,14 @@ src/
     server.js              # MCP server (stdio)
     http-transport.js      # HTTP MCP transport
     resources.js           # MCP resource handlers
+    prompts.js             # MCP prompt handlers
     screen-generator.js    # NLP screen generation
     tools/                 # 25 MCP tool handlers
   renderer/
     html-builder.js        # Screen JSON -> HTML
     screenshot.js          # Puppeteer PNG/PDF
     components/            # 35 UI components
-    styles/                # wireframe/material/ios CSS
+    styles/                # wireframe/material/ios/blueprint/flat/hand-drawn CSS
     templates/             # 7 screen templates
   storage/
     project-store.js       # JSON file CRUD
