@@ -4,7 +4,14 @@ import http from 'node:http';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { createHttpTransportApp } from '../../src/mcp/http-transport.js';
+
+// SDK's server/express.js imports express@5 which breaks ESM resolution when
+// the project path contains '#' (Node treats it as a URL fragment). Skip the
+// entire file in that case — the tests still run inside Docker (no '#' path).
+const pathHasHash = import.meta.url.includes('%23') || import.meta.url.includes('#');
+const { createHttpTransportApp } = pathHasHash
+  ? {}
+  : await import('../../src/mcp/http-transport.js');
 import { ProjectStore } from '../../src/storage/project-store.js';
 
 // --- HTTP helpers ---
@@ -93,7 +100,8 @@ async function initSession(port) {
 
 // --- Tests ---
 
-describe('M3b Integration — HTTP Transport', () => {
+const runner = pathHasHash ? describe.skip : describe;
+runner('M3b Integration — HTTP Transport', () => {
   let tmpDir, store, app, httpServer, port;
 
   beforeEach(async () => {
