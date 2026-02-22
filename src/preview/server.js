@@ -162,11 +162,171 @@ function buildReloadScript(projectId, updatedAt) {
 </script>`;
 }
 
+// Sidebar: left panel showing project tree with collapsible navigation.
+// Uses mockup-sidebar prefix on all classes to avoid conflicts with mockup content.
+const SIDEBAR_CSS = `
+<style>
+  #mockup-sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 260px;
+    background: #f5f5f5; border-right: 1px solid #ddd; z-index: 10000;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 13px; color: #333; overflow-y: auto;
+    transition: transform 0.3s ease;
+  }
+  #mockup-sidebar.collapsed { transform: translateX(-220px); }
+  #mockup-sidebar-toggle {
+    position: absolute; top: 12px; right: -32px; width: 28px; height: 28px;
+    background: #f5f5f5; border: 1px solid #ddd; border-left: none;
+    border-radius: 0 4px 4px 0; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; font-size: 14px; color: #666;
+  }
+  #mockup-sidebar-toggle:hover { background: #e8e8e8; }
+  #mockup-sidebar h3 {
+    margin: 0; padding: 16px 12px 8px; font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.5px; color: #999;
+  }
+  .mockup-sidebar-project { padding: 4px 0; }
+  .mockup-sidebar-project-name {
+    padding: 6px 12px; font-weight: 600; cursor: pointer; display: flex;
+    align-items: center; gap: 6px;
+  }
+  .mockup-sidebar-project-name:hover { background: #e8e8e8; }
+  .mockup-sidebar-project-name .arrow { font-size: 10px; transition: transform 0.2s; }
+  .mockup-sidebar-project-name .arrow.open { transform: rotate(90deg); }
+  .mockup-sidebar-screen {
+    padding: 5px 12px 5px 28px; cursor: pointer; text-decoration: none;
+    display: block; color: #555; border-radius: 4px; margin: 1px 8px;
+  }
+  .mockup-sidebar-screen:hover { background: #e0e0e0; }
+  .mockup-sidebar-screen.active { background: #d0d0ff; color: #333; font-weight: 500; }
+  body { margin-left: 260px; transition: margin-left 0.3s; }
+  body.sidebar-collapsed { margin-left: 40px; }
+  @media (max-width: 768px) {
+    #mockup-sidebar { transform: translateX(-260px); }
+    #mockup-sidebar.mobile-open { transform: translateX(0); }
+    #mockup-sidebar-toggle { right: -36px; }
+    body { margin-left: 0; }
+    body.sidebar-collapsed { margin-left: 0; }
+  }
+</style>`;
+
+const SIDEBAR_HTML = `
+<div id="mockup-sidebar">
+  <button id="mockup-sidebar-toggle" aria-label="Toggle sidebar">&lsaquo;</button>
+  <h3>Projects</h3>
+  <div id="mockup-sidebar-tree"></div>
+</div>`;
+
+// Sidebar client-side JS: fetches project tree from /api/projects, handles
+// collapse/expand, highlights active screen, auto-refreshes every 3s.
+// Uses trusted server-rendered data only (no user input in DOM writes).
+const SIDEBAR_JS = `
+<script>
+(function() {
+  var sidebar = document.getElementById('mockup-sidebar');
+  var toggle = document.getElementById('mockup-sidebar-toggle');
+  var tree = document.getElementById('mockup-sidebar-tree');
+  if (!sidebar) return;
+
+  var collapsed = localStorage.getItem('mockup-sidebar-collapsed') === '1';
+  if (collapsed) { sidebar.classList.add('collapsed'); document.body.classList.add('sidebar-collapsed'); toggle.textContent = '\\u203a'; }
+
+  toggle.addEventListener('click', function() {
+    var isMobile = window.innerWidth <= 768;
+    if (isMobile) {
+      sidebar.classList.toggle('mobile-open');
+    } else {
+      var nowCollapsed = sidebar.classList.toggle('collapsed');
+      document.body.classList.toggle('sidebar-collapsed', nowCollapsed);
+      toggle.textContent = nowCollapsed ? '\\u203a' : '\\u2039';
+      localStorage.setItem('mockup-sidebar-collapsed', nowCollapsed ? '1' : '0');
+    }
+  });
+
+  function getActivePath() {
+    var parts = window.location.pathname.split('/');
+    return { projectId: parts[2] || '', screenId: parts[3] || '' };
+  }
+
+  function escName(s) { var d = document.createElement('div'); d.textContent = s; return d.textContent; }
+
+  function loadTree() {
+    fetch('/api/projects').then(function(res) { return res.json(); }).then(function(projects) {
+      var active = getActivePath();
+      var items = [];
+      for (var i = 0; i < projects.length; i++) {
+        var proj = projects[i];
+        var isActiveProj = proj.id === active.projectId;
+        items.push('<div class="mockup-sidebar-project">');
+        items.push('<div class="mockup-sidebar-project-name" data-proj="' + proj.id + '">');
+        items.push('<span class="arrow' + (isActiveProj ? ' open' : '') + '">\\u25b6</span> ' + escName(proj.name));
+        items.push('</div>');
+        if (isActiveProj || projects.length === 1) {
+          for (var j = 0; j < proj.screens.length; j++) {
+            var scr = proj.screens[j];
+            var cls = scr.id === active.screenId ? ' active' : '';
+            items.push('<a class="mockup-sidebar-screen' + cls + '" href="/preview/' + proj.id + '/' + scr.id + '">' + escName(scr.name) + '</a>');
+          }
+        }
+        items.push('</div>');
+      }
+      tree.innerHTML = items.join('');
+    }).catch(function() {});
+  }
+
+  tree.addEventListener('click', function(e) {
+    var projName = e.target.closest('.mockup-sidebar-project-name');
+    if (projName) {
+      var arrow = projName.querySelector('.arrow');
+      var proj = projName.closest('.mockup-sidebar-project');
+      var screens = proj.querySelectorAll('.mockup-sidebar-screen');
+      if (screens.length) {
+        var hidden = screens[0].style.display === 'none';
+        screens.forEach(function(s) { s.style.display = hidden ? '' : 'none'; });
+        arrow.classList.toggle('open', hidden);
+      } else {
+        arrow.classList.toggle('open');
+        fetch('/api/projects').then(function(r) { return r.json(); }).then(function(projects) {
+          var p = projects.find(function(pp) { return pp.id === projName.dataset.proj; });
+          if (!p) return;
+          var scrHtml = '';
+          var active = getActivePath();
+          for (var k = 0; k < p.screens.length; k++) {
+            var scr = p.screens[k];
+            var cls = scr.id === active.screenId ? ' active' : '';
+            scrHtml += '<a class="mockup-sidebar-screen' + cls + '" href="/preview/' + p.id + '/' + scr.id + '">' + escName(scr.name) + '</a>';
+          }
+          projName.insertAdjacentHTML('afterend', scrHtml);
+        });
+      }
+      return;
+    }
+    var link = e.target.closest('.mockup-sidebar-screen');
+    if (!link) return;
+    e.preventDefault();
+    var href = link.getAttribute('href');
+    var parts = href.split('/');
+    var projectId = parts[2];
+    var screenId = parts[3];
+    if (typeof swapScreen === 'function') {
+      swapScreen(projectId, screenId, 'push', false);
+    } else {
+      window.location.href = href;
+    }
+    tree.querySelectorAll('.mockup-sidebar-screen').forEach(function(s) { s.classList.remove('active'); });
+    link.classList.add('active');
+  });
+
+  loadTree();
+  setInterval(loadTree, 3000);
+})();
+</script>`;
+
 function injectPreviewAssets(html, projectId, updatedAt) {
   // buildScreenHtml returns a full HTML document, so we inject into it
   // rather than nesting docs (which is invalid HTML).
-  html = html.replace('</head>', PREVIEW_STYLE + TRANSITION_CSS + '\n</head>');
-  html = html.replace('</body>', BACK_BUTTON + LINK_SCRIPT + buildReloadScript(projectId, updatedAt) + '\n</body>');
+  html = html.replace('</head>', PREVIEW_STYLE + SIDEBAR_CSS + TRANSITION_CSS + '\n</head>');
+  html = html.replace('</body>', SIDEBAR_HTML + BACK_BUTTON + LINK_SCRIPT + SIDEBAR_JS + buildReloadScript(projectId, updatedAt) + '\n</body>');
   return html;
 }
 
@@ -180,9 +340,39 @@ function buildScreenFragment(screen, style) {
   return bodyMatch[1].trim();
 }
 
+// Standalone landing page shown at /preview — gives users an entry point
+// with the sidebar already rendered so they can pick a screen to view.
+function buildLandingPage() {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MockupMCP Preview</title>
+  ${PREVIEW_STYLE}
+  ${SIDEBAR_CSS}
+</head>
+<body>
+  ${SIDEBAR_HTML}
+  <div style="display:flex;align-items:center;justify-content:center;height:80vh;color:#999;font-family:-apple-system,sans-serif;font-size:18px;">
+    Select a screen from the sidebar to preview
+  </div>
+  ${SIDEBAR_JS}
+</body>
+</html>`;
+}
+
 export function startPreviewServer(port = config.previewPort) {
   const app = express();
   const store = new ProjectStore(config.dataDir);
+
+  // Root redirect and landing page must be registered before the parameterized
+  // /preview/:projectId/:screenId route so Express doesn't treat "preview" as a projectId.
+  app.get('/', (_req, res) => res.redirect('/preview'));
+
+  app.get('/preview', (_req, res) => {
+    res.type('html').send(buildLandingPage());
+  });
 
   app.get('/preview/:projectId/:screenId', async (req, res) => {
     try {
@@ -225,6 +415,28 @@ export function startPreviewServer(port = config.previewPort) {
       res.type('html').send(fragment);
     } catch (err) {
       res.status(500).send('Error: ' + err.message);
+    }
+  });
+
+  // Read config.dataDir at request time so tests can swap data directories
+  // between requests without restarting the server.
+  app.get('/api/projects', async (_req, res) => {
+    try {
+      const projectStore = new ProjectStore(config.dataDir);
+      const projects = await projectStore.listProjects();
+      const result = [];
+      for (const proj of projects) {
+        const full = await projectStore.getProject(proj.id);
+        result.push({
+          id: full.id,
+          name: full.name,
+          style: full.style,
+          screens: (full.screens || []).map(s => ({ id: s.id, name: s.name })),
+        });
+      }
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
     }
   });
 

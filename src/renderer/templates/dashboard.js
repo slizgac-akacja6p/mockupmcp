@@ -66,15 +66,31 @@ export function generate(screenWidth, screenHeight, _style, contentHints = []) {
       z_index: 0,
       properties: { content: activityTitle, fontSize: 16 },
     },
-    // Recent activity list
+    // Recent activity list — max height reduced by tabbar height to avoid overlap
     {
       type: 'list',
       x: pad,
       y: isWide ? 72 + cardHeight + pad + Math.min(200, screenHeight - 400) + pad + 36 : 72 + (cardHeight + pad) * 2 + Math.min(200, screenHeight - 400) + pad + 36,
       width: contentWidth,
-      height: Math.min(160, screenHeight - (isWide ? 72 + cardHeight + pad + Math.min(200, screenHeight - 400) + pad + 36 + 16 : 72 + (cardHeight + pad) * 2 + Math.min(200, screenHeight - 400) + pad + 36 + 16)),
+      height: Math.min(160, screenHeight - 56 - (isWide ? 72 + cardHeight + pad + Math.min(200, screenHeight - 400) + pad + 36 + 16 : 72 + (cardHeight + pad) * 2 + Math.min(200, screenHeight - 400) + pad + 36 + 16)),
       z_index: 0,
       properties: { items: listItems },
+    },
+    // Tabbar — pinned at bottom
+    {
+      type: 'tabbar',
+      x: 0,
+      y: screenHeight - 56,
+      width: screenWidth,
+      height: 56,
+      z_index: 10,
+      properties: {
+        tabs: [
+          { icon: 'home', label: 'Home', active: true },
+          { icon: 'bar-chart-2', label: 'Analytics' },
+          { icon: 'settings', label: 'Settings' },
+        ],
+      },
     },
   ];
 
