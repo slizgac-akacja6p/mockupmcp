@@ -1,6 +1,7 @@
 import { createMcpServer, startMcpServer } from './mcp/server.js';
 import { registerAllTools } from './mcp/tools/index.js';
 import { registerResources } from './mcp/resources.js';
+import { registerPrompts } from './mcp/prompts.js';
 import { startHttpTransport } from './mcp/http-transport.js';
 import { startPreviewServer } from './preview/server.js';
 import { closeBrowser } from './renderer/screenshot.js';
@@ -41,6 +42,7 @@ async function main() {
     const mcpServer = createMcpServer();
     await registerAllTools(mcpServer, store);
     await registerResources(mcpServer, store);
+    registerPrompts(mcpServer, store);
     console.error('[MockupMCP] MCP server ready (stdio)');
     await startMcpServer(mcpServer);
   } else {
