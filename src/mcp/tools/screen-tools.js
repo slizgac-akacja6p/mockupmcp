@@ -106,7 +106,7 @@ export async function registerScreenTools(server, store) {
 
   server.tool(
     'mockup_generate_screen',
-    'Generate a complete UI screen from a natural language description. Matches to the closest template (login, dashboard, settings, list, form, profile, onboarding) and augments with additional elements based on keywords. Example: "login screen with social auth buttons".',
+    'RECOMMENDED for new screens. Generate a complete UI screen from a natural language description in a single call — 10x faster than adding elements one by one. Matches to the closest template (login, dashboard, settings, list, form, profile, onboarding) and augments with additional elements based on keywords. Example: "login screen with social auth buttons".',
     {
       project_id: z.string().describe('Project ID'),
       description: z.string().describe('Natural language screen description, e.g. "login screen with email and password fields"'),
