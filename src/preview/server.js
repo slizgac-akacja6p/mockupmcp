@@ -2,6 +2,8 @@ import express from 'express';
 import { ProjectStore } from '../storage/project-store.js';
 import { buildScreenHtml } from '../renderer/html-builder.js';
 import { config } from '../config.js';
+import { registerElementsApi } from './routes/elements-api.js';
+import { registerApprovalApi } from './routes/approval-api.js';
 
 // Centered background styling injected into every preview page so the mockup
 // renders on a neutral canvas without modifying the stored screen data.
@@ -500,6 +502,9 @@ export function startPreviewServer(port = config.previewPort) {
       res.status(500).json({ error: err.message });
     }
   });
+
+  registerElementsApi(app);
+  registerApprovalApi(app);
 
   const server = app.listen(port, () => {
     console.error('[MockupMCP] Preview server: http://localhost:' + port);

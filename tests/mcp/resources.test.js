@@ -106,3 +106,56 @@ describe('MCP Resources — project detail', () => {
     assert.ok(projectResources.length >= 1);
   });
 });
+
+describe('MCP Resources — approval', () => {
+  let client;
+  let store;
+  let tmpDir;
+  let projectId;
+  let screenId;
+
+  before(async () => {
+    tmpDir = await mkdtemp(join(tmpdir(), 'mcp-res-approval-'));
+    store = new ProjectStore(tmpDir);
+    await store.init();
+    const proj = await store.createProject('Test');
+    projectId = proj.id;
+    const scr = await store.addScreen(projectId, 'Main');
+    screenId = scr.id;
+    await store.addElement(projectId, screenId, 'button', 10, 20, 120, 44, { label: 'OK' });
+    const pair = await createTestPair(store);
+    client = pair.client;
+  });
+
+  after(async () => {
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('returns not-approved by default', async () => {
+    const result = await client.readResource({
+      uri: `mockup://projects/${projectId}/screens/${screenId}/approval`,
+    });
+    const data = JSON.parse(result.contents[0].text);
+    assert.equal(data.approved, false);
+    assert.equal(data.approvedAt, null);
+    assert.equal(data.elementCount, 1);
+  });
+
+  it('returns approved after editSessions update', async () => {
+    const { editSessions } = await import('../../src/preview/routes/approval-api.js');
+    const key = `${projectId}/${screenId}`;
+    editSessions.set(key, {
+      snapshot: [],
+      approved: true,
+      approvedAt: '2026-01-01T00:00:00.000Z',
+      summary: '1 added',
+    });
+    const result = await client.readResource({
+      uri: `mockup://projects/${projectId}/screens/${screenId}/approval`,
+    });
+    const data = JSON.parse(result.contents[0].text);
+    assert.equal(data.approved, true);
+    assert.equal(data.summary, '1 added');
+    editSessions.clear();
+  });
+});

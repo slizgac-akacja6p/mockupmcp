@@ -7,6 +7,7 @@ import { registerExportTools } from './export-tools.js';
 import { registerTemplateTools } from './template-tools.js';
 import { registerLayoutTools } from './layout-tools.js';
 import { registerGroupTools } from './group-tools.js';
+import { registerApprovalTools } from './approval-tools.js';
 
 export async function registerAllTools(server, store) {
   if (!store) store = new ProjectStore(config.dataDir);
@@ -17,5 +18,6 @@ export async function registerAllTools(server, store) {
   registerTemplateTools(server, store);
   registerLayoutTools(server, store);
   registerGroupTools(server, store);
-  console.error('[MockupMCP] 25 tools registered');
+  registerApprovalTools(server, store);
+  console.error('[MockupMCP] 26 tools registered');
 }
