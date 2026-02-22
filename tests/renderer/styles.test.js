@@ -3,32 +3,25 @@ import assert from 'node:assert/strict';
 import { loadStyle, getAvailableStyles } from '../../src/renderer/styles/index.js';
 
 describe('style registry', () => {
-  it('getAvailableStyles returns array with wireframe, material, ios', () => {
+  it('getAvailableStyles returns all 6 styles', () => {
     const styles = getAvailableStyles();
     assert.ok(styles.includes('wireframe'));
     assert.ok(styles.includes('material'));
     assert.ok(styles.includes('ios'));
-    assert.equal(styles.length, 3);
+    assert.ok(styles.includes('blueprint'));
+    assert.ok(styles.includes('flat'));
+    assert.ok(styles.includes('hand-drawn'));
+    assert.equal(styles.length, 6);
   });
 
-  it('loadStyle returns non-empty CSS string for wireframe', () => {
-    const css = loadStyle('wireframe');
-    assert.equal(typeof css, 'string');
-    assert.ok(css.length > 0);
-    assert.ok(css.includes('.mockup-button'));
-  });
-
-  it('loadStyle returns non-empty CSS string for material', () => {
-    const css = loadStyle('material');
-    assert.equal(typeof css, 'string');
-    assert.ok(css.length > 0);
-  });
-
-  it('loadStyle returns non-empty CSS string for ios', () => {
-    const css = loadStyle('ios');
-    assert.equal(typeof css, 'string');
-    assert.ok(css.length > 0);
-  });
+  for (const name of ['wireframe', 'material', 'ios', 'blueprint', 'flat', 'hand-drawn']) {
+    it(`loadStyle returns non-empty CSS string for ${name}`, () => {
+      const css = loadStyle(name);
+      assert.equal(typeof css, 'string');
+      assert.ok(css.length > 0);
+      assert.ok(css.includes('.mockup-button'));
+    });
+  }
 
   it('loadStyle falls back to wireframe for unknown style', () => {
     const css = loadStyle('unknown');
