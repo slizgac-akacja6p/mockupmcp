@@ -1,5 +1,5 @@
 // Template registry — same pattern as component registry.
-// Each template exports: generate(screenWidth, screenHeight, style) -> element[]
+// Each template exports: generate(screenWidth, screenHeight, style, contentHints) -> element[]
 // and description: string.
 
 import * as login      from './login.js';

@@ -1,6 +1,6 @@
 export const description = 'Content list screen with search bar and scrollable item rows.';
 
-export function generate(screenWidth, screenHeight, _style) {
+export function generate(screenWidth, screenHeight, _style, contentHints = []) {
   const pad = 16;
   const contentWidth = screenWidth - pad * 2;
   const itemH = 64;
@@ -19,6 +19,7 @@ export function generate(screenWidth, screenHeight, _style) {
       width: screenWidth,
       height: 56,
       z_index: 10,
+      // Structural nav title stays fixed — contentHints drive the list rows, not the chrome.
       properties: { title: 'Browse' },
     },
     {
@@ -32,7 +33,7 @@ export function generate(screenWidth, screenHeight, _style) {
     },
   ];
 
-  const sampleTitles = [
+  const defaultTitles = [
     'Getting Started Guide',
     'Advanced Configuration',
     'API Reference',
@@ -46,6 +47,13 @@ export function generate(screenWidth, screenHeight, _style) {
   for (let i = 0; i < itemCount; i++) {
     const y = reservedTop + pad + i * (itemH + 8);
     if (y + itemH > screenHeight - reservedBottom) break;
+
+    // Use hints as row titles only when 2+ hints are present — a single generic
+    // word like "Product" from "product list" should not override defaults.
+    const title = contentHints.length >= 2
+      ? contentHints[i % contentHints.length]
+      : defaultTitles[i % defaultTitles.length];
+
     elements.push({
       type: 'list',
       x: pad,
@@ -53,7 +61,7 @@ export function generate(screenWidth, screenHeight, _style) {
       width: contentWidth,
       height: itemH,
       z_index: 0,
-      properties: { items: [sampleTitles[i % sampleTitles.length]] },
+      properties: { items: [title] },
     });
   }
 

@@ -33,6 +33,39 @@ describe('parseDescription', () => {
     const result = parseDescription('user profile screen with avatar');
     assert.equal(result.nameHint, 'User Profile');
   });
+
+  it('extracts contentHints from comma-separated description', () => {
+    const result = parseDescription('fitness dashboard with steps count, calories burned, active minutes');
+    assert.ok(Array.isArray(result.contentHints));
+    assert.ok(result.contentHints.length >= 3);
+    assert.ok(result.contentHints.some(h => h.includes('Steps')));
+    assert.ok(result.contentHints.some(h => h.includes('Calories')));
+    assert.ok(result.contentHints.some(h => h.includes('Active')));
+  });
+
+  it('extracts contentHints from "and"-separated description', () => {
+    const result = parseDescription('login page for gym members and trainers');
+    assert.ok(result.contentHints.length >= 1);
+  });
+
+  it('returns empty contentHints for description with only keywords', () => {
+    const result = parseDescription('login screen');
+    assert.deepEqual(result.contentHints, []);
+  });
+
+  it('titleCases contentHints', () => {
+    const result = parseDescription('dashboard with monthly revenue, user growth');
+    for (const hint of result.contentHints) {
+      assert.match(hint, /^[A-Z]/);
+    }
+  });
+
+  it('removes stop words and known keywords from hints', () => {
+    const result = parseDescription('dashboard with the total users');
+    const joined = result.contentHints.join(' ').toLowerCase();
+    assert.ok(!joined.includes('the '));
+    assert.ok(!joined.includes('dashboard'));
+  });
 });
 
 describe('matchTemplate', () => {
@@ -136,6 +169,39 @@ describe('augmentElements', () => {
     const result = augmentElements(baseElements, { modifierKeywords: [], componentKeywords: [], screenKeywords: [] }, 393, 852);
     assert.equal(result.length, baseElements.length);
   });
+
+  it('adds tabbar when keyword present and not already in elements', () => {
+    const base = [
+      { type: 'navbar', x: 0, y: 0, width: 393, height: 56, z_index: 10, properties: { title: 'Test' } },
+    ];
+    const parsed = {
+      screenKeywords: ['dashboard'],
+      componentKeywords: ['tabbar'],
+      modifierKeywords: [],
+      tokens: ['dashboard', 'tabbar'],
+    };
+    const result = augmentElements(base, parsed, 393, 852);
+    const tabbar = result.find(el => el.type === 'tabbar');
+    assert.ok(tabbar, 'should add tabbar element');
+    assert.equal(tabbar.y, 852 - 56, 'tabbar at bottom of screen');
+    assert.equal(tabbar.z_index, 10, 'tabbar is pinned');
+    assert.equal(tabbar.width, 393, 'tabbar is full width');
+  });
+
+  it('does not add tabbar if already present', () => {
+    const base = [
+      { type: 'tabbar', x: 0, y: 796, width: 393, height: 56, z_index: 10, properties: { tabs: [] } },
+    ];
+    const parsed = {
+      screenKeywords: [],
+      componentKeywords: ['tabbar'],
+      modifierKeywords: [],
+      tokens: ['tabbar'],
+    };
+    const result = augmentElements(base, parsed, 393, 852);
+    const tabbars = result.filter(el => el.type === 'tabbar');
+    assert.equal(tabbars.length, 1, 'should not duplicate tabbar');
+  });
 });
 
 describe('generateScreen', () => {
@@ -181,5 +247,137 @@ describe('generateScreen', () => {
     for (const el of result.elements) {
       assert.ok(el.y + el.height <= 400, `Element at y=${el.y} h=${el.height} overflows 400px`);
     }
+  });
+
+  it('passes contentHints to template — dashboard cards use hint content', () => {
+    const result = generateScreen('fitness dashboard with steps, calories', 393, 852, 'wireframe');
+    assert.equal(result.matchInfo.template, 'dashboard');
+    const cards = result.elements.filter(el => el.type === 'card');
+    assert.ok(cards.length >= 2);
+    // First card should use first hint
+    assert.ok(cards[0].properties.title.includes('Steps'));
+  });
+
+  it('dashboard uses contentHints for card titles and chart label', () => {
+    const result = generateScreen(
+      'fitness dashboard with steps count, calories burned, weekly progress',
+      393, 852, 'wireframe'
+    );
+    const cards = result.elements.filter(el => el.type === 'card');
+    assert.ok(cards[0].properties.title.includes('Steps'));
+    assert.ok(cards[1].properties.title.includes('Calories'));
+    const chart = result.elements.find(el => el.type === 'chart_placeholder');
+    assert.ok(chart.properties.label.includes('Weekly'));
+  });
+
+  it('dashboard falls back to defaults when no contentHints', () => {
+    const result = generateScreen('dashboard', 393, 852, 'wireframe');
+    const cards = result.elements.filter(el => el.type === 'card');
+    assert.equal(cards[0].properties.title, 'Total Users');
+  });
+
+  it('login uses contentHints for heading and button', () => {
+    const result = generateScreen('login for gym members, start workout', 393, 852, 'wireframe');
+    const heading = result.elements.find(el => el.type === 'text' && el.properties.fontSize === 24);
+    assert.ok(heading.properties.content.includes('Gym'));
+    const button = result.elements.find(el => el.type === 'button' && el.properties.variant === 'primary');
+    assert.ok(button.properties.label.includes('Start'));
+  });
+
+  it('login falls back to defaults when no contentHints', () => {
+    const result = generateScreen('login screen', 393, 852, 'wireframe');
+    const heading = result.elements.find(el => el.type === 'text' && el.properties.fontSize === 24);
+    assert.equal(heading.properties.content, 'Welcome back');
+  });
+
+  it('settings uses contentHints for toggle labels', () => {
+    const result = generateScreen(
+      'settings with workout reminders, calorie tracking, GPS',
+      393, 852, 'wireframe'
+    );
+    const toggles = result.elements.filter(el => el.type === 'toggle');
+    assert.ok(toggles.length >= 3);
+    assert.ok(toggles[0].properties.label.includes('Workout'));
+  });
+
+  it('settings falls back to defaults when no contentHints', () => {
+    const result = generateScreen('settings page', 393, 852, 'wireframe');
+    const toggles = result.elements.filter(el => el.type === 'toggle');
+    assert.equal(toggles[0].properties.label, 'Notifications');
+  });
+
+  it('list uses contentHints for item titles', () => {
+    const result = generateScreen(
+      'list with running, cycling, yoga, swimming',
+      393, 852, 'wireframe'
+    );
+    const lists = result.elements.filter(el => el.type === 'list');
+    assert.ok(lists.length >= 3);
+    assert.ok(lists[0].properties.items[0].includes('Running'));
+  });
+
+  it('list falls back to defaults when no contentHints', () => {
+    const result = generateScreen('product list', 393, 852, 'wireframe');
+    const lists = result.elements.filter(el => el.type === 'list');
+    assert.ok(lists[0].properties.items[0].includes('Getting Started'));
+  });
+
+  it('form uses contentHints for field labels', () => {
+    const result = generateScreen(
+      'form with weight, height, age, submit',
+      393, 852, 'wireframe'
+    );
+    const inputs = result.elements.filter(el => el.type === 'input');
+    assert.ok(inputs[0].properties.label.includes('Weight'));
+  });
+
+  it('form falls back to defaults when no contentHints', () => {
+    const result = generateScreen('contact form', 393, 852, 'wireframe');
+    const inputs = result.elements.filter(el => el.type === 'input');
+    assert.equal(inputs[0].properties.label, 'Full Name');
+  });
+
+  it('profile uses contentHints for name and stat labels', () => {
+    const result = generateScreen(
+      'profile for John Runner, marathons completed, total miles, best time',
+      393, 852, 'wireframe'
+    );
+    const texts = result.elements.filter(el => el.type === 'text');
+    const nameText = texts.find(t => t.properties.fontSize === 20);
+    assert.ok(nameText.properties.content.includes('John'));
+    const cards = result.elements.filter(el => el.type === 'card');
+    assert.ok(cards[0].properties.title.includes('Marathons'));
+  });
+
+  it('profile falls back to defaults when no contentHints', () => {
+    const result = generateScreen('user profile', 393, 852, 'wireframe');
+    const texts = result.elements.filter(el => el.type === 'text');
+    const nameText = texts.find(t => t.properties.fontSize === 20);
+    assert.equal(nameText.properties.content, 'Jane Doe');
+  });
+
+  it('onboarding uses contentHints for headline and subtitle', () => {
+    const result = generateScreen(
+      'onboarding for fitness tracker, track your daily steps',
+      393, 852, 'wireframe'
+    );
+    const texts = result.elements.filter(el => el.type === 'text');
+    const headline = texts.find(t => t.properties.fontSize === 22);
+    assert.ok(headline.properties.content.includes('Fitness'));
+  });
+
+  it('onboarding falls back to defaults when no contentHints', () => {
+    const result = generateScreen('welcome onboarding', 393, 852, 'wireframe');
+    const texts = result.elements.filter(el => el.type === 'text');
+    const headline = texts.find(t => t.properties.fontSize === 22);
+    assert.equal(headline.properties.content, 'Welcome to MockupMCP');
+  });
+
+  it('dashboard template includes tabbar by default', () => {
+    const result = generateScreen('dashboard screen', 393, 852, 'wireframe');
+    const tabbar = result.elements.find(el => el.type === 'tabbar');
+    assert.ok(tabbar, 'dashboard should include tabbar');
+    assert.equal(tabbar.y, 852 - 56);
+    assert.equal(tabbar.z_index, 10);
   });
 });

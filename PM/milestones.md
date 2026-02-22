@@ -121,3 +121,28 @@
 - [x] README.md — quick start, tools reference, resources, configuration
 - [x] Docker E2E tests — HTTP transport, resources, preview server (RUN_E2E=1)
 - [x] All unit tests pass (588)
+
+## Content Hints (incremental)
+**Status:** DONE
+**Branch:** `feature/m7-sidebar-tabbar` (prior commits)
+**Scope:** All 7 templates accept contentHints param, parseDescription extracts hints from description
+**DoD:**
+- [x] parseDescription returns contentHints array
+- [x] All 7 templates use contentHints with fallback defaults
+- [x] 611 tests pass
+
+## M7 — Sidebar Navigation + Tabbar Fix
+**Status:** DONE
+**Branch:** `feature/m7-sidebar-tabbar`
+**Scope:** Collapsible sidebar in preview pages, tabbar generation fix, landing page
+**DoD:**
+- [x] augmentElements adds tabbar when keyword present (dedup-safe)
+- [x] Dashboard template includes tabbar by default
+- [x] GET /api/projects endpoint (JSON tree: projects + screens)
+- [x] Collapsible sidebar injected in every preview page (260px, localStorage persistence)
+- [x] Landing page at /preview with sidebar + placeholder
+- [x] GET / redirects to /preview
+- [x] SPA navigation from sidebar (uses swapScreen when available)
+- [x] Auto-refresh project tree every 3s
+- [x] Mobile responsive (overlay mode)
+- [x] 621 tests pass (10 new, 0 failures)

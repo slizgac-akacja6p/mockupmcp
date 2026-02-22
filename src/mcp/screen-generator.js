@@ -31,10 +31,19 @@ const STOP_WORDS = new Set([
   'screen', 'page', 'view', 'app', 'application', 'ui',
 ]);
 
+// Union of all known domain vocabulary — used to isolate content-specific phrases.
+// Words that survive this filter are semantic data hints, not structural keywords.
+const ALL_KNOWN_KEYWORDS = new Set([
+  ...STOP_WORDS,
+  ...SCREEN_KEYWORDS,
+  ...COMPONENT_KEYWORDS,
+  ...MODIFIER_KEYWORDS.flatMap(m => m.split(' ')),
+]);
+
 /**
  * Parse a natural language description into categorized keywords.
  * @param {string} description - Free-text screen description.
- * @returns {{ screenKeywords: string[], componentKeywords: string[], modifierKeywords: string[], nameHint: string, tokens: string[] }}
+ * @returns {{ screenKeywords: string[], componentKeywords: string[], modifierKeywords: string[], nameHint: string, tokens: string[], contentHints: string[] }}
  */
 export function parseDescription(description) {
   const lower = description.toLowerCase();
@@ -57,7 +66,27 @@ export function parseDescription(description) {
     .slice(0, 2);
   const nameHint = nameWords.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') || 'Generated Screen';
 
-  return { screenKeywords, componentKeywords, modifierKeywords, nameHint, tokens };
+  // Extract content hints — semantic phrases from description segments.
+  // Split on commas and "and" conjunctions to isolate per-metric phrases,
+  // then strip all known structural vocabulary to surface data-specific words.
+  const segments = description
+    .split(/,|\band\b/)
+    .map(seg => seg.trim())
+    .filter(Boolean);
+
+  const contentHints = segments
+    .map(seg =>
+      seg
+        .replace(/[^a-zA-Z0-9\s]/g, '')
+        .split(/\s+/)
+        .filter(w => !ALL_KNOWN_KEYWORDS.has(w.toLowerCase()))
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(' ')
+        .trim()
+    )
+    .filter(h => h.length > 0);
+
+  return { screenKeywords, componentKeywords, modifierKeywords, nameHint, tokens, contentHints };
 }
 
 // Template keyword profiles with weights.
@@ -207,6 +236,26 @@ export function augmentElements(elements, parsed, screenWidth, screenHeight) {
     });
   }
 
+  // Tabbar is pinned at the bottom — skip addIfFits height check since z_index >= 10 elements
+  // are excluded from auto-layout and always render at their absolute position.
+  if (parsed.componentKeywords.includes('tabbar') && !existingTypes.has('tabbar')) {
+    result.push({
+      type: 'tabbar',
+      x: 0,
+      y: screenHeight - 56,
+      width: screenWidth,
+      height: 56,
+      z_index: 10,
+      properties: {
+        tabs: [
+          { icon: 'home', label: 'Home', active: true },
+          { icon: 'search', label: 'Search' },
+          { icon: 'user', label: 'Profile' },
+        ],
+      },
+    });
+  }
+
   return result;
 }
 
@@ -228,7 +277,7 @@ export function generateScreen(description, screenWidth, screenHeight, style) {
   if (match.template) {
     // Use matched template
     const template = getTemplate(match.template);
-    elements = template.generate(screenWidth, screenHeight, style);
+    elements = template.generate(screenWidth, screenHeight, style, parsed.contentHints);
   } else {
     // Fallback: basic screen with navbar + description text so the user sees
     // something meaningful instead of an empty canvas.
@@ -237,7 +286,7 @@ export function generateScreen(description, screenWidth, screenHeight, style) {
       {
         type: 'navbar', x: 0, y: 0,
         width: screenWidth, height: 56, z_index: 10,
-        properties: { title: parsed.nameHint },
+        properties: { title: parsed.contentHints[0] || parsed.nameHint },
       },
       {
         type: 'text', x: pad, y: 80,
