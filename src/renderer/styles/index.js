@@ -7,7 +7,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 // Warm cache on load to avoid repeated disk reads during rendering
 const cache = {};
 
-const VALID_STYLES = ['wireframe', 'material', 'ios'];
+const VALID_STYLES = ['wireframe', 'material', 'ios', 'blueprint', 'flat', 'hand-drawn'];
 
 export function loadStyle(name) {
   const styleName = VALID_STYLES.includes(name) ? name : 'wireframe';
