@@ -39,7 +39,9 @@ export function buildScreenHtml(screen, style = 'wireframe') {
   <meta charset="utf-8">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    /* Body dimensions constrain Puppeteer viewport to screen size (no gray bleed).
+       In browser preview, PREVIEW_STYLE overrides body layout — this is intentional. */
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; width: ${screen.width}px; height: ${screen.height}px; overflow: hidden; margin: 0; }
     ${css}
   </style>
 </head>

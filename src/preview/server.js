@@ -228,6 +228,9 @@ const SIDEBAR_JS = `
   var tree = document.getElementById('mockup-sidebar-tree');
   if (!sidebar) return;
 
+  // Track which projects are manually expanded so loadTree can restore state
+  // across periodic re-renders without losing user's expand/collapse choices.
+  var expandedProjects = new Set();
   var collapsed = localStorage.getItem('mockup-sidebar-collapsed') === '1';
   if (collapsed) { sidebar.classList.add('collapsed'); document.body.classList.add('sidebar-collapsed'); toggle.textContent = '\\u203a'; }
 
@@ -252,16 +255,19 @@ const SIDEBAR_JS = `
 
   function loadTree() {
     fetch('/api/projects').then(function(res) { return res.json(); }).then(function(projects) {
+      // Read scroll right before DOM write so it reflects the latest position
+      var scrollTop = sidebar.scrollTop;
       var active = getActivePath();
       var items = [];
       for (var i = 0; i < projects.length; i++) {
         var proj = projects[i];
         var isActiveProj = proj.id === active.projectId;
+        var isExpanded = isActiveProj || expandedProjects.has(proj.id) || projects.length === 1;
         items.push('<div class="mockup-sidebar-project">');
         items.push('<div class="mockup-sidebar-project-name" data-proj="' + proj.id + '">');
-        items.push('<span class="arrow' + (isActiveProj ? ' open' : '') + '">\\u25b6</span> ' + escName(proj.name));
+        items.push('<span class="arrow' + (isExpanded ? ' open' : '') + '">\\u25b6</span> ' + escName(proj.name));
         items.push('</div>');
-        if (isActiveProj || projects.length === 1) {
+        if (isExpanded) {
           for (var j = 0; j < proj.screens.length; j++) {
             var scr = proj.screens[j];
             var cls = scr.id === active.screenId ? ' active' : '';
@@ -271,34 +277,22 @@ const SIDEBAR_JS = `
         items.push('</div>');
       }
       tree.innerHTML = items.join('');
+      sidebar.scrollTop = scrollTop;
     }).catch(function() {});
   }
 
   tree.addEventListener('click', function(e) {
     var projName = e.target.closest('.mockup-sidebar-project-name');
     if (projName) {
-      var arrow = projName.querySelector('.arrow');
-      var proj = projName.closest('.mockup-sidebar-project');
-      var screens = proj.querySelectorAll('.mockup-sidebar-screen');
-      if (screens.length) {
-        var hidden = screens[0].style.display === 'none';
-        screens.forEach(function(s) { s.style.display = hidden ? '' : 'none'; });
-        arrow.classList.toggle('open', hidden);
+      var projId = projName.dataset.proj;
+      // Toggle membership in the expanded set, then re-render via loadTree
+      // so expand state is consistent with the periodic refresh path.
+      if (expandedProjects.has(projId)) {
+        expandedProjects.delete(projId);
       } else {
-        arrow.classList.toggle('open');
-        fetch('/api/projects').then(function(r) { return r.json(); }).then(function(projects) {
-          var p = projects.find(function(pp) { return pp.id === projName.dataset.proj; });
-          if (!p) return;
-          var scrHtml = '';
-          var active = getActivePath();
-          for (var k = 0; k < p.screens.length; k++) {
-            var scr = p.screens[k];
-            var cls = scr.id === active.screenId ? ' active' : '';
-            scrHtml += '<a class="mockup-sidebar-screen' + cls + '" href="/preview/' + p.id + '/' + scr.id + '">' + escName(scr.name) + '</a>';
-          }
-          projName.insertAdjacentHTML('afterend', scrHtml);
-        });
+        expandedProjects.add(projId);
       }
+      loadTree();
       return;
     }
     var link = e.target.closest('.mockup-sidebar-screen');

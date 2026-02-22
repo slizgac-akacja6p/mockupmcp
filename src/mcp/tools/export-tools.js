@@ -8,7 +8,7 @@ import { getGenerator, getAvailableFrameworks } from '../../codegen/index.js';
 export function registerExportTools(server, store) {
   server.tool(
     'mockup_export',
-    'Export a screen as PNG, SVG, or PDF. Returns the file path and inline content.',
+    'Export a screen as PNG, SVG, or PDF. Each export renders via Puppeteer (~400ms). For iterating on layouts, prefer mockup_get_preview_url for instant browser preview. Returns the file path and inline content.',
     {
       project_id: z.string().describe('Project ID'),
       screen_id: z.string().describe('Screen ID to export'),

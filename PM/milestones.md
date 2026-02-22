@@ -170,5 +170,20 @@
 - [x] ESM loader mock for Puppeteer-free testing
 - [x] 767 tests pass (17 new)
 
+## M10 — Preview + Performance Bugfixes
+**Status:** DONE
+**Branch:** `fix/m10-preview-perf`
+**PR:** #15 → develop
+**Scope:** Bugs from first real-world usage (MGGS Audiobook Maker): screenshot shadow, sidebar dedup/scroll, tool perf guidance
+**Tasks:** `PM/tasks/M10.md`
+**DoD:**
+- [x] Body CSS constrains Puppeteer viewport to screen size (no gray bleed)
+- [x] Sidebar: expandedProjects Set for persistent expand/collapse state
+- [x] Sidebar: scrollTop preserved across 3s polling refreshes
+- [x] Sidebar: no duplicate screens on repeated clicks (insertAdjacentHTML removed)
+- [x] Tool descriptions: performance hints for batch vs individual operations
+- [x] 768 tests pass (767 existing + 1 new)
+- [x] Docker verified: PNG clean, sidebar functional, tools/list updated
+
 ## PRD Completion
 **All PRD items implemented.** 25 tools, 5 resources, 3 prompts, 6 styles, 35 components, 7 templates.

@@ -4,7 +4,7 @@ import { getTemplate, getAvailableTemplates } from '../../renderer/templates/ind
 export function registerTemplateTools(server, store) {
   server.tool(
     'mockup_apply_template',
-    'Apply a preset template to a screen. Replaces all existing elements by default. Templates: login, dashboard, settings, list, form, profile, onboarding',
+    'Apply a preset template to a screen in a single call (10x faster than individual mockup_add_element). Replaces all existing elements by default. Templates: login, dashboard, settings, list, form, profile, onboarding',
     {
       project_id: z.string().describe('Project ID'),
       screen_id: z.string().describe('Screen ID to apply template to'),
