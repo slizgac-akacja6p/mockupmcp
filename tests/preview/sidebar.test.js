@@ -162,3 +162,41 @@ describe('landing page', () => {
     assert.equal(res.headers.location, '/preview');
   });
 });
+
+describe('sidebar + screen preview integration', () => {
+  let tmpDir, server, port, origDataDir;
+
+  beforeEach(async () => {
+    tmpDir = mkdtempSync(join(tmpdir(), 'preview-integ-'));
+    origDataDir = config.dataDir;
+    config.dataDir = tmpDir;
+
+    const store = new ProjectStore(tmpDir);
+    await store.init();
+
+    const project = await store.createProject('Integ Project', 'desc', { width: 393, height: 852, preset: 'mobile' });
+    await store.addScreen(project.id, 'Main Screen', 393, 852, '#fff');
+
+    port = 3400 + Math.floor(Math.random() * 1000);
+    server = startPreviewServer(port);
+    await new Promise(r => setTimeout(r, 100));
+  });
+
+  afterEach(() => {
+    config.dataDir = origDataDir;
+    server.close();
+    rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it('navigating to a screen shows both sidebar and mockup content', async () => {
+    const res = await get(port, '/api/projects');
+    const projects = JSON.parse(res.body);
+    const proj = projects[0];
+    const screen = proj.screens[0];
+    const previewRes = await get(port, `/preview/${proj.id}/${screen.id}`);
+    assert.equal(previewRes.status, 200);
+    // Both sidebar and screen content present
+    assert.ok(previewRes.body.includes('mockup-sidebar'));
+    assert.ok(previewRes.body.includes('class="screen"'));
+  });
+});
