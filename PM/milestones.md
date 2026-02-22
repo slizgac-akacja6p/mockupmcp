@@ -185,5 +185,21 @@
 - [x] 768 tests pass (767 existing + 1 new)
 - [x] Docker verified: PNG clean, sidebar functional, tools/list updated
 
+## M11 — Folder-Based Navigation
+**Status:** DONE
+**Branch:** `feature/m11-folder-nav`
+**Scope:** Hierarchical folder organization for projects — disk folders = sidebar tree, nested subfolders, auto-redirect on delete
+**Tasks:** `PM/tasks/M11.md`
+**DoD:**
+- [x] Folder scanner utility (recursive discovery, exclude exports/hidden)
+- [x] ProjectStore refactor: _pathIndex Map, _buildIndex, createProject(folder), listProjectsTree()
+- [x] Preview API returns nested tree { folders, projects }
+- [x] Sidebar renders folders with expand/collapse, depth indentation
+- [x] 404 auto-redirect to landing when project deleted
+- [x] MCP mockup_create_project accepts optional folder param
+- [x] Path traversal protection on folder param
+- [x] Backward compat: legacy projects/ subdir still discovered
+- [x] 796 tests pass (768 → 796, +28 new)
+
 ## PRD Completion
 **All PRD items implemented.** 25 tools, 5 resources, 3 prompts, 6 styles, 35 components, 7 templates.
