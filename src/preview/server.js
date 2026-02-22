@@ -136,7 +136,7 @@ const LINK_SCRIPT = `
       history.replaceState({ projectId: parts[2], screenId: parts[3], transition: 'push' }, '');
     }
   })();
-</script>`;
+<\/script>`;
 
 // Fixed back button lets designers navigate the flow history without browser chrome.
 const BACK_BUTTON = `
@@ -149,17 +149,19 @@ const BACK_BUTTON = `
 function buildReloadScript(projectId, updatedAt) {
   // Polling rather than WebSockets keeps the server stateless and avoids
   // connection management across MCP tool calls that mutate project data.
+  // Redirect to /preview when the project has been deleted (404 response).
   return `
 <script>
   let lastMod = '${updatedAt}';
   setInterval(async () => {
     try {
       const r = await fetch('/api/lastmod/${projectId}');
+      if (r.status === 404) { window.location.href = '/preview'; return; }
       const data = await r.json();
       if (data.updated_at !== lastMod) location.reload();
     } catch (_) {}
   }, 2000);
-</script>`;
+<\/script>`;
 }
 
 // Sidebar: left panel showing project tree with collapsible navigation.
@@ -193,6 +195,14 @@ const SIDEBAR_CSS = `
   .mockup-sidebar-project-name:hover { background: #e8e8e8; }
   .mockup-sidebar-project-name .arrow { font-size: 10px; transition: transform 0.2s; }
   .mockup-sidebar-project-name .arrow.open { transform: rotate(90deg); }
+  .mockup-sidebar-folder { padding: 2px 0; }
+  .mockup-sidebar-folder-name {
+    padding: 6px 12px; font-weight: 600; cursor: pointer; display: flex;
+    align-items: center; gap: 6px; color: #666;
+  }
+  .mockup-sidebar-folder-name:hover { background: #e8e8e8; }
+  .mockup-sidebar-folder-name .arrow { font-size: 10px; transition: transform 0.2s; }
+  .mockup-sidebar-folder-name .arrow.open { transform: rotate(90deg); }
   .mockup-sidebar-screen {
     padding: 5px 12px 5px 28px; cursor: pointer; text-decoration: none;
     display: block; color: #555; border-radius: 4px; margin: 1px 8px;
@@ -218,8 +228,8 @@ const SIDEBAR_HTML = `
 </div>`;
 
 // Sidebar client-side JS: fetches project tree from /api/projects, handles
-// collapse/expand, highlights active screen, auto-refreshes every 3s.
-// Uses trusted server-rendered data only (no user input in DOM writes).
+// folder expand/collapse, highlights active screen, auto-refreshes every 3s.
+// All HTML is built server-side from trusted data; tree.innerHTML is safe here.
 const SIDEBAR_JS = `
 <script>
 (function() {
@@ -228,9 +238,9 @@ const SIDEBAR_JS = `
   var tree = document.getElementById('mockup-sidebar-tree');
   if (!sidebar) return;
 
-  // Track which projects are manually expanded so loadTree can restore state
-  // across periodic re-renders without losing user's expand/collapse choices.
-  var expandedProjects = new Set();
+  // expandedNodes tracks both folder paths and project IDs so collapse/expand
+  // state survives the periodic 3s re-render without losing user choices.
+  var expandedNodes = new Set();
   var collapsed = localStorage.getItem('mockup-sidebar-collapsed') === '1';
   if (collapsed) { sidebar.classList.add('collapsed'); document.body.classList.add('sidebar-collapsed'); toggle.textContent = '\\u203a'; }
 
@@ -253,44 +263,109 @@ const SIDEBAR_JS = `
 
   function escName(s) { var d = document.createElement('div'); d.textContent = s; return d.textContent; }
 
+  // Walk the tree to find ancestor folder paths for the active project so we
+  // can auto-expand them on first load without user interaction.
+  function findActiveProjectPath(node, activeProjId) {
+    for (var i = 0; i < node.projects.length; i++) {
+      if (node.projects[i].id === activeProjId) return [];
+    }
+    for (var j = 0; j < node.folders.length; j++) {
+      var sub = findActiveProjectPath(node.folders[j], activeProjId);
+      if (sub !== null) return [node.folders[j].path].concat(sub);
+    }
+    return null;
+  }
+
+  function countProjects(node) {
+    var count = node.projects.length;
+    for (var i = 0; i < node.folders.length; i++) {
+      count += countProjects(node.folders[i]);
+    }
+    return count;
+  }
+
+  function renderNode(node, depth, items, active, singleRoot) {
+    // Render folders before projects so hierarchy is visually grouped.
+    for (var i = 0; i < node.folders.length; i++) {
+      var folder = node.folders[i];
+      var isFolderExpanded = expandedNodes.has(folder.path);
+      var pad = 12 + depth * 16;
+      items.push('<div class="mockup-sidebar-folder">');
+      items.push('<div class="mockup-sidebar-folder-name" data-folder-path="' + escName(folder.path) + '" style="padding-left:' + pad + 'px">');
+      items.push('<span class="arrow' + (isFolderExpanded ? ' open' : '') + '">\\u25b6<\\/span> ' + escName(folder.name));
+      items.push('<\\/div>');
+      if (isFolderExpanded) {
+        renderNode(folder, depth + 1, items, active, false);
+      }
+      items.push('<\\/div>');
+    }
+    for (var j = 0; j < node.projects.length; j++) {
+      var proj = node.projects[j];
+      var isActiveProj = proj.id === active.projectId;
+      var isProjExpanded = isActiveProj || expandedNodes.has(proj.id) || singleRoot;
+      var projPad = 12 + depth * 16;
+      items.push('<div class="mockup-sidebar-project">');
+      items.push('<div class="mockup-sidebar-project-name" data-proj="' + proj.id + '" style="padding-left:' + projPad + 'px">');
+      items.push('<span class="arrow' + (isProjExpanded ? ' open' : '') + '">\\u25b6<\\/span> ' + escName(proj.name));
+      items.push('<\\/div>');
+      if (isProjExpanded) {
+        var screenPad = 12 + (depth + 1) * 16;
+        for (var k = 0; k < proj.screens.length; k++) {
+          var scr = proj.screens[k];
+          var cls = scr.id === active.screenId ? ' active' : '';
+          items.push('<a class="mockup-sidebar-screen' + cls + '" href="\\/preview\\/' + proj.id + '\\/' + scr.id + '" style="padding-left:' + screenPad + 'px">' + escName(scr.name) + '<\\/a>');
+        }
+      }
+      items.push('<\\/div>');
+    }
+  }
+
   function loadTree() {
-    fetch('/api/projects').then(function(res) { return res.json(); }).then(function(projects) {
-      // Read scroll right before DOM write so it reflects the latest position
+    fetch('/api/projects').then(function(res) { return res.json(); }).then(function(data) {
+      // Read scroll right before DOM write so it reflects the latest position.
       var scrollTop = sidebar.scrollTop;
       var active = getActivePath();
-      var items = [];
-      for (var i = 0; i < projects.length; i++) {
-        var proj = projects[i];
-        var isActiveProj = proj.id === active.projectId;
-        var isExpanded = isActiveProj || expandedProjects.has(proj.id) || projects.length === 1;
-        items.push('<div class="mockup-sidebar-project">');
-        items.push('<div class="mockup-sidebar-project-name" data-proj="' + proj.id + '">');
-        items.push('<span class="arrow' + (isExpanded ? ' open' : '') + '">\\u25b6</span> ' + escName(proj.name));
-        items.push('</div>');
-        if (isExpanded) {
-          for (var j = 0; j < proj.screens.length; j++) {
-            var scr = proj.screens[j];
-            var cls = scr.id === active.screenId ? ' active' : '';
-            items.push('<a class="mockup-sidebar-screen' + cls + '" href="/preview/' + proj.id + '/' + scr.id + '">' + escName(scr.name) + '</a>');
+
+      // Auto-expand folder ancestors of the currently viewed project on load.
+      if (active.projectId) {
+        var activePath = findActiveProjectPath(data, active.projectId);
+        if (activePath) {
+          for (var a = 0; a < activePath.length; a++) {
+            expandedNodes.add(activePath[a]);
           }
         }
-        items.push('</div>');
       }
+
+      var totalProjects = countProjects(data);
+      var singleRoot = totalProjects === 1;
+      var items = [];
+      renderNode(data, 0, items, active, singleRoot);
       tree.innerHTML = items.join('');
       sidebar.scrollTop = scrollTop;
     }).catch(function() {});
   }
 
   tree.addEventListener('click', function(e) {
+    var folderName = e.target.closest('.mockup-sidebar-folder-name');
+    if (folderName) {
+      var folderPath = folderName.dataset.folderPath;
+      if (expandedNodes.has(folderPath)) {
+        expandedNodes.delete(folderPath);
+      } else {
+        expandedNodes.add(folderPath);
+      }
+      loadTree();
+      return;
+    }
     var projName = e.target.closest('.mockup-sidebar-project-name');
     if (projName) {
       var projId = projName.dataset.proj;
       // Toggle membership in the expanded set, then re-render via loadTree
       // so expand state is consistent with the periodic refresh path.
-      if (expandedProjects.has(projId)) {
-        expandedProjects.delete(projId);
+      if (expandedNodes.has(projId)) {
+        expandedNodes.delete(projId);
       } else {
-        expandedProjects.add(projId);
+        expandedNodes.add(projId);
       }
       loadTree();
       return;
@@ -314,7 +389,7 @@ const SIDEBAR_JS = `
   loadTree();
   setInterval(loadTree, 3000);
 })();
-</script>`;
+<\/script>`;
 
 function injectPreviewAssets(html, projectId, updatedAt) {
   // buildScreenHtml returns a full HTML document, so we inject into it
@@ -355,6 +430,7 @@ function buildLandingPage() {
 </body>
 </html>`;
 }
+
 
 export function startPreviewServer(port = config.previewPort) {
   const app = express();
@@ -417,18 +493,9 @@ export function startPreviewServer(port = config.previewPort) {
   app.get('/api/projects', async (_req, res) => {
     try {
       const projectStore = new ProjectStore(config.dataDir);
-      const projects = await projectStore.listProjects();
-      const result = [];
-      for (const proj of projects) {
-        const full = await projectStore.getProject(proj.id);
-        result.push({
-          id: full.id,
-          name: full.name,
-          style: full.style,
-          screens: (full.screens || []).map(s => ({ id: s.id, name: s.name })),
-        });
-      }
-      res.json(result);
+      await projectStore.init();
+      const tree = await projectStore.listProjectsTree();
+      res.json(tree);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }

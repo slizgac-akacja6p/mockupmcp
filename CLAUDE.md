@@ -7,7 +7,7 @@ Dockerized MCP server for creating UI mockups from Claude Code. JSON mockup defi
 | Command | Description |
 |---------|-------------|
 | `npm start` | Start MCP server (stdio mode) |
-| `npm test` | Run all tests (768 tests, Node.js built-in runner) |
+| `npm test` | Run all tests (796 tests, Node.js built-in runner) |
 | `node --test tests/renderer/*.test.js` | Run renderer tests only |
 | `RUN_E2E=1 npm test` | Run including E2E tests (requires running Docker container) |
 | `docker build -t mockupmcp:latest .` | Build Docker image |
@@ -45,7 +45,8 @@ src/
       layout-tools.js   # Auto-layout (1)
       template-tools.js # Screen templates (2)
   storage/
-    project-store.js    # JSON file CRUD
+    project-store.js    # JSON file CRUD with folder-aware index
+    folder-scanner.js   # Recursive project file discovery
     id-generator.js     # nanoid prefixed IDs
   renderer/
     html-builder.js     # Screen JSON → HTML string
@@ -87,9 +88,11 @@ tests/
 - **Layout engine:** `z_index >= 10` = pinned element (excluded from auto-layout)
 - **E2E tests:** gated with `RUN_E2E=1` env var (Docker available != container running)
 - **Docker image:** ~900MB (Chromium makes <500MB unrealistic)
-- **ProjectStore:** uses `mkdirSync` with `recursive:true` in constructor for fresh volumes
+- **ProjectStore:** folder-aware — `_pathIndex` Map scans dataDir recursively via `folder-scanner.js`; `createProject(folder)` param validates against path traversal
+- **ProjectStore:** `_buildIndex()` reads all project files on each `listProjects`/`listProjectsTree` call — acceptable for small deployments
 - **Body CSS:** `html-builder.js` body has width/height/overflow — effective only in Puppeteer; PREVIEW_STYLE overrides in browser preview (by design)
-- **Sidebar state:** `expandedProjects` Set + `scrollTop` save/restore survive 3s polling; do NOT use `insertAdjacentHTML` for expand (causes duplication)
+- **Sidebar state:** `expandedNodes` Set (folder paths + project IDs) + `scrollTop` save/restore survive 3s polling; recursive `renderNode` for folder tree
+- **Sidebar API:** `/api/projects` returns `{ folders: [...], projects: [...] }` tree (not flat array)
 
 ## Git
 

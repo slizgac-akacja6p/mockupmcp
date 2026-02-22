@@ -1,28 +1,60 @@
-import { readFile, writeFile, rename, mkdir, readdir, unlink, rm } from 'fs/promises';
+import { readFile, writeFile, rename, mkdir, unlink, rm } from 'fs/promises';
 import { mkdirSync } from 'fs';
-import { join } from 'path';
+import { join, dirname, relative, sep } from 'path';
 import { generateId, validateId } from './id-generator.js';
+import { scanProjectFiles } from './folder-scanner.js';
 
 export class ProjectStore {
   constructor(dataDir) {
     this.dataDir = dataDir;
-    this.projectsDir = join(dataDir, 'projects');
     this.exportsDir = join(dataDir, 'exports');
 
-    // Auto-create subdirectories on construction.
-    mkdirSync(this.projectsDir, { recursive: true });
+    // In-memory index: projectId → relativePath (from dataDir).
+    // Populated by _buildIndex() during init() and kept current on each write/delete.
+    this._pathIndex = new Map();
+
+    // Auto-create exports directory on construction so callers don't have to await init().
     mkdirSync(this.exportsDir, { recursive: true });
   }
 
   async init() {
-    await mkdir(this.projectsDir, { recursive: true });
     await mkdir(this.exportsDir, { recursive: true });
+    await this._buildIndex();
   }
 
   // --- Internal helpers ---
 
+  // Scan dataDir for all proj_*.json files and populate the in-memory path index.
+  async _buildIndex() {
+    this._pathIndex.clear();
+    const files = await scanProjectFiles(this.dataDir);
+    for (const { relativePath, absolutePath } of files) {
+      try {
+        const raw = await readFile(absolutePath, 'utf-8');
+        const data = JSON.parse(raw);
+        if (data.id && data.id.startsWith('proj_')) {
+          this._pathIndex.set(data.id, relativePath);
+        }
+      } catch (err) {
+        // Skip unreadable/invalid files but log for diagnostics.
+        console.error(`[ProjectStore] Skipping ${absolutePath}: ${err.message}`);
+      }
+    }
+  }
+
+  // Returns the absolute path for a project that is already in the index, or null.
+  _resolvePath(projectId) {
+    const rel = this._pathIndex.get(projectId);
+    if (rel) return join(this.dataDir, rel);
+    return null;
+  }
+
+  // Returns the absolute path for a project.
+  // Falls back to dataDir root for projects not yet in the index (i.e., brand-new).
   _path(projectId) {
-    return join(this.projectsDir, `${projectId}.json`);
+    const resolved = this._resolvePath(projectId);
+    if (resolved) return resolved;
+    return join(this.dataDir, `${projectId}.json`);
   }
 
   // Prevents path traversal attacks by requiring the standard ID format.
@@ -41,17 +73,20 @@ export class ProjectStore {
   }
 
   // Atomic write: write to a temp file first, then rename to avoid partial writes on crash.
+  // Also ensures the target directory exists and keeps the path index current.
   async _save(project) {
     project.updated_at = new Date().toISOString();
     const filePath = this._path(project.id);
+    await mkdir(dirname(filePath), { recursive: true });
     const tmpPath = `${filePath}.tmp`;
     await writeFile(tmpPath, JSON.stringify(project, null, 2), 'utf-8');
     await rename(tmpPath, filePath);
+    this._pathIndex.set(project.id, relative(this.dataDir, filePath));
   }
 
   // --- Project methods ---
 
-  async createProject(name, description = '', viewport = { width: 393, height: 852, preset: 'mobile' }, style = 'wireframe') {
+  async createProject(name, description = '', viewport = { width: 393, height: 852, preset: 'mobile' }, style = 'wireframe', folder = null) {
     const id = generateId('proj');
     const now = new Date().toISOString();
     const project = {
@@ -64,59 +99,129 @@ export class ProjectStore {
       viewport,
       screens: [],
     };
+
+    if (folder) {
+      const resolvedFolder = join(this.dataDir, folder);
+      // Prevent path traversal outside dataDir (e.g. folder = "../../etc").
+      if (!resolvedFolder.startsWith(this.dataDir + sep) && resolvedFolder !== this.dataDir) {
+        throw new Error(`Invalid folder path: "${folder}"`);
+      }
+      // Pre-register the index entry so _path() resolves to the correct subfolder.
+      const relPath = join(folder, `${id}.json`);
+      this._pathIndex.set(id, relPath);
+    }
+
     await this._save(project);
     return project;
   }
 
   async getProject(projectId) {
     this._validateId(projectId);
+    let filePath = this._path(projectId);
     let raw;
     try {
-      raw = await readFile(this._path(projectId), 'utf-8');
+      raw = await readFile(filePath, 'utf-8');
     } catch (err) {
       if (err.code === 'ENOENT') {
-        throw new Error(`Project ${projectId} not found`);
+        // Lazy rebuild: the file may have been added or moved since the last index build.
+        await this._buildIndex();
+        filePath = this._path(projectId);
+        try {
+          raw = await readFile(filePath, 'utf-8');
+        } catch (err2) {
+          if (err2.code === 'ENOENT') throw new Error(`Project ${projectId} not found`);
+          throw err2;
+        }
+      } else {
+        throw err;
       }
-      throw err;
     }
     return JSON.parse(raw);
   }
 
   async listProjects() {
-    let files;
-    try {
-      files = await readdir(this.projectsDir);
-    } catch {
-      // Directory doesn't exist yet — return empty list rather than crashing.
-      return [];
+    // Always rebuild before listing so callers see files added outside the store.
+    await this._buildIndex();
+    const summaries = [];
+    for (const [projectId, relPath] of this._pathIndex) {
+      try {
+        const raw = await readFile(join(this.dataDir, relPath), 'utf-8');
+        const project = JSON.parse(raw);
+        // Derive folder from the relative path: everything except the filename.
+        const pathParts = relPath.split('/');
+        const folder = pathParts.length > 1 ? pathParts.slice(0, -1).join('/') : null;
+        summaries.push({
+          id: project.id,
+          name: project.name,
+          screens: project.screens.length,
+          updated_at: project.updated_at,
+          folder,
+        });
+      } catch {
+        // Skip files that have become unreadable since the index was built.
+      }
     }
-    const summaries = await Promise.all(
-      files
-        .filter((f) => f.endsWith('.json'))
-        .map(async (f) => {
-          const projectId = f.slice(0, -5); // strip .json
-          const project = await this.getProject(projectId);
-          return {
-            id: project.id,
-            name: project.name,
-            screens: project.screens.length,
-            updated_at: project.updated_at,
-          };
-        })
-    );
     return summaries;
+  }
+
+  // Returns the full project hierarchy as a nested tree of folders and projects.
+  // Each node: { folders: [...], projects: [...] }
+  // Each project entry: { id, name, style, screens: [{ id, name }] }
+  async listProjectsTree() {
+    await this._buildIndex();
+    const root = { folders: [], projects: [] };
+
+    for (const [, relPath] of this._pathIndex) {
+      try {
+        const raw = await readFile(join(this.dataDir, relPath), 'utf-8');
+        const project = JSON.parse(raw);
+        const parts = relPath.split('/');
+
+        const projectEntry = {
+          id: project.id,
+          name: project.name,
+          style: project.style,
+          screens: (project.screens || []).map((s) => ({ id: s.id, name: s.name })),
+        };
+
+        if (parts.length === 1) {
+          root.projects.push(projectEntry);
+        } else {
+          // Walk (or create) folder nodes to place the project in the right subtree.
+          let current = root;
+          const folderParts = parts.slice(0, -1);
+          let pathSoFar = '';
+          for (const folderName of folderParts) {
+            pathSoFar = pathSoFar ? pathSoFar + '/' + folderName : folderName;
+            let folder = current.folders.find((f) => f.name === folderName);
+            if (!folder) {
+              folder = { name: folderName, path: pathSoFar, folders: [], projects: [] };
+              current.folders.push(folder);
+            }
+            current = folder;
+          }
+          current.projects.push(projectEntry);
+        }
+      } catch {
+        // Skip unreadable files.
+      }
+    }
+
+    return root;
   }
 
   async deleteProject(projectId) {
     this._validateId(projectId);
+    const filePath = this._path(projectId);
     try {
-      await unlink(this._path(projectId));
+      await unlink(filePath);
     } catch (err) {
       if (err.code === 'ENOENT') {
         throw new Error(`Project ${projectId} not found`);
       }
       throw err;
     }
+    this._pathIndex.delete(projectId);
     // Clean up exported screenshots for this project.
     const exportDir = join(this.exportsDir, projectId);
     await rm(exportDir, { recursive: true, force: true }).catch(() => {});
@@ -176,7 +281,7 @@ export class ProjectStore {
       ...structuredClone(source),
       id: generateId('scr'),
       name: newName || `${source.name} (copy)`,
-      elements: source.elements.map(el => ({
+      elements: source.elements.map((el) => ({
         ...structuredClone(el),
         id: generateId('el'),
       })),
@@ -193,7 +298,7 @@ export class ProjectStore {
     const screen = this._findScreen(project, screenId);
 
     for (const update of updates) {
-      const el = screen.elements.find(e => e.id === update.id);
+      const el = screen.elements.find((e) => e.id === update.id);
       if (!el) continue;
       if (update.x !== undefined) el.x = update.x;
       if (update.y !== undefined) el.y = update.y;
@@ -316,12 +421,12 @@ export class ProjectStore {
     const project = await this.getProject(projectId);
     const screen = this._findScreen(project, screenId);
 
-    const targetExists = project.screens.some(s => s.id === targetScreenId);
+    const targetExists = project.screens.some((s) => s.id === targetScreenId);
     if (!targetExists) {
       throw new Error(`Target screen ${targetScreenId} not found in project ${projectId}`);
     }
 
-    const element = screen.elements.find(e => e.id === elementId);
+    const element = screen.elements.find((e) => e.id === elementId);
     if (!element) {
       throw new Error(`Element ${elementId} not found in screen ${screenId}`);
     }
@@ -336,7 +441,7 @@ export class ProjectStore {
     this._validateId(elementId);
     const project = await this.getProject(projectId);
     const screen = this._findScreen(project, screenId);
-    const element = screen.elements.find(e => e.id === elementId);
+    const element = screen.elements.find((e) => e.id === elementId);
     if (!element) {
       throw new Error(`Element ${elementId} not found in screen ${screenId}`);
     }
@@ -357,7 +462,9 @@ export class ProjectStore {
             from_element: el.id,
             from_element_type: el.type,
             to_screen: el.properties.link_to.screen_id,
-            to_screen_name: project.screens.find(s => s.id === el.properties.link_to.screen_id)?.name || 'Unknown',
+            to_screen_name:
+              project.screens.find((s) => s.id === el.properties.link_to.screen_id)?.name ||
+              'Unknown',
             transition: el.properties.link_to.transition,
           });
         }
@@ -378,7 +485,7 @@ export class ProjectStore {
     }
 
     for (const elId of elementIds) {
-      if (!screen.elements.find(e => e.id === elId)) {
+      if (!screen.elements.find((e) => e.id === elId)) {
         throw new Error(`Element ${elId} not found in screen ${screenId}`);
       }
     }
@@ -401,7 +508,7 @@ export class ProjectStore {
     const screen = this._findScreen(project, screenId);
     if (!screen.groups) throw new Error(`Group ${groupId} not found`);
 
-    const idx = screen.groups.findIndex(g => g.id === groupId);
+    const idx = screen.groups.findIndex((g) => g.id === groupId);
     if (idx === -1) throw new Error(`Group ${groupId} not found in screen ${screenId}`);
 
     screen.groups.splice(idx, 1);
@@ -414,11 +521,11 @@ export class ProjectStore {
     const screen = this._findScreen(project, screenId);
     if (!screen.groups) throw new Error(`Group ${groupId} not found`);
 
-    const group = screen.groups.find(g => g.id === groupId);
+    const group = screen.groups.find((g) => g.id === groupId);
     if (!group) throw new Error(`Group ${groupId} not found in screen ${screenId}`);
 
     for (const elId of group.element_ids) {
-      const el = screen.elements.find(e => e.id === elId);
+      const el = screen.elements.find((e) => e.id === elId);
       if (el) {
         el.x += deltaX;
         el.y += deltaY;
