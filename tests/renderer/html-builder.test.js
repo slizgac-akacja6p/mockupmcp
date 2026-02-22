@@ -76,6 +76,17 @@ describe('buildScreenHtml', () => {
     });
     assert.ok((html.match(/overflow:hidden/g) || []).length >= 2, 'Should have overflow:hidden on screen and element');
   });
+
+  it('sets body width, height, and overflow hidden matching screen dimensions', () => {
+    const html = buildScreenHtml({ width: 375, height: 812, background: '#FFF', elements: [] });
+    assert.ok(html.includes('width: 375px'), 'body should have width matching screen');
+    assert.ok(html.includes('height: 812px'), 'body should have height matching screen');
+    // body style should contain overflow: hidden and margin: 0
+    const bodyMatch = html.match(/body\s*\{[^}]+\}/);
+    assert.ok(bodyMatch, 'should have body style block');
+    assert.ok(bodyMatch[0].includes('overflow: hidden'), 'body should have overflow hidden');
+    assert.ok(bodyMatch[0].includes('margin: 0'), 'body should have margin 0');
+  });
 });
 
 describe('opacity support', () => {

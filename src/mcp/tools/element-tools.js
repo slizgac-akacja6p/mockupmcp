@@ -4,7 +4,7 @@ import { getAvailableTypes } from '../../renderer/components/index.js';
 export function registerElementTools(server, store) {
   server.tool(
     'mockup_add_element',
-    'Add a UI element to a screen. Types: text, rectangle, circle, line, image, icon, avatar, badge, chip, skeleton, progress, tooltip, button, input, textarea, checkbox, radio, toggle, select, slider, navbar, tabbar, sidebar, breadcrumb, card, list, table, alert, modal, login_form, search_bar, header, footer, data_table, chart_placeholder',
+    'Add a single UI element to a screen. For creating full screens, prefer mockup_generate_screen (1 call) or mockup_apply_template (1 call) which are 10x faster than adding elements individually. Types: text, rectangle, circle, line, image, icon, avatar, badge, chip, skeleton, progress, tooltip, button, input, textarea, checkbox, radio, toggle, select, slider, navbar, tabbar, sidebar, breadcrumb, card, list, table, alert, modal, login_form, search_bar, header, footer, data_table, chart_placeholder',
     {
       project_id: z.string().describe('Project ID'),
       screen_id: z.string().describe('Screen ID'),
