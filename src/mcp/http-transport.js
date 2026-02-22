@@ -5,6 +5,7 @@ import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import { createMcpExpressApp } from '@modelcontextprotocol/sdk/server/express.js';
 import { registerAllTools } from './tools/index.js';
 import { registerResources } from './resources.js';
+import { registerPrompts } from './prompts.js';
 
 const MAX_SESSIONS = 10;
 const SESSION_IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
@@ -168,6 +169,7 @@ async function createSession(sessions, store) {
 
   await registerAllTools(server, store);
   await registerResources(server, store);
+  registerPrompts(server, store);
 
   const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: () => randomUUID(),

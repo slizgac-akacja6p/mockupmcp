@@ -146,3 +146,29 @@
 - [x] Auto-refresh project tree every 3s
 - [x] Mobile responsive (overlay mode)
 - [x] 621 tests pass (10 new, 0 failures)
+
+## M8 — Blueprint, Flat, Hand-drawn Styles
+**Status:** DONE
+**Branch:** `feature/m8-styles`
+**Scope:** 3 new rendering styles completing the PRD style library (3→6 total)
+**DoD:**
+- [x] blueprint.css — technical/monospace/grid/blue palette (887 lines)
+- [x] flat.css — vibrant colors/solid fills/zero shadows (661 lines)
+- [x] hand-drawn.css — Comic Neue/irregular borders/Balsamiq-like (912 lines)
+- [x] Style registry updated (VALID_STYLES: 6 entries)
+- [x] 750 tests pass (129 new from expanded 6×35 style×component matrix)
+
+## M9 — MCP Prompts
+**Status:** DONE
+**Branch:** `feature/m9-prompts`
+**Scope:** 3 MCP Prompts completing the PRD (design review, accessibility, compare screens)
+**DoD:**
+- [x] mockup_design_review — UX review with JSON + PNG screenshot
+- [x] mockup_accessibility_check — a11y checklist with JSON + PNG screenshot
+- [x] mockup_compare_screens — side-by-side comparison with 2 PNGs
+- [x] Wired into both stdio and HTTP transports
+- [x] ESM loader mock for Puppeteer-free testing
+- [x] 767 tests pass (17 new)
+
+## PRD Completion
+**All PRD items implemented.** 25 tools, 5 resources, 3 prompts, 6 styles, 35 components, 7 templates.
