@@ -282,17 +282,31 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
       return;
     }
 
-    const rect = canvas.getBoundingClientRect();
+    // Use the .screen element (actual mockup) as the coordinate reference,
+    // not #editor-canvas (the flex wrapper) which has centering padding/offsets
+    // that would place the element outside the visible mockup area.
+    const screenEl = canvas.querySelector('.screen');
+    const refEl = screenEl || canvas;
+    const rect = refEl.getBoundingClientRect();
+
     // Divide by zoom scale so the element lands at the clicked mockup coordinate,
     // not at the scaled viewport coordinate (which would be off at any zoom != 1).
-    const zoomMatch = document.querySelector('.screen')?.style.transform?.match(/scale\(([^)]+)\)/);
+    const zoomMatch = screenEl?.style.transform?.match(/scale\(([^)]+)\)/);
     const zoom = zoomMatch ? parseFloat(zoomMatch[1]) : 1;
-    const x = Math.round((e.clientX - rect.left) / zoom);
-    const y = Math.round((e.clientY - rect.top) / zoom);
 
     // Use palette-data defaults so all 35 component types get their correct
     // dimensions regardless of whether they appear in the keyboard-shortcut map.
     const { width: w, height: h } = getComponentDefaults(addModeType);
+
+    // Compute position relative to the screen element and clamp so the new
+    // element stays fully within the mockup boundaries.
+    const data = editorState.getScreenData();
+    const screenWidth = data?.width || 375;
+    const screenHeight = data?.height || 812;
+    const rawX = Math.round((e.clientX - rect.left) / zoom);
+    const rawY = Math.round((e.clientY - rect.top) / zoom);
+    const x = Math.max(0, Math.min(rawX, screenWidth - w));
+    const y = Math.max(0, Math.min(rawY, screenHeight - h));
 
     try {
       const created = await api.addElement(projectId, screenId, { type: addModeType, x, y, width: w, height: h });
