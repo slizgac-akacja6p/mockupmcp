@@ -7,7 +7,7 @@ Dockerized MCP server for creating UI mockups from Claude Code. JSON mockup defi
 | Command | Description |
 |---------|-------------|
 | `npm start` | Start MCP server (stdio mode) |
-| `npm test` | Run all tests (796 tests, Node.js built-in runner) |
+| `npm test` | Run all tests (~1564 tests, Node.js built-in runner) |
 | `node --test tests/renderer/*.test.js` | Run renderer tests only |
 | `RUN_E2E=1 npm test` | Run including E2E tests (requires running Docker container) |
 | `docker build -t mockupmcp:latest .` | Build Docker image |
@@ -32,18 +32,19 @@ src/
   mcp/
     server.js           # MCP server (stdio)
     http-transport.js   # HTTP StreamableHTTPServerTransport
-    resources.js        # 5 MCP Resources (project/screen data)
-    prompts.js          # 3 MCP Prompts (design_review, accessibility_check, compare_screens)
+    resources.js        # 6 MCP Resources (project/screen data)
+    prompts.js          # 4 MCP Prompts (design_review, accessibility_check, compare_screens, comment_summary)
     screen-generator.js # AI-driven screen generation
     tools/
-      index.js          # Tool registry (25 tools)
+      index.js          # Tool registry (34 tools)
       project-tools.js  # Project CRUD (3)
       screen-tools.js   # Screen CRUD (5)
       element-tools.js  # Element CRUD (7)
       export-tools.js   # Export PNG/SVG + preview URL (4)
       group-tools.js    # Element grouping (3)
-      layout-tools.js   # Auto-layout (1)
+      layout-tools.js   # Auto-layout + high-level layout API
       template-tools.js # Screen templates (2)
+      comment-tools.js  # Comment CRUD (3)
   storage/
     project-store.js    # JSON file CRUD with folder-aware index
     folder-scanner.js   # Recursive project file discovery
@@ -51,13 +52,15 @@ src/
   renderer/
     html-builder.js     # Screen JSON → HTML string
     screenshot.js       # Puppeteer HTML → PNG
-    styles/             # 6 styles: wireframe, blueprint, flat, hand-drawn, ios, material
+    styles/             # 19 styles: wireframe, blueprint, flat, hand-drawn, ios, material, dark-minimal, pastel, corporate, retro, glassmorphism, neon, paper, terminal, playful, gradient, monochrome, soft-ui, slate
+    sections/           # 10 section generators (semantic layout sections)
+    layout-composer.js  # Layout composition engine
     components/         # 35 components (render(props) → HTML)
     templates/          # 7 templates: dashboard, form, list, login, onboarding, profile, settings
   codegen/              # Code generation: html, react, swiftui, flutter, flow
   preview/
     server.js           # Express preview server (port 3100)
-    editor/             # 6 client-side editor modules (canvas, palette, inspector, sync, toolbar, orchestrator)
+    editor/             # 8 client-side editor modules (canvas, palette, inspector, sync, toolbar, orchestrator, layers, comments)
     templates/
       preview-page.html
 tests/
