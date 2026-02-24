@@ -105,6 +105,7 @@ let _projectId = null;
 let _screenId = null;
 let _dragSourceIndex = null;
 let _dragSourceElement = null;
+let _keydownListener = null;
 
 /**
  * Get the current cached screen data.
@@ -140,7 +141,12 @@ export function initLayers({ projectId, screenId, apiClient, selectionModule, sc
   renderLayers();
 
   // Wire up keyboard shortcuts for bring-to-front (]) and send-to-back ([)
-  document.addEventListener('keydown', (e) => {
+  // Remove old listener if initLayers is called multiple times
+  if (_keydownListener) {
+    document.removeEventListener('keydown', _keydownListener);
+  }
+
+  _keydownListener = (e) => {
     // Skip if focused on input/textarea
     const focused = document.activeElement;
     if (focused && (focused.tagName === 'INPUT' || focused.tagName === 'TEXTAREA')) {
@@ -154,7 +160,9 @@ export function initLayers({ projectId, screenId, apiClient, selectionModule, sc
       e.preventDefault();
       handleSendToBack();
     }
-  });
+  };
+
+  document.addEventListener('keydown', _keydownListener);
 }
 
 /**
@@ -350,20 +358,19 @@ async function handleDragDrop(draggedElement, targetElement) {
     [elements[draggedIdx], elements[targetIdx]] = [elements[targetIdx], elements[draggedIdx]];
 
     // Reassign z_index values to maintain order
-    // Top element (first in sorted array) gets highest z_index
-    const maxExistingZ = Math.max(..._screenData.elements.map(el => el.z_index ?? 0), 0);
-    let newZ = maxExistingZ;
+    // Separate pinned and non-pinned elements
+    const nonPinned = elements.filter(el => !isPinned(el));
+    const pinned = elements.filter(el => isPinned(el));
 
-    for (const el of elements) {
-      // Skip updating pinned elements that should stay >= 10
-      if (isPinned(el)) {
-        // Keep their z_index as-is
-        continue;
-      }
-      // Non-pinned elements get reassigned
+    // Assign z_index to non-pinned elements only (descending from count-1 down to 0)
+    // This keeps non-pinned z_index < 10, avoiding contamination of the pinned zone
+    let newZ = nonPinned.length - 1;
+    for (const el of nonPinned) {
       el.z_index = newZ;
       newZ--;
     }
+
+    // Pinned elements keep their existing z_index unchanged
 
     // PATCH each changed element
     for (const el of _screenData.elements) {
