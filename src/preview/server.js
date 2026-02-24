@@ -411,9 +411,108 @@ function buildScreenFragment(screen, style) {
   return bodyMatch[1].trim();
 }
 
-// Standalone landing page shown at /preview — gives users an entry point
-// with the sidebar already rendered so they can pick a screen to view.
-function buildLandingPage() {
+// Landing page CSS and content for screen list display with build status.
+const LANDING_PAGE_CSS = `
+<style>
+  .mockup-landing-container {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 80vh; color: #333; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  .mockup-landing-header {
+    text-align: center; margin-bottom: 24px;
+  }
+  .mockup-landing-header h1 {
+    margin: 0 0 4px 0; font-size: 24px; color: #333;
+  }
+  .mockup-landing-header p {
+    margin: 0; font-size: 14px; color: #999;
+  }
+  .mockup-screen-list {
+    list-style: none; padding: 0; margin: 0; max-width: 480px; width: 100%;
+  }
+  .mockup-screen-list li {
+    padding: 10px 16px; margin: 4px 0; border-radius: 6px;
+    font-size: 14px; border: 1px solid transparent;
+  }
+  .mockup-screen-list a {
+    color: #6366F1; text-decoration: none; display: flex;
+    justify-content: space-between; align-items: center; gap: 8px;
+  }
+  .mockup-screen-list a:hover {
+    background: rgba(99, 102, 241, 0.08); border-radius: 6px;
+  }
+  .mockup-screen-list .building {
+    color: #999; font-style: italic; display: flex;
+    justify-content: space-between; align-items: center; gap: 8px;
+  }
+  .mockup-screen-list .el-count {
+    color: #aaa; font-size: 12px; white-space: nowrap;
+  }
+  .mockup-screen-status {
+    display: inline-block; padding: 2px 8px; border-radius: 3px;
+    font-size: 11px; font-weight: 500; background: #f0f0f0; color: #999;
+  }
+  .mockup-project-group {
+    color: #666; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+    padding: 16px 16px 4px 16px; font-weight: 600; margin-top: 8px;
+  }
+  .mockup-project-group:first-of-type {
+    margin-top: 0;
+  }
+  .mockup-no-projects {
+    text-align: center; color: #999;
+  }
+  .mockup-no-projects p {
+    margin: 12px 0;
+  }
+</style>`;
+
+// Standalone landing page shown at /preview — shows screen list with build status.
+function buildLandingPage(screenItems = []) {
+  let screenListHtml = '';
+
+  if (screenItems.length === 0) {
+    screenListHtml = `
+    <div class="mockup-no-projects">
+      <p>No projects yet</p>
+      <p style="font-size: 12px; color: #ccc;">Create a project to get started</p>
+    </div>`;
+  } else {
+    // Group screens by project
+    const grouped = {};
+    for (const item of screenItems) {
+      if (!grouped[item.projectName]) {
+        grouped[item.projectName] = [];
+      }
+      grouped[item.projectName].push(item);
+    }
+
+    const listItems = [];
+    for (const [projName, screens] of Object.entries(grouped)) {
+      listItems.push(`<div class="mockup-project-group">${escapeHtml(projName)}</div>`);
+      for (const screen of screens) {
+        if (screen.elementCount > 0) {
+          listItems.push(`
+          <li>
+            <a href="/preview/${screen.projectId}/${screen.screenId}">
+              <span>${escapeHtml(screen.screenName)}</span>
+              <span class="el-count">${screen.elementCount} element${screen.elementCount === 1 ? '' : 's'}</span>
+            </a>
+          </li>`);
+        } else {
+          listItems.push(`
+          <li>
+            <div class="building">
+              <span>${escapeHtml(screen.screenName)}</span>
+              <span class="mockup-screen-status">building...</span>
+            </div>
+          </li>`);
+        }
+      }
+    }
+    screenListHtml = listItems.join('');
+  }
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -422,15 +521,28 @@ function buildLandingPage() {
   <title>MockupMCP Preview</title>
   ${PREVIEW_STYLE}
   ${SIDEBAR_CSS}
+  ${LANDING_PAGE_CSS}
 </head>
 <body>
   ${SIDEBAR_HTML}
-  <div style="display:flex;align-items:center;justify-content:center;height:80vh;color:#999;font-family:-apple-system,sans-serif;font-size:18px;">
-    Select a screen from the sidebar to preview
+  <div class="mockup-landing-container">
+    <div class="mockup-landing-header">
+      <h1>Mockups</h1>
+      <p>Select a screen to preview</p>
+    </div>
+    <ul class="mockup-screen-list">
+      ${screenListHtml}
+    </ul>
   </div>
   ${SIDEBAR_JS}
 </body>
 </html>`;
+}
+
+// HTML escape for user-provided content to prevent XSS.
+function escapeHtml(text) {
+  const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+  return String(text).replace(/[&<>"']/g, char => map[char]);
 }
 
 
@@ -442,8 +554,48 @@ export function startPreviewServer(port = config.previewPort) {
   // /preview/:projectId/:screenId route so Express doesn't treat "preview" as a projectId.
   app.get('/', (_req, res) => res.redirect('/preview'));
 
-  app.get('/preview', (_req, res) => {
-    res.type('html').send(buildLandingPage());
+  app.get('/preview', async (_req, res) => {
+    try {
+      await store.init();
+      const tree = await store.listProjectsTree();
+      const items = [];
+
+      // Helper to flatten tree into screen list
+      function walkTree(nodes) {
+        for (const node of nodes) {
+          if (node.type === 'project') {
+            for (const screen of (node.screens || [])) {
+              items.push({
+                projectId: node.id,
+                projectName: node.name,
+                screenId: screen.id,
+                screenName: screen.name,
+                elementCount: screen.elements?.length ?? 0,
+              });
+            }
+          } else if (node.children) {
+            walkTree(node.children);
+          }
+        }
+      }
+
+      walkTree(tree.folders || []);
+      for (const proj of (tree.projects || [])) {
+        for (const screen of (proj.screens || [])) {
+          items.push({
+            projectId: proj.id,
+            projectName: proj.name,
+            screenId: screen.id,
+            screenName: screen.name,
+            elementCount: screen.elements?.length ?? 0,
+          });
+        }
+      }
+
+      res.type('html').send(buildLandingPage(items));
+    } catch (err) {
+      res.type('html').send(buildLandingPage([]));
+    }
   });
 
   app.get('/preview/:projectId/:screenId', async (req, res) => {
@@ -498,6 +650,52 @@ export function startPreviewServer(port = config.previewPort) {
       await projectStore.init();
       const tree = await projectStore.listProjectsTree();
       res.json(tree);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Returns flat list of screens with element count for landing page status display.
+  app.get('/api/status', async (_req, res) => {
+    try {
+      const projectStore = new ProjectStore(config.dataDir);
+      await projectStore.init();
+      const tree = await projectStore.listProjectsTree();
+      const items = [];
+
+      // Helper to flatten tree into screen list
+      function walkTree(nodes) {
+        for (const node of nodes) {
+          if (node.type === 'project') {
+            for (const screen of (node.screens || [])) {
+              items.push({
+                projectId: node.id,
+                projectName: node.name,
+                screenId: screen.id,
+                screenName: screen.name,
+                elementCount: screen.elements?.length ?? 0,
+              });
+            }
+          } else if (node.children) {
+            walkTree(node.children);
+          }
+        }
+      }
+
+      walkTree(tree.folders || []);
+      for (const proj of (tree.projects || [])) {
+        for (const screen of (proj.screens || [])) {
+          items.push({
+            projectId: proj.id,
+            projectName: proj.name,
+            screenId: screen.id,
+            screenName: screen.name,
+            elementCount: screen.elements?.length ?? 0,
+          });
+        }
+      }
+
+      res.json(items);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
