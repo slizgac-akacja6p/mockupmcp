@@ -11,26 +11,9 @@ import { config } from '../config.js';
 // renders on a neutral canvas without modifying the stored screen data.
 // Layout mirrors the editor canvas: gray background, centered screen with shadow.
 // Sidebar margin-left comes from SIDEBAR_CSS (260px / 40px collapsed).
-// Dark-mode class is toggled on <html> by THEME_JS; CSS vars drive all chrome colors.
 const PREVIEW_STYLE = `
 <style>
-  :root {
-    --canvas-bg: #e8e8e8;
-    --toolbar-bg: #f8f9fa;
-    --toolbar-border: #dee2e6;
-    --toolbar-text: #212529;
-    --toolbar-text-muted: #495057;
-  }
-  html.dark-mode {
-    --canvas-bg: #1e1e1e;
-    --toolbar-bg: #2c2c2c;
-    --toolbar-border: #444;
-    --toolbar-text: #e0e0e0;
-    --toolbar-text-muted: #aaa;
-  }
-  /* Suppress the transition on initial load to avoid a color flash */
-  html.no-transition, html.no-transition * { transition: none !important; }
-  html { background: var(--canvas-bg); min-height: 100vh; transition: background 0.2s; }
+  html { background: #e8e8e8; min-height: 100vh; }
   body {
     display: flex; justify-content: center; align-items: flex-start;
     width: auto !important; height: auto !important;
@@ -42,18 +25,7 @@ const PREVIEW_STYLE = `
   }
   body.sidebar-collapsed { margin-left: 40px; }
   .screen { box-shadow: 0 4px 16px rgba(0,0,0,0.18); }
-</style>
-<script>
-  /* Apply saved theme before first paint to avoid a flash of the wrong colors. */
-  (function() {
-    var html = document.documentElement;
-    html.classList.add('no-transition');
-    if (localStorage.getItem('mockup-color-theme') === 'dark') {
-      html.classList.add('dark-mode');
-    }
-    requestAnimationFrame(function() { html.classList.remove('no-transition'); });
-  })();
-<\/script>`;
+</style>`;
 
 // CSS keyframe animations for screen-to-screen transitions (push, fade, slide-up).
 // Each transition type has forward and reverse variants for back navigation.
@@ -195,35 +167,35 @@ const ZOOM_CSS = `
     display: flex; align-items: center; gap: 2px;
   }
   .zoom-btn {
-    width: 26px; height: 26px; border: 1px solid var(--toolbar-border, #dee2e6); border-radius: 4px;
-    background: transparent; cursor: pointer; font-size: 14px; font-weight: 600;
-    color: var(--toolbar-text-muted, #495057); display: flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border: 1px solid #dee2e6; border-radius: 4px;
+    background: #fff; cursor: pointer; font-size: 14px; font-weight: 600;
+    color: #495057; display: flex; align-items: center; justify-content: center;
     transition: background 0.1s; padding: 0; line-height: 1;
   }
-  .zoom-btn:hover { background: rgba(128,128,128,0.15); }
+  .zoom-btn:hover { background: #e9ecef; }
   .zoom-level {
     min-width: 38px; text-align: center; font-size: 12px; font-weight: 500;
-    color: var(--toolbar-text-muted, #495057); padding: 0 2px;
+    color: #495057; padding: 0 2px;
   }
   /* Preview toolbar — matches editor toolbar style */
   #preview-toolbar {
     position: fixed; top: 0; left: 260px; right: 0; height: 48px; z-index: 9999;
-    background: var(--toolbar-bg); border-bottom: 1px solid var(--toolbar-border);
+    background: #f8f9fa; border-bottom: 1px solid #dee2e6;
     box-shadow: 0 1px 3px rgba(0,0,0,0.08);
     display: flex; align-items: center; padding: 0 16px; gap: 12px;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px;
-    transition: left 0.3s, background 0.2s;
+    transition: left 0.3s;
   }
   #preview-toolbar .back-btn {
     padding: 5px 10px; font-size: 12px; font-weight: 500;
-    border: 1px solid var(--toolbar-border); border-radius: 5px;
-    background: transparent; color: var(--toolbar-text-muted); cursor: pointer;
+    border: 1px solid #dee2e6; border-radius: 5px;
+    background: #fff; color: #495057; cursor: pointer;
     text-decoration: none; display: flex; align-items: center; gap: 4px;
     transition: background 0.1s;
   }
-  #preview-toolbar .back-btn:hover { background: rgba(128,128,128,0.15); }
+  #preview-toolbar .back-btn:hover { background: #e9ecef; }
   #preview-toolbar .screen-name {
-    font-weight: 600; font-size: 14px; flex: 1; color: var(--toolbar-text);
+    font-weight: 600; font-size: 14px; flex: 1; color: #212529;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   #preview-toolbar a.edit-link {
@@ -376,93 +348,49 @@ function buildReloadScript(projectId, updatedAt) {
 
 // Sidebar: left panel showing project tree with collapsible navigation.
 // Uses mockup-sidebar prefix on all classes to avoid conflicts with mockup content.
-// All colors use CSS vars defined in PREVIEW_STYLE so dark mode works globally.
 const SIDEBAR_CSS = `
 <style>
-  :root {
-    --sidebar-bg: #f5f5f5;
-    --sidebar-border: #ddd;
-    --sidebar-text: #333;
-    --sidebar-text-muted: #999;
-    --sidebar-folder-color: #666;
-    --sidebar-item-hover: #e8e8e8;
-    --sidebar-item-active-bg: #d0e3f5;
-    --sidebar-item-active-color: #1a5a9e;
-    --sidebar-screen-color: #555;
-    --sidebar-toggle-bg: #f5f5f5;
-  }
-  html.dark-mode {
-    --sidebar-bg: #1a1a1a;
-    --sidebar-border: #333;
-    --sidebar-text: #ccc;
-    --sidebar-text-muted: #666;
-    --sidebar-folder-color: #888;
-    --sidebar-item-hover: #2a2a2a;
-    --sidebar-item-active-bg: #1c3a5c;
-    --sidebar-item-active-color: #7ab8f5;
-    --sidebar-screen-color: #aaa;
-    --sidebar-toggle-bg: #1a1a1a;
-  }
   #mockup-sidebar {
     position: fixed; top: 0; left: 0; bottom: 0; width: 260px;
-    background: var(--sidebar-bg); border-right: 1px solid var(--sidebar-border); z-index: 9990;
+    background: #f5f5f5; border-right: 1px solid #ddd; z-index: 9990;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: 13px; color: var(--sidebar-text); overflow-y: auto;
-    transition: transform 0.3s ease, background 0.2s;
-    display: flex; flex-direction: column;
+    font-size: 13px; color: #333; overflow-y: auto;
+    transition: transform 0.3s ease;
   }
   #mockup-sidebar.collapsed { transform: translateX(-220px); }
   #mockup-sidebar-toggle {
     position: absolute; top: 12px; right: -32px; width: 28px; height: 28px;
-    background: var(--sidebar-toggle-bg); border: 1px solid var(--sidebar-border); border-left: none;
+    background: #f5f5f5; border: 1px solid #ddd; border-left: none;
     border-radius: 0 4px 4px 0; cursor: pointer; display: flex;
-    align-items: center; justify-content: center; font-size: 14px; color: var(--sidebar-folder-color);
-    transition: background 0.2s;
+    align-items: center; justify-content: center; font-size: 14px; color: #666;
   }
-  #mockup-sidebar-toggle:hover { background: var(--sidebar-item-hover); }
+  #mockup-sidebar-toggle:hover { background: #e8e8e8; }
   #mockup-sidebar h3 {
     margin: 0; padding: 16px 12px 8px; font-size: 11px; text-transform: uppercase;
-    letter-spacing: 0.5px; color: var(--sidebar-text-muted);
+    letter-spacing: 0.5px; color: #999;
   }
-  /* Tree area fills remaining space so the theme toggle stays at the bottom */
-  #mockup-sidebar-tree { flex: 1; }
   .mockup-sidebar-project { padding: 4px 0; }
   .mockup-sidebar-project-name {
     padding: 6px 12px; font-weight: 600; cursor: pointer; display: flex;
-    align-items: center; gap: 6px; color: var(--sidebar-text);
+    align-items: center; gap: 6px;
   }
-  .mockup-sidebar-project-name:hover { background: var(--sidebar-item-hover); }
+  .mockup-sidebar-project-name:hover { background: #e8e8e8; }
   .mockup-sidebar-project-name .arrow { font-size: 10px; transition: transform 0.2s; }
   .mockup-sidebar-project-name .arrow.open { transform: rotate(90deg); }
   .mockup-sidebar-folder { padding: 2px 0; }
   .mockup-sidebar-folder-name {
     padding: 6px 12px; font-weight: 600; cursor: pointer; display: flex;
-    align-items: center; gap: 6px; color: var(--sidebar-folder-color);
+    align-items: center; gap: 6px; color: #666;
   }
-  .mockup-sidebar-folder-name:hover { background: var(--sidebar-item-hover); }
+  .mockup-sidebar-folder-name:hover { background: #e8e8e8; }
   .mockup-sidebar-folder-name .arrow { font-size: 10px; transition: transform 0.2s; }
   .mockup-sidebar-folder-name .arrow.open { transform: rotate(90deg); }
   .mockup-sidebar-screen {
     padding: 5px 12px 5px 28px; cursor: pointer; text-decoration: none;
-    display: block; color: var(--sidebar-screen-color); border-radius: 4px; margin: 1px 8px;
+    display: block; color: #555; border-radius: 4px; margin: 1px 8px;
   }
-  .mockup-sidebar-screen:hover { background: var(--sidebar-item-hover); }
-  .mockup-sidebar-screen.active {
-    background: var(--sidebar-item-active-bg); color: var(--sidebar-item-active-color); font-weight: 500;
-  }
-  /* Theme toggle pinned to the bottom of the sidebar */
-  #mockup-theme-toggle {
-    padding: 12px; border-top: 1px solid var(--sidebar-border);
-    display: flex; align-items: center; gap: 8px;
-    color: var(--sidebar-text-muted); font-size: 12px;
-  }
-  #mockup-theme-toggle button {
-    padding: 4px 10px; border: 1px solid var(--sidebar-border); border-radius: 4px;
-    background: var(--sidebar-item-hover); color: var(--sidebar-text);
-    cursor: pointer; font-size: 12px; font-family: inherit;
-    transition: background 0.15s;
-  }
-  #mockup-theme-toggle button:hover { background: var(--sidebar-item-active-bg); }
+  .mockup-sidebar-screen:hover { background: #e0e0e0; }
+  .mockup-sidebar-screen.active { background: #d0e3f5; color: #1a5a9e; font-weight: 500; }
   body { margin-left: 260px; transition: margin-left 0.3s; }
   body.sidebar-collapsed { margin-left: 40px; }
   @media (max-width: 768px) {
@@ -479,43 +407,7 @@ const SIDEBAR_HTML = `
   <button id="mockup-sidebar-toggle" aria-label="Toggle sidebar">&lsaquo;</button>
   <h3>Projects</h3>
   <div id="mockup-sidebar-tree"></div>
-  <div id="mockup-theme-toggle">
-    <button id="mockup-theme-btn" aria-label="Toggle dark mode">Light</button>
-    <span>Theme</span>
-  </div>
 </div>`;
-
-// Theme toggle: persists dark/light preference in localStorage and applies the
-// dark-mode class to <html> on load so chrome (toolbar, sidebar, canvas bg)
-// switches color without touching the mockup .screen element itself.
-const THEME_JS = `
-<script>
-(function() {
-  var STORAGE_KEY = 'mockup-color-theme';
-  var btn = document.getElementById('mockup-theme-btn');
-  if (!btn) return;
-
-  function applyTheme(dark) {
-    if (dark) {
-      document.documentElement.classList.add('dark-mode');
-      btn.textContent = 'Dark';
-    } else {
-      document.documentElement.classList.remove('dark-mode');
-      btn.textContent = 'Light';
-    }
-  }
-
-  // Restore saved preference immediately so there is no flash on load.
-  var saved = localStorage.getItem(STORAGE_KEY);
-  applyTheme(saved === 'dark');
-
-  btn.addEventListener('click', function() {
-    var isDark = document.documentElement.classList.contains('dark-mode');
-    applyTheme(!isDark);
-    localStorage.setItem(STORAGE_KEY, !isDark ? 'dark' : 'light');
-  });
-})();
-<\/script>`;
 
 // Sidebar client-side JS: fetches project tree from /api/projects, handles
 // folder expand/collapse, highlights active screen, auto-refreshes every 3s.
@@ -930,7 +822,6 @@ function injectPreviewAssets(html, projectId, screenId, updatedAt, screenName) {
     buildPreviewToolbar(projectId, screenId, screenName) +
     LINK_SCRIPT +
     SIDEBAR_JS +
-    THEME_JS +
     buildReloadScript(projectId, updatedAt) +
     ZOOM_JS +
     '\n</body>',
@@ -962,11 +853,10 @@ function buildLandingPage() {
 </head>
 <body>
   ${SIDEBAR_HTML}
-  <div style="display:flex;align-items:center;justify-content:center;height:80vh;font-family:-apple-system,sans-serif;font-size:18px;color:var(--sidebar-text-muted,#999);">
+  <div style="display:flex;align-items:center;justify-content:center;height:80vh;color:#999;font-family:-apple-system,sans-serif;font-size:18px;">
     Select a screen from the sidebar to preview
   </div>
   ${SIDEBAR_JS}
-  ${THEME_JS}
 </body>
 </html>`;
 }
