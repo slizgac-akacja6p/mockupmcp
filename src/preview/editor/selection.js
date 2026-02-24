@@ -106,8 +106,12 @@ export function createSelectionState() {
  * @param {() => void}           onDeselect     - Called when selection is cleared
  * @param {(ids: Set<string>) => void} [onMultiSelect] - Optional: called with Set of selected IDs on multi-select
  */
-export function initSelection(container, state, onSelect, onDeselect, onMultiSelect) {
+export function initSelection(container, state, onSelect, onDeselect, onMultiSelect, getAddModeType) {
   container.addEventListener('click', (e) => {
+    // Guard: skip selection when add mode is active — the add-mode click
+    // handler in editor.js owns those clicks and must not see a selection side-effect.
+    if (getAddModeType?.()) return;
+
     // Guard: skip if box-select just completed (race condition prevention)
     if (container.dataset.didBoxSelect === '1') {
       container.dataset.didBoxSelect = '';

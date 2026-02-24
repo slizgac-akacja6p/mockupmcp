@@ -254,7 +254,7 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
   initSelection(canvas, selectionState, onSelect, onDeselect, (selectedIds) => {
     updateMultiSelectToolbar(selectedIds);
     updateMultiSelectVisual(selectedIds);
-  });
+  }, () => addModeType);
   initPropertyPanel(panel, handlePropertyChange);
 
   // Box-select: drag over empty canvas to select multiple elements at once.
