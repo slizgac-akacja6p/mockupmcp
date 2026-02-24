@@ -5,6 +5,7 @@
 // point and is only called at runtime.
 
 import { getComponentDefaults } from './component-meta.js';
+import { debounce } from './utils.js';
 
 // i18n helper — safe fallback when the i18n module hasn't loaded yet or in Node.js tests.
 const _t = (key, fallback) => (typeof globalThis.window !== 'undefined' && typeof window.t === 'function' ? window.t(key, fallback) : (fallback ?? key));
@@ -356,6 +357,9 @@ export function initPropertyPanel(panelEl, onSave) {
   // no changes to buildEditorPage in server.js.
   _installThemeToggle();
 
+  // Debounce PATCH calls so rapid slider/input changes batch into one request.
+  const debouncedSave = debounce((changes) => onSave(changes), 150);
+
   // Sync range slider → companion number input in real-time while dragging.
   panelEl.addEventListener('input', (e) => {
     const slider = e.target;
@@ -408,7 +412,7 @@ export function initPropertyPanel(panelEl, onSave) {
       if (swatchInput) swatchInput.value = input.value;
     }
 
-    onSave({ [fieldName]: parsed });
+    debouncedSave({ [fieldName]: parsed });
   });
 }
 
