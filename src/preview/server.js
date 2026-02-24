@@ -695,8 +695,9 @@ const EDITOR_CSS = `
   /* Dark sidebar override — editor uses dark sidebar matching the mockup,
      while preview pages keep the default light sidebar from SIDEBAR_CSS. */
   #mockup-sidebar {
+    width: 240px !important;
     background: var(--surface-1) !important;
-    border-right-color: var(--border-default) !important;
+    border-right: 1px solid var(--border-default) !important;
     color: var(--text-primary) !important;
   }
   #mockup-sidebar-toggle {
@@ -719,8 +720,8 @@ const EDITOR_CSS = `
   }
 
   #editor-toolbar {
-    position: fixed; top: 0; left: 260px; right: 260px; height: 48px; z-index: 9999;
-    background: var(--surface-2); border-bottom: 1px solid var(--border-default);
+    position: fixed; top: 0; left: 240px; right: 280px; height: 48px; z-index: 9999;
+    background: var(--surface-2); border-bottom: 1px solid var(--border-subtle);
     box-shadow: none;
     display: flex; align-items: center; padding: 0 16px; gap: 12px;
     font-family: var(--font-ui); font-size: 13px;
@@ -751,11 +752,12 @@ const EDITOR_CSS = `
     /* Dot grid pattern matching mockup — 52px spacing, 3px dots */
     background-image: radial-gradient(circle, var(--dot-grid) 1px, transparent 1px);
     background-size: 52px 52px;
+    box-shadow: inset 2px 0 8px rgba(0,0,0,0.3);
   }
   #editor-canvas .screen { box-shadow: 0 4px 24px rgba(0,0,0,0.4); overflow: visible !important; }
 
   #editor-right-panel {
-    width: 260px; min-width: 260px;
+    width: 280px; min-width: 280px;
     display: flex; flex-direction: column;
     background: var(--surface-1); border-left: 1px solid var(--border-default);
     overflow: hidden;
@@ -856,11 +858,30 @@ const EDITOR_CSS = `
 
   #editor-flex-wrapper {
     display: flex; flex: 1;
-    margin-left: 260px; margin-top: 48px;
+    margin-left: 240px; margin-top: 48px;
+    transition: margin-left 0.2s ease;
   }
 
   body.sidebar-collapsed #editor-toolbar { left: 40px; }
   body.sidebar-collapsed #editor-flex-wrapper { margin-left: 40px; }
+
+  /* Sidebar collapse — editor sidebar (JS wired separately) */
+  #editor-sidebar { position: relative; transition: width 0.2s ease; }
+  #editor-sidebar.collapsed { width: 48px; overflow: hidden; }
+  #editor-sidebar.collapsed .sidebar-label,
+  #editor-sidebar.collapsed .project-name,
+  #editor-sidebar.collapsed .screen-name { display: none; }
+  #editor-sidebar-collapse-btn {
+    position: absolute; right: -12px; top: 50%; transform: translateY(-50%);
+    width: 24px; height: 24px;
+    background: var(--surface-3); border: 1px solid var(--border-default); border-radius: 50%;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 10px; color: var(--text-secondary); z-index: 10;
+    transition: background 0.15s;
+  }
+  #editor-sidebar-collapse-btn:hover { background: var(--surface-4); }
+  #editor-flex-wrapper.sidebar-collapsed { margin-left: 48px; }
+  #editor-toolbar.sidebar-collapsed { left: 48px; }
 
   /* Dark overrides for shared zoom controls inside editor toolbar */
   #editor-toolbar .zoom-btn {
@@ -997,7 +1018,7 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
   </style>
 </head>
 <body>
-  ${SIDEBAR_HTML}
+  ${SIDEBAR_HTML.replace('<h3>Projects</h3>', '<button id="editor-sidebar-collapse-btn">&#x203A;</button><h3>Projects</h3>')}
   <div id="editor-toolbar">
     <span class="screen-name">${screenName}</span>
     <span class="edit-mode-badge">Edit mode</span>
