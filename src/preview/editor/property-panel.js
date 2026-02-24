@@ -232,12 +232,26 @@ export function renderPanelHtml(fields) {
     grouped[field.group].push(field);
   }
 
+  // Slider max heuristics: position fields use screen-dimension limits,
+  // property number fields use a conservative upper bound.
+  function sliderMax(name) {
+    if (name === 'x' || name === 'width') return 2000;
+    if (name === 'y' || name === 'height') return 2000;
+    return 1000;
+  }
+
   function renderNumberCompact(f) {
-    return `<div class="panel-field panel-field--compact">
+    const max = sliderMax(f.name);
+    return `<div class="panel-field panel-field--compact prop-field-with-slider">
   <label class="panel-label">${escPanelVal(f.name)}</label>
   <input type="number" class="panel-input panel-input--compact"
          data-field="${escPanelVal(f.name)}"
          data-field-type="number"
+         value="${escPanelVal(f.value)}">
+  <input type="range" class="prop-slider"
+         data-field="${escPanelVal(f.name)}"
+         data-field-type="number"
+         min="0" max="${max}"
          value="${escPanelVal(f.value)}">
 </div>`;
   }
@@ -279,6 +293,22 @@ export function renderPanelHtml(fields) {
     }
 
     const inputType = f.fieldType === 'number' ? 'number' : 'text';
+    if (f.fieldType === 'number') {
+      const max = sliderMax(f.name);
+      return `<div class="panel-field prop-field-with-slider">
+  <label class="panel-label">${escPanelVal(f.name)}</label>
+  <input class="panel-input"
+         type="number"
+         data-field="${escPanelVal(f.name)}"
+         data-field-type="number"
+         value="${escPanelVal(f.value)}"${disabledAttr}>
+  <input type="range" class="prop-slider"
+         data-field="${escPanelVal(f.name)}"
+         data-field-type="number"
+         min="0" max="${max}"
+         value="${escPanelVal(f.value)}"${disabledAttr}>
+</div>`;
+    }
     return `<div class="panel-field">
   <label class="panel-label">${escPanelVal(f.name)}</label>
   <input class="panel-input"
@@ -349,6 +379,25 @@ export function initPropertyPanel(panelEl, onSave) {
   // Debounce PATCH calls so rapid slider/input changes batch into one request.
   const debouncedSave = debounce((changes) => onSave(changes), 150);
 
+  // Slider ↔ number input sync: dragging the slider updates the number field
+  // in real-time and triggers a debounced save. The 'input' event fires
+  // continuously while dragging; 'change' fires on release.
+  panelEl.addEventListener('input', (e) => {
+    const slider = e.target;
+    if (slider.type !== 'range') return;
+    const fieldName = slider.dataset.field;
+    if (!fieldName) return;
+
+    // Update the corresponding number input to reflect the slider position.
+    const numInput = panelEl.querySelector(
+      `input[type="number"][data-field="${fieldName}"]`
+    );
+    if (numInput) numInput.value = slider.value;
+
+    const parsed = parseFieldValue(slider.value, 'number');
+    debouncedSave({ [fieldName]: parsed });
+  });
+
   panelEl.addEventListener('change', (e) => {
     const input = e.target;
     const fieldName = input.dataset.field;
@@ -356,6 +405,18 @@ export function initPropertyPanel(panelEl, onSave) {
 
     // Ignore events from elements that aren't panel fields.
     if (!fieldName || !fieldType) return;
+
+    // Slider 'change' fires on mouse-up — already handled by 'input' above,
+    // but sync the number input one final time for accuracy.
+    if (input.type === 'range') {
+      const numInput = panelEl.querySelector(
+        `input[type="number"][data-field="${fieldName}"]`
+      );
+      if (numInput) numInput.value = input.value;
+      const parsed = parseFieldValue(input.value, 'number');
+      debouncedSave({ [fieldName]: parsed });
+      return;
+    }
 
     // Checkbox (boolean toggle): use .checked, not .value.
     const rawValue = input.type === 'checkbox' ? input.checked : input.value;
@@ -374,6 +435,14 @@ export function initPropertyPanel(panelEl, onSave) {
         `input[type="color"][data-field="${fieldName}"]`
       );
       if (swatchInput) swatchInput.value = input.value;
+    }
+
+    // When a number input changes, keep its sibling slider in sync.
+    if (input.type === 'number') {
+      const slider = panelEl.querySelector(
+        `input[type="range"][data-field="${fieldName}"]`
+      );
+      if (slider) slider.value = input.value;
     }
 
     debouncedSave({ [fieldName]: parsed });

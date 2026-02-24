@@ -872,12 +872,27 @@ const EDITOR_CSS = `
   }
   /* Canvas element styling — shadow + selection outline */
   .element { box-shadow: var(--shadow-sm); }
-  .element.selected { outline: 2px solid var(--accent) !important; outline-offset: 1px; }
+  .selected, [data-element-id].selected {
+    outline: 1.5px solid var(--accent) !important;
+    outline-offset: 1px;
+  }
 
-  /* Resize handles on selected elements */
+  /* Resize handles on selected elements — override inline styles from resize.js */
   .resize-handle {
-    width: 6px; height: 6px;
-    background: var(--accent); border: 1px solid white; border-radius: 1px;
+    position: absolute;
+    width: 8px !important;
+    height: 8px !important;
+    background: white !important;
+    border: 2px solid var(--accent) !important;
+    border-radius: 2px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    z-index: 1000;
+    cursor: pointer;
+    box-sizing: border-box;
+  }
+  .resize-handle:hover {
+    background: var(--accent) !important;
+    transform: translate(-50%, -50%) scale(1.2);
   }
 
   .toolbar-separator {
@@ -988,6 +1003,46 @@ const EDITOR_CSS = `
     display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 8px;
   }
   .panel-pos-pair .panel-field { margin-bottom: 0; }
+  /* Custom slim slider for numeric fields */
+  .prop-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--border-default);
+    margin-top: 4px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    display: block;
+  }
+  .prop-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 2px solid var(--surface-1);
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+  .prop-slider::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 2px solid var(--surface-1);
+  }
+  .prop-slider:focus {
+    outline: none;
+  }
+  .prop-slider::-webkit-slider-runnable-track {
+    height: 3px;
+    border-radius: 2px;
+  }
+
   /* Color field: swatch (native picker) + hex text input side by side */
   .panel-color-row { display: flex; align-items: center; gap: 6px; }
   .panel-color-swatch {
