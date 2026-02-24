@@ -29,7 +29,7 @@ export function buildScreenHtml(screen, style = 'wireframe') {
         inlineStyle += 'cursor:pointer;';
       }
 
-      return `<div class="element" data-el-id="${el.id}" style="${inlineStyle}"${linkAttrs}>${innerHtml}</div>`;
+      return `<div class="element" data-element-id="${el.id}" style="${inlineStyle}"${linkAttrs}>${innerHtml}</div>`;
     })
     .join('\n    ');
 
