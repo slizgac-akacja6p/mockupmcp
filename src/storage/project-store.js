@@ -143,6 +143,7 @@ export class ProjectStore {
         screen.version ??= 1;
         screen.parent_screen_id ??= null;
         screen.status ??= 'draft';
+        screen.comments ??= [];
       }
     }
     return project;
@@ -584,6 +585,53 @@ export class ProjectStore {
     }
     await this._save(project);
     return screen;
+  }
+
+  // --- Comment methods ---
+
+  async addComment(projectId, screenId, { element_id = null, text, author = 'user' }) {
+    this._validateId(screenId);
+    const project = await this.getProject(projectId);
+    const screen = project.screens.find(s => s.id === screenId);
+    if (!screen) throw new Error(`Screen not found: ${screenId}`);
+    screen.comments ??= [];
+    const unresolvedPins = screen.comments.filter(c => !c.resolved).map(c => c.pin_number || 0);
+    const nextPin = unresolvedPins.length > 0 ? Math.max(...unresolvedPins) + 1 : 1;
+    const comment = {
+      id: generateId('cmt'),
+      element_id: element_id || null,
+      text,
+      author,
+      resolved: false,
+      pin_number: nextPin,
+      created_at: new Date().toISOString()
+    };
+    screen.comments.push(comment);
+    await this._save(project);
+    return comment;
+  }
+
+  async listComments(projectId, screenId, { include_resolved = false } = {}) {
+    this._validateId(screenId);
+    const project = await this.getProject(projectId);
+    const screen = project.screens.find(s => s.id === screenId);
+    if (!screen) throw new Error(`Screen not found: ${screenId}`);
+    screen.comments ??= [];
+    if (include_resolved) return screen.comments;
+    return screen.comments.filter(c => !c.resolved);
+  }
+
+  async resolveComment(projectId, screenId, commentId) {
+    this._validateId(screenId);
+    const project = await this.getProject(projectId);
+    const screen = project.screens.find(s => s.id === screenId);
+    if (!screen) throw new Error(`Screen not found: ${screenId}`);
+    screen.comments ??= [];
+    const comment = screen.comments.find(c => c.id === commentId);
+    if (!comment) throw new Error(`Comment not found: ${commentId}`);
+    comment.resolved = true;
+    await this._save(project);
+    return comment;
   }
 
   // --- Export ---

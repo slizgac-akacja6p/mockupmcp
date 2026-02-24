@@ -66,8 +66,13 @@
   "approval.rejectReason": "Powod odrzucenia",
   "approval.rejectReasonPlaceholder": "Opisz co nalezy zmienic...",
   "approval.confirmAcceptWithComments": "Ekran zostanie oznaczony jako wymagajacy zmian na podstawie komentarzy.",
-  "approval.noUnresolvedComments": "Brak nierozwi\u0105zanych komentarzy",
+  "approval.noUnresolvedComments": "Brak nierozwiązanych komentarzy",
   "approval.success.accepted": "Ekran zatwierdzony",
-  "approval.success.acceptedWithComments": "Zatwierdzono z komentarzami \u2014 wymagana iteracja",
-  "approval.success.rejected": "Ekran odrzucony"
+  "approval.success.acceptedWithComments": "Zatwierdzono z komentarzami — wymagana iteracja",
+  "approval.success.rejected": "Ekran odrzucony",
+  "comments": "Komentarze",
+  "addComment": "Dodaj komentarz",
+  "resolveComment": "Rozwiąż",
+  "noComments": "Brak komentarzy",
+  "commentResolved": "Rozwiązany"
 }

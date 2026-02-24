@@ -225,5 +225,28 @@ export async function registerResources(server, store) {
     }
   );
 
-  console.error('[MockupMCP] 3 static + 3 dynamic resources registered');
+  // --- Dynamic: screen comments ---
+  const commentsTemplate = new ResourceTemplate(
+    'mockup://projects/{projectId}/screens/{screenId}/comments',
+    { list: undefined }
+  );
+
+  server.resource(
+    'screen-comments',
+    commentsTemplate,
+    { description: 'All comments (including resolved) for a screen' },
+    async (uri, variables) => {
+      const { projectId, screenId } = variables;
+      const comments = await store.listComments(projectId, screenId, { include_resolved: true });
+      return {
+        contents: [{
+          uri: uri.toString(),
+          text: JSON.stringify(comments),
+          mimeType: 'application/json',
+        }],
+      };
+    }
+  );
+
+  console.error('[MockupMCP] 3 static + 4 dynamic resources registered');
 }

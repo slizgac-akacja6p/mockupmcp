@@ -1924,6 +1924,37 @@ export function startPreviewServer(port = config.previewPort) {
     }
   });
 
+  // POST /api/screens/:projectId/:screenId/comments
+  // Creates a new comment on a screen or element.
+  app.post('/api/screens/:projectId/:screenId/comments', async (req, res) => {
+    try {
+      const { element_id = null, text, author = 'user' } = req.body;
+      if (!text) return res.status(400).json({ error: 'text is required' });
+      if (!['user', 'ai'].includes(author)) return res.status(400).json({ error: 'Invalid author' });
+      const comment = await store.addComment(req.params.projectId, req.params.screenId, { element_id, text, author });
+      res.status(201).json(comment);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+  });
+
+  // GET /api/screens/:projectId/:screenId/comments
+  // Lists comments for a screen (filters resolved by default).
+  app.get('/api/screens/:projectId/:screenId/comments', async (req, res) => {
+    try {
+      const include_resolved = req.query.include_resolved === 'true';
+      const comments = await store.listComments(req.params.projectId, req.params.screenId, { include_resolved });
+      res.json(comments);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+  });
+
+  // PATCH /api/screens/:projectId/:screenId/comments/:commentId/resolve
+  // Marks a comment as resolved.
+  app.patch('/api/screens/:projectId/:screenId/comments/:commentId/resolve', async (req, res) => {
+    try {
+      const comment = await store.resolveComment(req.params.projectId, req.params.screenId, req.params.commentId);
+      res.json(comment);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+  });
+
   // Serve i18n locale files — only allow lowercase alpha lang codes to prevent
   // path traversal (e.g. "../secret" is stripped to "secret" which won't match).
   app.get('/i18n/:lang.json', (req, res) => {

@@ -69,5 +69,10 @@
   "approval.noUnresolvedComments": "No unresolved comments to submit with",
   "approval.success.accepted": "Screen accepted",
   "approval.success.acceptedWithComments": "Accepted with comments — iteration needed",
-  "approval.success.rejected": "Screen rejected"
+  "approval.success.rejected": "Screen rejected",
+  "comments": "Comments",
+  "addComment": "Add comment",
+  "resolveComment": "Resolve",
+  "noComments": "No comments",
+  "commentResolved": "Resolved"
 }
