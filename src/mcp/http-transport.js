@@ -7,8 +7,8 @@ import { registerAllTools } from './tools/index.js';
 import { registerResources } from './resources.js';
 import { registerPrompts } from './prompts.js';
 
-const MAX_SESSIONS = 10;
-const SESSION_IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+const MAX_SESSIONS = 50;
+const SESSION_IDLE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
 /**
  * Creates an Express app with MCP HTTP transport routes.
@@ -45,12 +45,12 @@ export function createHttpTransportApp(store) {
 
     if (isInit) {
       if (sessions.size >= MAX_SESSIONS) {
-        res.status(503).json({
-          jsonrpc: '2.0',
-          error: { code: -32000, message: 'Max sessions reached. Try again later.' },
-          id: null,
-        });
-        return;
+        // Evict oldest session instead of rejecting
+        const oldestId = sessions.keys().next().value;
+        if (oldestId) {
+          console.error(`[HTTP] Session limit reached, evicting oldest: ${oldestId}`);
+          await cleanupSession(sessions, oldestId);
+        }
       }
 
       try {
