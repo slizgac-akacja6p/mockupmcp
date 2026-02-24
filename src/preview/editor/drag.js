@@ -137,6 +137,10 @@ export function initDrag(container, selectionState, options) {
   // divided by this value to convert viewport pixels to mockup coordinates.
   let zoomScale = 1;
 
+  // Throttle mousemove to one logical frame — prevents jank when the browser
+  // fires 100+ events/second during a fast drag gesture.
+  let _dragRafPending = false;
+
   container.addEventListener('mousedown', (e) => {
     // Capture potential drag start on any element, regardless of selection state
     const target = e.target.closest('[data-element-id]');
@@ -171,51 +175,57 @@ export function initDrag(container, selectionState, options) {
     if (!pendingDrag && !dragging) return;
     if (!dragEl) return;
 
-    const dx = (e.clientX - startMouseX) / zoomScale;
-    const dy = (e.clientY - startMouseY) / zoomScale;
+    if (_dragRafPending) return;
+    _dragRafPending = true;
+    requestAnimationFrame(() => {
+      _dragRafPending = false;
 
-    // Promote pending drag to active drag only after movement threshold
-    if (pendingDrag && !dragging) {
-      if (Math.abs(dx) < DRAG_THRESHOLD && Math.abs(dy) < DRAG_THRESHOLD) return;
+      const dx = (e.clientX - startMouseX) / zoomScale;
+      const dy = (e.clientY - startMouseY) / zoomScale;
 
-      pendingDrag = false;
-      dragging = true;
+      // Promote pending drag to active drag only after movement threshold
+      if (pendingDrag && !dragging) {
+        if (Math.abs(dx) < DRAG_THRESHOLD && Math.abs(dy) < DRAG_THRESHOLD) return;
 
-      // Select the element being dragged (triggers onDragStart callback
-      // which updates selection state and highlights the element)
-      if (onDragStart) onDragStart(elementId);
+        pendingDrag = false;
+        dragging = true;
 
-      // Visual feedback: semi-transparent with shadow so user can see
-      // the element is being dragged (not just the selection outline moving)
-      dragEl.style.opacity = '0.7';
-      dragEl.style.boxShadow = '0 4px 16px rgba(0,0,0,0.2)';
-      dragEl.style.zIndex = '999';
+        // Select the element being dragged (triggers onDragStart callback
+        // which updates selection state and highlights the element)
+        if (onDragStart) onDragStart(elementId);
 
-      container.style.cursor = 'grabbing';
-    }
+        // Visual feedback: semi-transparent with shadow so user can see
+        // the element is being dragged (not just the selection outline moving)
+        dragEl.style.opacity = '0.7';
+        dragEl.style.boxShadow = '0 4px 16px rgba(0,0,0,0.2)';
+        dragEl.style.zIndex = '999';
 
-    if (dragging) {
-      let moveX = dx;
-      let moveY = dy;
-
-      // Ask the guide system for snap adjustments. The callback returns
-      // snapped element coordinates; we convert back to deltas from the
-      // element's start position so the translate transform stays correct.
-      if (onDragMove) {
-        const wouldBeX = startElX + dx;
-        const wouldBeY = startElY + dy;
-        const snap = onDragMove(elementId, wouldBeX, wouldBeY);
-        if (snap) {
-          if (snap.snapX !== null) moveX = snap.snapX - startElX;
-          if (snap.snapY !== null) moveY = snap.snapY - startElY;
-        }
+        container.style.cursor = 'grabbing';
       }
 
-      // Show movement visually via transform rather than mutating left/top —
-      // avoids triggering layout recalculation on every pixel.
-      dragEl.style.transform = `translate(${moveX}px, ${moveY}px)`;
-      e.preventDefault();
-    }
+      if (dragging) {
+        let moveX = dx;
+        let moveY = dy;
+
+        // Ask the guide system for snap adjustments. The callback returns
+        // snapped element coordinates; we convert back to deltas from the
+        // element's start position so the translate transform stays correct.
+        if (onDragMove) {
+          const wouldBeX = startElX + dx;
+          const wouldBeY = startElY + dy;
+          const snap = onDragMove(elementId, wouldBeX, wouldBeY);
+          if (snap) {
+            if (snap.snapX !== null) moveX = snap.snapX - startElX;
+            if (snap.snapY !== null) moveY = snap.snapY - startElY;
+          }
+        }
+
+        // Show movement visually via transform rather than mutating left/top —
+        // avoids triggering layout recalculation on every pixel.
+        dragEl.style.transform = `translate(${moveX}px, ${moveY}px)`;
+        e.preventDefault();
+      }
+    });
   });
 
   document.addEventListener('mouseup', (e) => {

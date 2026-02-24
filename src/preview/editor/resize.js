@@ -235,6 +235,10 @@ export function initResize(container, selectionState, options) {
     });
   }
 
+  // Throttle mousemove to one logical frame — prevents jank when the browser
+  // fires 100+ events/second during a fast resize gesture.
+  let _resizeRafPending = false;
+
   // Resize session state — reset on every handle mousedown
   let resizing    = false;
   let activeHandle = null;
@@ -291,24 +295,30 @@ export function initResize(container, selectionState, options) {
   document.addEventListener('mousemove', (e) => {
     if (!resizing || !targetEl) return;
 
-    // Divide by zoomScale to convert viewport pixels to mockup coordinates
-    const dx = (e.clientX - startMouseX) / zoomScale;
-    const dy = (e.clientY - startMouseY) / zoomScale;
+    if (_resizeRafPending) return;
+    _resizeRafPending = true;
+    requestAnimationFrame(() => {
+      _resizeRafPending = false;
 
-    // Update visual geometry directly (no API call) for responsive feedback
-    const result = computeResizeResult(
-      activeHandle, startRect, dx, dy, e.shiftKey, gridEnabled, gridSize,
-    );
+      // Divide by zoomScale to convert viewport pixels to mockup coordinates
+      const dx = (e.clientX - startMouseX) / zoomScale;
+      const dy = (e.clientY - startMouseY) / zoomScale;
 
-    targetEl.style.left   = `${result.x}px`;
-    targetEl.style.top    = `${result.y}px`;
-    targetEl.style.width  = `${result.width}px`;
-    targetEl.style.height = `${result.height}px`;
+      // Update visual geometry directly (no API call) for responsive feedback
+      const result = computeResizeResult(
+        activeHandle, startRect, dx, dy, e.shiftKey, gridEnabled, gridSize,
+      );
 
-    // Keep handles tracking the element during the drag
-    positionHandles({ left: result.x, top: result.y, width: result.width, height: result.height });
+      targetEl.style.left   = `${result.x}px`;
+      targetEl.style.top    = `${result.y}px`;
+      targetEl.style.width  = `${result.width}px`;
+      targetEl.style.height = `${result.height}px`;
 
-    e.preventDefault();
+      // Keep handles tracking the element during the drag
+      positionHandles({ left: result.x, top: result.y, width: result.width, height: result.height });
+
+      e.preventDefault();
+    });
   });
 
   document.addEventListener('mouseup', (e) => {
