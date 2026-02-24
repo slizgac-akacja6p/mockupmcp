@@ -782,6 +782,7 @@ const EDITOR_CSS = `
   .panel-tab.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
   .panel-tab-content {
     display: none; flex: 1; overflow-y: auto; flex-direction: column;
+    padding: 0 12px;
   }
   .panel-tab-content.active { display: flex; }
 
@@ -1254,6 +1255,11 @@ export function startPreviewServer(port = config.previewPort) {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = pathDirname(__filename);
   app.use('/editor/js', express.static(pathJoin(__dirname, 'editor')));
+
+  // i18n browser module + locale JSON files — must be static so the <script>
+  // tag in buildEditorPage can load /i18n/index.js (not just the JSON files
+  // handled by the parameterized /i18n/:lang.json route below).
+  app.use('/i18n', express.static(pathJoin(__dirname, 'i18n')));
 
   // Root redirect and landing page must be registered before the parameterized
   // /preview/:projectId/:screenId route so Express doesn't treat "preview" as a projectId.
