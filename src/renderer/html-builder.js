@@ -34,7 +34,10 @@ export function buildScreenHtml(screen, style = 'wireframe') {
     .join('\n    ');
 
   // Build color scheme attribute if present (used by styles like slate for dark/light support)
-  const colorSchemeAttr = screen.color_scheme ? ` data-color-scheme="${screen.color_scheme}"` : '';
+  // Use allowlist to prevent XSS via unsanitized color_scheme values
+  const ALLOWED_COLOR_SCHEMES = new Set(['dark', 'light']);
+  const safeColorScheme = ALLOWED_COLOR_SCHEMES.has(screen.color_scheme) ? screen.color_scheme : null;
+  const colorSchemeAttr = safeColorScheme ? ` data-color-scheme="${safeColorScheme}"` : '';
 
   return `<!DOCTYPE html>
 <html>
