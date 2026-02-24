@@ -59,5 +59,10 @@
   "layers.bringToFront": "Bring to front",
   "layers.sendToBack": "Send to back",
   "layers.pinned": "Pinned (z≥10)",
-  "layers.noElements": "No elements"
+  "layers.noElements": "No elements",
+  "comments": "Comments",
+  "addComment": "Add comment",
+  "resolveComment": "Resolve",
+  "noComments": "No comments",
+  "commentResolved": "Resolved"
 }
