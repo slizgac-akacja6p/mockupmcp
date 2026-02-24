@@ -947,25 +947,21 @@ const EDITOR_CSS = `
   .toolbar-btn:disabled { opacity: 0.4; cursor: default; }
   .toolbar-btn-active { background: var(--accent-subtle); border-color: var(--accent); color: var(--accent); }
 
-  .lang-btn {
-    padding: 3px 7px;
-    font-size: var(--text-xs);
-    font-weight: 600;
+  #lang-select {
+    background: var(--surface-2);
     border: 1px solid var(--border-default);
-    border-radius: var(--radius-sm);
-    background: transparent;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s;
-  }
-  .lang-btn.active {
-    background: var(--surface-3);
     color: var(--text-primary);
+    font-size: var(--text-xs);
+    padding: 3px 6px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    outline: none;
+  }
+  #lang-select:hover {
     border-color: var(--border-strong);
   }
-  .lang-btn:hover:not(.active) {
-    background: var(--surface-3);
-    color: var(--text-primary);
+  #lang-select:focus {
+    border-color: var(--accent);
   }
 
   /* Mode toggle buttons — pill style for select/add mode */
@@ -1243,10 +1239,10 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
     <div id="multi-select-toolbar" style="display:none">
       <button id="btn-delete-selected" class="toolbar-btn toolbar-btn-danger">Delete (<span id="multi-select-count">0</span>)</button>
     </div>
-    <div id="lang-switcher" style="display:flex;align-items:center;gap:2px;margin-left:8px;">
-      <button class="lang-btn active" data-lang="en" title="English">EN</button>
-      <button class="lang-btn" data-lang="pl" title="Polski">PL</button>
-    </div>
+    <select id="lang-select" title="Język">
+      <option value="en">EN</option>
+      <option value="pl">PL</option>
+    </select>
     <a class="preview-link" href="/preview/${projectId}/${screenId}">Preview</a>
   </div>
   <div id="editor-flex-wrapper">

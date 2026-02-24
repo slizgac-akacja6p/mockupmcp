@@ -654,14 +654,15 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
   });
 
   // --- language switcher ---
-  document.querySelectorAll('.lang-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const lang = btn.dataset.lang;
+  const langSelect = document.getElementById('lang-select');
+  if (langSelect) {
+    // Set initial value from current language
+    langSelect.value = localStorage.getItem('mockup-lang') || 'en';
+    langSelect.addEventListener('change', async (e) => {
+      const lang = e.target.value;
       if (typeof window.setLanguage === 'function') {
         await window.setLanguage(lang);
       }
-      document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
 
       // Refresh all translatable toolbar and panel labels after language change
       const undoBtn = document.getElementById('btn-undo');
@@ -684,13 +685,7 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
         onDeselect();
       }
     });
-  });
-
-  // Restore active language button from persisted preference
-  const savedLang = localStorage.getItem('editor-lang') || 'en';
-  document.querySelectorAll('.lang-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.lang === savedLang);
-  });
+  }
 
   // --- sidebar collapse toggle ---
   const collapseBtn = document.getElementById('editor-sidebar-collapse-btn');
