@@ -21,5 +21,5 @@ export async function registerAllTools(server, store) {
   registerGroupTools(server, store);
   registerApprovalTools(server, store);
   registerBulkTools(server, store);
-  console.error('[MockupMCP] 30 tools registered');
+  console.error('[MockupMCP] 31 tools registered');
 }
