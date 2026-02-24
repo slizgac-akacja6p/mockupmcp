@@ -1795,27 +1795,26 @@ export function startPreviewServer(port = config.previewPort) {
   });
 
   // PATCH /api/projects/:projectId/screens/:screenId
-  // Updates allowed screen fields (name, background, width, height, style).
+  // Updates allowed screen fields (name, background, width, height, style, status).
   app.patch('/api/projects/:projectId/screens/:screenId', async (req, res) => {
     try {
-      const project = await store.getProject(req.params.projectId);
-      const screen = project.screens.find(s => s.id === req.params.screenId);
-      if (!screen) return res.status(404).json({ error: 'Screen not found' });
-
-      const { name, background, width, height, style, status } = req.body;
-      if (name !== undefined) screen.name = name;
-      if (background !== undefined) screen.background = background;
-      if (width !== undefined) screen.width = width;
-      if (height !== undefined) screen.height = height;
-      if (style !== undefined) screen.style = style;
-      if (status !== undefined) {
-        if (!['draft', 'approved', 'rejected'].includes(status)) {
-          return res.status(400).json({ error: 'Invalid status. Must be: draft, approved, or rejected' });
-        }
-        screen.status = status;
+      // Validate status if provided before building updates object.
+      const { status } = req.body;
+      if (status !== undefined && !['draft', 'approved', 'rejected'].includes(status)) {
+        return res.status(400).json({ error: 'Invalid status. Must be: draft, approved, or rejected' });
       }
 
-      await store._save(project);
+      // Build updates object with only provided fields.
+      const allowed = ['name', 'background', 'width', 'height', 'style', 'status'];
+      const updates = {};
+      for (const field of allowed) {
+        if (req.body[field] !== undefined) {
+          updates[field] = req.body[field];
+        }
+      }
+
+      // Use updateScreen() for proper encapsulation instead of direct _save().
+      const screen = await store.updateScreen(req.params.projectId, req.params.screenId, updates);
       res.json(screen);
     } catch (err) {
       res.status(404).json({ error: err.message });
