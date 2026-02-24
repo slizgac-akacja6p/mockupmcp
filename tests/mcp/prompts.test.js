@@ -89,8 +89,8 @@ before(() => {
 
 describe('MCP Prompts', () => {
   describe('registration', () => {
-    it('registers 3 prompts', () => {
-      assert.equal(server.prompts.size, 3);
+    it('registers 4 prompts', () => {
+      assert.equal(server.prompts.size, 4);
     });
 
     it('registers mockup_design_review', () => {
@@ -103,6 +103,10 @@ describe('MCP Prompts', () => {
 
     it('registers mockup_compare_screens', () => {
       assert.ok(server.prompts.has('mockup_compare_screens'));
+    });
+
+    it('registers mockup_layout_guide', () => {
+      assert.ok(server.prompts.has('mockup_layout_guide'));
     });
   });
 

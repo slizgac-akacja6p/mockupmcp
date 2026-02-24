@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { autoLayout } from '../../renderer/layout.js';
+import { composeLayout } from '../../renderer/layout-composer.js';
+import { getAvailableSections } from '../../renderer/sections/index.js';
 
 export function registerLayoutTools(server, store) {
   server.tool(
@@ -58,6 +60,56 @@ export function registerLayoutTools(server, store) {
           content: [{
             type: 'text',
             text: JSON.stringify(updatedScreen, null, 2),
+          }],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: 'text', text: `Error: ${error.message}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // --- High-level layout API: semantic sections ---
+  server.tool(
+    'mockup_create_screen_layout',
+    'Create a screen with automatic layout from semantic sections (e.g., navbar, hero_with_cta, card_grid_3). 10x faster mockup creation. Sections are stacked vertically.',
+    {
+      project_id: z.string().describe('Project ID'),
+      name: z.string().describe('Screen name'),
+      sections: z.array(
+        z.object({
+          type: z.string().describe(`Section type: ${getAvailableSections().join(', ')}`),
+          props: z.record(z.any()).optional().describe('Section-specific properties (e.g., { title: "...", links: [...] })'),
+        })
+      ).describe('Array of sections to stack vertically'),
+      style: z.string().optional().describe('Style override (defaults to project style)'),
+      width: z.number().optional().default(1280).describe('Screen width in pixels (default: 1280)'),
+      height: z.number().optional().default(900).describe('Screen height in pixels (default: 900, actual will be auto-calculated)'),
+    },
+    async ({ project_id, name, sections, style, width, height }) => {
+      try {
+        const { elements, totalHeight } = await composeLayout(project_id, sections, store, width);
+
+        // Create screen with calculated height
+        const actualHeight = Math.max(totalHeight, height);
+        const screen = await store.addScreen(project_id, name, width, actualHeight, '#FFFFFF', style || null);
+
+        // Add all composed elements to the screen in bulk
+        await store.bulkAddElements(project_id, screen.id, elements);
+
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              screen_id: screen.id,
+              name: screen.name,
+              width: screen.width,
+              height: screen.height,
+              element_count: elements.length,
+              sections_applied: sections.length,
+            }, null, 2),
           }],
         };
       } catch (error) {
