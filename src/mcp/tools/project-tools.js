@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { config } from '../../config.js';
+import { getAvailableStyles } from '../../renderer/styles/index.js';
 
 export function registerProjectTools(server, store) {
   server.tool(
@@ -14,10 +15,10 @@ export function registerProjectTools(server, store) {
         .default('mobile')
         .describe('Viewport preset: mobile (393x852), tablet (834x1194), desktop (1440x900)'),
       style: z
-        .enum(['wireframe', 'material', 'ios', 'blueprint', 'flat', 'hand-drawn'])
+        .enum(getAvailableStyles())
         .optional()
         .default('wireframe')
-        .describe('Visual style: wireframe, material, ios, blueprint, flat, hand-drawn'),
+        .describe('Visual style for the project (inherited by screens unless overridden)'),
       folder: z.string().optional().describe('Optional folder path to organize the project (e.g. "MGGS/Audiobook Maker")'),
     },
     async ({ name, description, viewport, style, folder }) => {

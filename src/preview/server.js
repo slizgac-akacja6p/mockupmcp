@@ -1145,6 +1145,30 @@ const EDITOR_CSS = `
     border-color: var(--accent);
   }
 
+  #style-select {
+    background: var(--surface-2);
+    border: 1px solid var(--border-default);
+    color: var(--text-primary);
+    font-size: var(--text-xs);
+    padding: 3px 6px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    outline: none;
+    max-width: 150px;
+  }
+  #style-select:hover {
+    border-color: var(--border-strong);
+  }
+  #style-select:focus {
+    border-color: var(--accent);
+  }
+  .toolbar-label {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    user-select: none;
+    white-space: nowrap;
+  }
+
   /* Mode toggle buttons — pill style for select/add mode */
   .mode-btn {
     border-radius: var(--radius-md); padding: 4px 10px;
@@ -1335,7 +1359,37 @@ function buildComponentMetaJson() {
 // correctly inside the editor canvas, matching what preview/screenshot produce.
 // Palette sidebar shows recent components + search + categories. ADD_MODE shows when
 // user presses shortcut to add element. Multi-select toolbar appears when >1 element selected.
-function buildEditorPage(screenHtml, projectId, screenId, projectName, screenName, style = 'wireframe') {
+// Style value → human-readable label mapping. Used by both the toolbar dropdown
+// (project-level) and the property panel dropdown (screen-level override).
+const STYLE_OPTIONS = [
+  { value: 'wireframe',      label: 'Wireframe' },
+  { value: 'material',       label: 'Material' },
+  { value: 'material3',      label: 'Material 3' },
+  { value: 'ios',            label: 'iOS' },
+  { value: 'hig',            label: 'Apple HIG' },
+  { value: 'fluent2',        label: 'Fluent 2' },
+  { value: 'antd',           label: 'Ant Design' },
+  { value: 'carbon',         label: 'IBM Carbon' },
+  { value: 'flat',           label: 'Flat' },
+  { value: 'blueprint',      label: 'Blueprint' },
+  { value: 'hand-drawn',     label: 'Hand-drawn' },
+  { value: 'neubrutalism',   label: 'Neubrutalism' },
+  { value: 'glassmorphism',  label: 'Glassmorphism' },
+  { value: 'neumorphic',     label: 'Neumorphic' },
+  { value: 'claymorphism',   label: 'Claymorphism' },
+  { value: 'dark-minimal',   label: 'Dark Minimal' },
+  { value: 'aurora',         label: 'Aurora' },
+  { value: 'skeuomorphic',   label: 'Skeuomorphic' },
+];
+
+function buildStyleOptionsHtml(selectedValue) {
+  return STYLE_OPTIONS.map(({ value, label }) => {
+    const sel = value === selectedValue ? ' selected' : '';
+    return `<option value="${value}"${sel}>${label}</option>`;
+  }).join('');
+}
+
+function buildEditorPage(screenHtml, projectId, screenId, projectName, screenName, style = 'wireframe', projectStyle = 'wireframe', screenStyle = null) {
   const componentMetaJson = buildComponentMetaJson();
   // Component styles must come before EDITOR_CSS so editor rules can override them.
   const componentStyle = `<style>
@@ -1420,6 +1474,10 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
     <div id="multi-select-toolbar" style="display:none">
       <button id="btn-delete-selected" class="toolbar-btn toolbar-btn-danger">Delete (<span id="multi-select-count">0</span>)</button>
     </div>
+    <span class="toolbar-label">Style:</span>
+    <select id="style-select" title="Project style">
+      ${buildStyleOptionsHtml(projectStyle)}
+    </select>
     <select id="lang-select" title="Język">
       <option value="en">EN</option>
       <option value="pl">PL</option>
@@ -1469,6 +1527,9 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
   ${SIDEBAR_JS}
   ${ZOOM_JS}
   <script>window.__COMPONENT_META__ = ${componentMetaJson};</script>
+  <script>window.__STYLE_OPTIONS__ = ${JSON.stringify(STYLE_OPTIONS)};
+  window.__PROJECT_STYLE__ = ${JSON.stringify(projectStyle)};
+  window.__SCREEN_STYLE__ = ${JSON.stringify(screenStyle)};</script>
   <script src="/i18n/index.js"></script>
   <script>
     // Tab switching for right panel (Properties | Components)
@@ -1620,7 +1681,7 @@ export function startPreviewServer(port = config.previewPort) {
 
       const style = screen.style || project.style || 'wireframe';
       const fragment = buildScreenFragment(screen, style);
-      const html = buildEditorPage(fragment, project.id, screen.id, project.name, screen.name, style);
+      const html = buildEditorPage(fragment, project.id, screen.id, project.name, screen.name, style, project.style || 'wireframe', screen.style || null);
       res.type('html').send(html);
     } catch (err) {
       res.status(500).send('Error: ' + err.message);
@@ -1661,6 +1722,21 @@ export function startPreviewServer(port = config.previewPort) {
       res.json(tree);
     } catch (err) {
       res.status(500).json({ error: err.message });
+    }
+  });
+
+  // PATCH /api/projects/:projectId
+  // Updates allowed project fields (name, style).
+  app.patch('/api/projects/:projectId', async (req, res) => {
+    try {
+      const project = await store.getProject(req.params.projectId);
+      const { name, style } = req.body;
+      if (name !== undefined) project.name = name;
+      if (style !== undefined) project.style = style;
+      await store._save(project);
+      res.json(project);
+    } catch (err) {
+      res.status(404).json({ error: err.message });
     }
   });
 

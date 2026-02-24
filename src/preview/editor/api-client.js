@@ -81,6 +81,19 @@ export async function deleteElement(projectId, screenId, elementId) {
   await handleResponse(res);
 }
 
+export async function updateProject(projectId, updates) {
+  const res = await fetch(
+    `/api/projects/${projectId}`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    },
+  );
+  await handleResponse(res);
+  return res.json();
+}
+
 export async function updateScreen(projectId, screenId, updates) {
   const res = await fetch(
     `/api/projects/${projectId}/screens/${screenId}`,

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { getAvailableTypes } from '../../renderer/components/index.js';
 import { generateId } from '../../storage/id-generator.js';
+import { getAvailableStyles } from '../../renderer/styles/index.js';
 
 export function registerBulkTools(server, store) {
   server.tool(
@@ -12,7 +13,7 @@ export function registerBulkTools(server, store) {
       width: z.number().optional().describe('Screen width in pixels (optional, uses project viewport width if omitted)'),
       height: z.number().optional().describe('Screen height in pixels (optional, uses project viewport height if omitted)'),
       background: z.string().optional().default('#FFFFFF').describe('Screen background color (default: #FFFFFF)'),
-      style: z.enum(['wireframe', 'material', 'ios', 'blueprint', 'flat', 'hand-drawn']).optional()
+      style: z.enum(getAvailableStyles()).optional()
         .describe('Visual style for the screen'),
       elements: z.array(z.object({
         type: z.string().describe('Element type (rectangle, text, button, card, etc.)'),
@@ -71,7 +72,7 @@ export function registerBulkTools(server, store) {
       description: z.string().optional().describe('Project description'),
       viewport: z.enum(['mobile', 'tablet', 'desktop']).optional()
         .describe('Viewport preset (mobile: 393x852, tablet: 768x1024, desktop: 1280x800)'),
-      style: z.enum(['wireframe', 'material', 'ios', 'blueprint', 'flat', 'hand-drawn']).optional()
+      style: z.enum(getAvailableStyles()).optional()
         .describe('Default visual style for screens'),
       folder: z.string().optional().describe('Folder path to create project in'),
       screens: z.array(z.object({
@@ -80,7 +81,7 @@ export function registerBulkTools(server, store) {
         width: z.number().optional().describe('Screen width (optional, uses viewport preset)'),
         height: z.number().optional().describe('Screen height (optional, uses viewport preset)'),
         background: z.string().optional().default('#FFFFFF').describe('Screen background color'),
-        style: z.enum(['wireframe', 'material', 'ios', 'blueprint', 'flat', 'hand-drawn']).optional()
+        style: z.enum(getAvailableStyles()).optional()
           .describe('Screen-specific style (overrides project style)'),
         elements: z.array(z.object({
           type: z.string().describe('Element type'),

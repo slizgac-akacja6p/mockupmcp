@@ -351,6 +351,46 @@ export function renderPanelHtml(fields) {
 }
 
 // ---------------------------------------------------------------------------
+// Screen properties panel (shown when no element is selected)
+// ---------------------------------------------------------------------------
+
+/**
+ * Render the screen-level properties panel, including a style override dropdown.
+ * When no element is selected the property panel shows screen info instead of
+ * the "click an element" placeholder.
+ *
+ * @param {string|null} currentScreenStyle - current screen style override (null = inherit)
+ * @param {Array<{value: string, label: string}>} styleOptions - available styles
+ * @returns {string} HTML string
+ */
+export function renderScreenStyleHtml(currentScreenStyle, styleOptions) {
+  const title = _t('panel.screen', 'Screen');
+  const styleLabel = _t('panel.screenStyle', 'Screen Style');
+  const inheritLabel = _t('panel.inheritFromProject', 'Inherit from project');
+
+  const options = styleOptions.map(({ value, label }) => {
+    const sel = value === currentScreenStyle ? ' selected' : '';
+    return `<option value="${escPanelVal(value)}"${sel}>${escPanelVal(label)}</option>`;
+  }).join('');
+
+  const inheritSelected = !currentScreenStyle ? ' selected' : '';
+
+  return `<div class="panel-group" data-group="screen">
+  <div class="panel-group-title">${escPanelVal(title)}</div>
+  <div class="panel-field">
+    <label class="panel-label">${escPanelVal(styleLabel)}</label>
+    <select id="screen-style-select"
+            data-field="screen-style"
+            data-field-type="text">
+      <option value=""${inheritSelected}>${escPanelVal(inheritLabel)}</option>
+      ${options}
+    </select>
+  </div>
+</div>
+<p class="panel-placeholder">${escPanelVal(_t('panel.selectElement', 'Select an element to edit its properties'))}</p>`;
+}
+
+// ---------------------------------------------------------------------------
 // DOM binding (only runs in browser)
 // ---------------------------------------------------------------------------
 

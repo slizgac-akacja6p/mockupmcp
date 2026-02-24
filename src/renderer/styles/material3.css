@@ -1,0 +1,684 @@
+/* Material Design 3 — tonal color system, expressive shapes, no hard shadows */
+:root {
+  /* MD3 color system — seed color #6750A4 (purple) */
+  --md-sys-color-primary:              #6750A4;
+  --md-sys-color-on-primary:           #FFFFFF;
+  --md-sys-color-primary-container:    #EADDFF;
+  --md-sys-color-on-primary-container: #21005D;
+  --md-sys-color-secondary:            #625B71;
+  --md-sys-color-on-secondary:         #FFFFFF;
+  --md-sys-color-secondary-container:  #E8DEF8;
+  --md-sys-color-tertiary:             #7D5260;
+  --md-sys-color-on-tertiary:          #FFFFFF;
+  --md-sys-color-tertiary-container:   #FFD8E4;
+  --md-sys-color-error:                #B3261E;
+  --md-sys-color-on-error:             #FFFFFF;
+  --md-sys-color-error-container:      #F9DEDC;
+  --md-sys-color-surface:              #FFFBFE;
+  --md-sys-color-on-surface:           #1C1B1F;
+  --md-sys-color-surface-variant:      #E7E0EC;
+  --md-sys-color-on-surface-variant:   #49454F;
+  --md-sys-color-outline:              #79747E;
+  --md-sys-color-outline-variant:      #CAC4D0;
+  --md-sys-color-background:           #FFFBFE;
+  --md-sys-color-on-background:        #1C1B1F;
+  --md-sys-color-surface-container-low:    #F7F2FA;
+  --md-sys-color-surface-container:        #F3EDF7;
+  --md-sys-color-surface-container-high:   #ECE6F0;
+  --md-sys-color-surface-container-highest:#E6E0E9;
+  --md-sys-color-inverse-surface:      #313033;
+  --md-sys-color-inverse-on-surface:   #F4EFF4;
+  --md-sys-color-inverse-primary:      #D0BCFF;
+
+  /* MD3 shape scale */
+  --md-shape-none: 0px;
+  --md-shape-xs:   4px;
+  --md-shape-sm:   8px;
+  --md-shape-md:   12px;
+  --md-shape-lg:   16px;
+  --md-shape-xl:   28px;
+  --md-shape-full: 50px;
+
+  /* MD3 elevation via tonal overlay — primary color mixed into surface */
+  --md-elevation-1: color-mix(in srgb, var(--md-sys-color-primary) 5%, var(--md-sys-color-surface));
+  --md-elevation-2: color-mix(in srgb, var(--md-sys-color-primary) 8%, var(--md-sys-color-surface));
+  --md-elevation-3: color-mix(in srgb, var(--md-sys-color-primary) 11%, var(--md-sys-color-surface));
+  --md-elevation-4: color-mix(in srgb, var(--md-sys-color-primary) 12%, var(--md-sys-color-surface));
+  --md-elevation-5: color-mix(in srgb, var(--md-sys-color-primary) 14%, var(--md-sys-color-surface));
+
+  /* MD3 typography scale */
+  --md-typescale-display-large:   57px/64px "Roboto", sans-serif;
+  --md-typescale-display-medium:  45px/52px "Roboto", sans-serif;
+  --md-typescale-headline-large:  32px/40px "Roboto", sans-serif;
+  --md-typescale-headline-medium: 28px/36px "Roboto", sans-serif;
+  --md-typescale-title-large:     22px/28px "Roboto", sans-serif;
+  --md-typescale-title-medium:    16px/24px "Roboto Medium", sans-serif;
+  --md-typescale-body-large:      16px/24px "Roboto", sans-serif;
+  --md-typescale-body-medium:     14px/20px "Roboto", sans-serif;
+  --md-typescale-label-large:     14px/20px "Roboto Medium", sans-serif;
+  --md-typescale-label-medium:    12px/16px "Roboto Medium", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Roboto", "Google Sans", system-ui, sans-serif;
+  color: var(--md-sys-color-on-background);
+  background: var(--md-sys-color-background);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ── Button ─────────────────────────────────────────────────────────────── */
+
+/* MD3 buttons use full pill shape (shape-full) for filled/tonal/outlined */
+.mockup-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--md-shape-full);
+  border: none;
+  font-family: "Roboto Medium", "Google Sans", sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.1px;
+  cursor: pointer;
+  line-height: 1;
+  white-space: nowrap;
+  gap: 8px;
+}
+
+.mockup-button--sm  { padding: 8px 20px;  font-size: 12px; }
+.mockup-button--md  { padding: 10px 24px; font-size: 14px; }
+.mockup-button--lg  { padding: 14px 32px; font-size: 16px; }
+
+/* Filled button — highest emphasis */
+.mockup-button--primary {
+  background: var(--md-sys-color-primary);
+  color:      var(--md-sys-color-on-primary);
+  box-shadow: none;
+}
+
+/* Tonal button — medium emphasis using container color */
+.mockup-button--secondary {
+  background: var(--md-sys-color-secondary-container);
+  color:      var(--md-sys-color-on-secondary-container);
+}
+
+/* Outlined button — medium emphasis with border */
+.mockup-button--outline {
+  background: transparent;
+  color:      var(--md-sys-color-primary);
+  border:     1px solid var(--md-sys-color-outline);
+}
+
+/* Text/ghost button — lowest emphasis */
+.mockup-button--ghost {
+  background:   transparent;
+  color:        var(--md-sys-color-primary);
+  border:       none;
+}
+
+/* ── Input ──────────────────────────────────────────────────────────────── */
+
+/* MD3 filled text field — tonal surface fill with bottom indicator line */
+.mockup-input {
+  display: block;
+  width: 100%;
+  padding: 16px 16px 8px;
+  border: none;
+  border-bottom: 1px solid var(--md-sys-color-on-surface-variant);
+  border-radius: var(--md-shape-xs) var(--md-shape-xs) 0 0;
+  font-family: inherit;
+  font-size: 16px;
+  color: var(--md-sys-color-on-surface);
+  background: var(--md-sys-color-surface-container-highest);
+}
+
+.mockup-input-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--md-sys-color-primary);
+  letter-spacing: 0.4px;
+}
+
+/* ── Navbar (Top App Bar) ────────────────────────────────────────────────── */
+
+/* MD3 top app bar — surface color, subtle elevation on scroll */
+.mockup-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 16px;
+  height: 64px;
+  background: var(--md-elevation-2);
+  box-shadow: none;
+}
+
+.mockup-navbar__title {
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--md-sys-color-on-surface);
+  flex: 1;
+  text-align: center;
+}
+
+.mockup-navbar__side {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 48px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+/* ── Tab Bar (Navigation Bar) ───────────────────────────────────────────── */
+
+/* MD3 navigation bar — pill indicator on active item */
+.mockup-tabbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  width: 100%;
+  padding: 12px 0 16px;
+  background: var(--md-sys-color-surface-container);
+}
+
+.mockup-tabbar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  color: var(--md-sys-color-on-surface-variant);
+  cursor: pointer;
+}
+
+/* Active indicator uses primary container pill — MD3 nav bar pattern */
+.mockup-tabbar-item--active {
+  color: var(--md-sys-color-on-secondary-container);
+  font-weight: 700;
+}
+
+/* ── Card ───────────────────────────────────────────────────────────────── */
+
+/* MD3 elevated card — tonal overlay at elevation level 1 */
+.mockup-card {
+  border: none;
+  border-radius: var(--md-shape-md);
+  background: var(--md-elevation-1);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 1px 3px 1px rgba(0,0,0,0.15);
+  overflow: hidden;
+}
+
+.mockup-card__body     { padding: 16px; }
+.mockup-card__title    { font-size: 16px; font-weight: 500; color: var(--md-sys-color-on-surface); margin-bottom: 4px; }
+.mockup-card__value    { font-size: 32px; font-weight: 400; color: var(--md-sys-color-primary); margin-bottom: 4px; }
+.mockup-card__subtitle { font-size: 14px; color: var(--md-sys-color-on-surface-variant); margin-bottom: 8px; }
+.mockup-card__actions  { display: flex; gap: 8px; padding: 8px 16px 16px; }
+
+/* ── List ───────────────────────────────────────────────────────────────── */
+
+.mockup-list            { background: var(--md-sys-color-surface); border-radius: var(--md-shape-sm); overflow: hidden; }
+.mockup-list-item       { padding: 12px 16px; border-bottom: 1px solid var(--md-sys-color-outline-variant); font-size: 14px; color: var(--md-sys-color-on-surface); display: flex; align-items: center; gap: 16px; min-height: 56px; }
+.mockup-list-item:last-child { border-bottom: none; }
+.mockup-list-item__avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--md-sys-color-primary-container); flex-shrink: 0; }
+
+/* ── Image placeholder ──────────────────────────────────────────────────── */
+
+.mockup-image-placeholder { width: 100%; height: 100%; background: var(--md-sys-color-surface-container); border-radius: var(--md-shape-md); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+
+/* ── Icon ───────────────────────────────────────────────────────────────── */
+
+.mockup-icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--md-sys-color-on-surface-variant); }
+
+/* ── Badge ──────────────────────────────────────────────────────────────── */
+
+/* MD3 badge — small indicator dot or count pill */
+.mockup-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+  border-radius: var(--md-shape-full);
+  font-size: 11px;
+  font-weight: 500;
+  background: var(--md-sys-color-error);
+  color: var(--md-sys-color-on-error);
+  min-width: 16px;
+  height: 16px;
+}
+
+/* ── Alert ──────────────────────────────────────────────────────────────── */
+
+.mockup-alert {
+  padding: 12px 16px;
+  border-radius: var(--md-shape-sm);
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+  font-size: 14px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.mockup-alert--info    { background: var(--md-sys-color-primary-container);  color: var(--md-sys-color-on-primary-container); }
+.mockup-alert--success { background: #C8E6C9; color: #1B5E20; }
+.mockup-alert--warning { background: #FFF3E0; color: #E65100; }
+.mockup-alert--error   { background: var(--md-sys-color-error-container);    color: var(--md-sys-color-error); }
+
+/* ── Textarea ──────────────────────────────────────────────────────────── */
+
+.mockup-textarea { font-family: inherit; line-height: 1.5; }
+
+/* ── Checkbox ──────────────────────────────────────────────────────────── */
+
+.mockup-checkbox { display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: 14px; color: var(--md-sys-color-on-surface); }
+
+.mockup-checkbox__box {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--md-sys-color-on-surface-variant);
+  border-radius: var(--md-shape-none);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--md-sys-color-on-primary);
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.mockup-checkbox__label { color: var(--md-sys-color-on-surface); }
+
+/* ── Radio ─────────────────────────────────────────────────────────────── */
+
+.mockup-radio { display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: 14px; }
+
+.mockup-radio__circle {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--md-sys-color-on-surface-variant);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.mockup-radio__dot   { width: 10px; height: 10px; border-radius: 50%; background: var(--md-sys-color-primary); }
+.mockup-radio__label { color: var(--md-sys-color-on-surface); }
+
+/* ── Toggle (Switch) ───────────────────────────────────────────────────── */
+
+.mockup-toggle { display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: 14px; }
+
+/* MD3 switch — outline track when off, filled primary when on */
+.mockup-toggle__track {
+  width: 52px;
+  height: 32px;
+  border-radius: 16px;
+  background: var(--md-sys-color-surface-variant);
+  border: 2px solid var(--md-sys-color-outline);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.mockup-toggle--on .mockup-toggle__track { background: var(--md-sys-color-primary); border-color: var(--md-sys-color-primary); }
+
+.mockup-toggle__thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--md-sys-color-outline);
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  transition: left 0.2s, width 0.1s;
+}
+
+.mockup-toggle--on .mockup-toggle__thumb { width: 24px; height: 24px; top: 2px; left: 22px; background: var(--md-sys-color-on-primary); }
+.mockup-toggle__label { color: var(--md-sys-color-on-surface); }
+
+/* ── Select (Dropdown) ─────────────────────────────────────────────────── */
+
+.mockup-select { width: 100%; }
+
+.mockup-select__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 16px 8px;
+  border: none;
+  border-bottom: 1px solid var(--md-sys-color-on-surface-variant);
+  border-radius: var(--md-shape-xs) var(--md-shape-xs) 0 0;
+  font-size: 16px;
+  color: var(--md-sys-color-on-surface);
+  background: var(--md-sys-color-surface-container-highest);
+  cursor: pointer;
+}
+
+.mockup-select__arrow { font-size: 12px; color: var(--md-sys-color-on-surface-variant); }
+
+/* ── Slider ────────────────────────────────────────────────────────────── */
+
+.mockup-slider { width: 100%; padding: 8px 0; }
+
+.mockup-slider__track {
+  width: 100%;
+  height: 4px;
+  background: var(--md-sys-color-surface-container-highest);
+  border-radius: var(--md-shape-full);
+  position: relative;
+}
+
+.mockup-slider__fill  { height: 100%; background: var(--md-sys-color-primary); border-radius: var(--md-shape-full); }
+
+.mockup-slider__thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--md-sys-color-primary);
+  border: none;
+  position: absolute;
+  top: -8px;
+  transform: translateX(-50%);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* ── Sidebar (Navigation Drawer) ───────────────────────────────────────── */
+
+.mockup-sidebar {
+  width: 100%;
+  height: 100%;
+  background: var(--md-sys-color-surface-container-low);
+  padding: 12px 0;
+}
+
+.mockup-sidebar__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 24px 0 16px;
+  height: 56px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--md-sys-color-on-surface-variant);
+  cursor: pointer;
+  border-radius: 0 var(--md-shape-full) var(--md-shape-full) 0;
+  margin-right: 12px;
+}
+
+/* Active drawer item uses secondary container pill — MD3 navigation drawer spec */
+.mockup-sidebar__item--active {
+  color: var(--md-sys-color-on-secondary-container);
+  background: var(--md-sys-color-secondary-container);
+  font-weight: 700;
+}
+
+/* ── Breadcrumb ────────────────────────────────────────────────────────── */
+
+.mockup-breadcrumb       { display: flex; align-items: center; gap: 4px; font-size: 14px; }
+.mockup-breadcrumb__item { color: var(--md-sys-color-primary); cursor: pointer; }
+.mockup-breadcrumb__item--current { color: var(--md-sys-color-on-surface); font-weight: 500; cursor: default; }
+.mockup-breadcrumb__sep  { color: var(--md-sys-color-on-surface-variant); margin: 0 2px; }
+
+/* ── Table ─────────────────────────────────────────────────────────────── */
+
+.mockup-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+
+.mockup-table__th {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  color: var(--md-sys-color-on-surface-variant);
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  background: transparent;
+}
+
+.mockup-table__td          { padding: 12px 16px; border-bottom: 1px solid var(--md-sys-color-outline-variant); color: var(--md-sys-color-on-surface); }
+.mockup-table__row--striped { background: var(--md-sys-color-surface-container-low); }
+
+/* ── Avatar ────────────────────────────────────────────────────────────── */
+
+.mockup-avatar { flex-shrink: 0; }
+
+/* ── Chip ──────────────────────────────────────────────────────────────── */
+
+/* MD3 chips — input, filter, suggestion; uses outline or tonal fill */
+.mockup-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 16px;
+  border-radius: var(--md-shape-sm);
+  font-size: 14px;
+  font-weight: 500;
+  background: transparent;
+  color: var(--md-sys-color-on-surface-variant);
+  border: 1px solid var(--md-sys-color-outline);
+}
+
+.mockup-chip--selected {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  border-color: transparent;
+}
+
+.mockup-chip__remove { font-size: 14px; cursor: pointer; color: var(--md-sys-color-on-surface-variant); line-height: 1; }
+
+/* ── Modal (Dialog) ────────────────────────────────────────────────────── */
+
+.mockup-modal__backdrop {
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+/* MD3 dialog — large radius, no hard border, elevation shadow */
+.mockup-modal {
+  background: var(--md-sys-color-surface-container-high);
+  border-radius: var(--md-shape-xl);
+  border: none;
+  width: 100%;
+  max-width: 400px;
+  overflow: hidden;
+  box-shadow: 0 8px 12px rgba(0,0,0,0.15), 0 4px 4px rgba(0,0,0,0.3);
+}
+
+.mockup-modal__header { padding: 24px 24px 16px; font-size: 24px; font-weight: 400; color: var(--md-sys-color-on-surface); }
+.mockup-modal__body   { padding: 0 24px 24px; font-size: 14px; color: var(--md-sys-color-on-surface-variant); line-height: 1.6; }
+.mockup-modal__footer { display: flex; justify-content: flex-end; gap: 8px; padding: 0 24px 24px; }
+
+/* ── Skeleton ──────────────────────────────────────────────────────────── */
+
+.mockup-skeleton { background: var(--md-sys-color-surface-container-highest); border-radius: var(--md-shape-sm); width: 100%; height: 100%; animation: md3-pulse 1.5s ease-in-out infinite; }
+.mockup-skeleton--circle { border-radius: 50%; }
+.mockup-skeleton--text   { height: 16px; }
+
+@keyframes md3-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* ── Progress ──────────────────────────────────────────────────────────── */
+
+.mockup-progress {
+  width: 100%;
+  height: 4px;
+  background: var(--md-sys-color-surface-container-highest);
+  border-radius: var(--md-shape-full);
+  overflow: hidden;
+}
+
+.mockup-progress__bar { height: 100%; background: var(--md-sys-color-primary); border-radius: var(--md-shape-full); }
+
+/* ── Tooltip ───────────────────────────────────────────────────────────── */
+
+.mockup-tooltip { position: relative; display: inline-block; }
+
+.mockup-tooltip__content {
+  background: var(--md-sys-color-inverse-surface);
+  color: var(--md-sys-color-inverse-on-surface);
+  padding: 4px 8px;
+  border-radius: var(--md-shape-xs);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* ── Search Bar ────────────────────────────────────────────────────────── */
+
+/* MD3 search bar — large rounded pill shape */
+.mockup-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  height: 56px;
+  border-radius: var(--md-shape-full);
+  background: var(--md-elevation-2);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 1px 3px 1px rgba(0,0,0,0.15);
+  width: 100%;
+}
+
+.mockup-search-bar__icon  { display: flex; flex-shrink: 0; color: var(--md-sys-color-on-surface); }
+.mockup-search-bar__input { font-size: 16px; color: var(--md-sys-color-on-surface-variant); flex: 1; }
+
+/* ── Login Form ────────────────────────────────────────────────────────── */
+
+.mockup-login         { display: flex; flex-direction: column; gap: 16px; padding: 32px; width: 100%; }
+.mockup-login__title  { font-size: 28px; font-weight: 400; color: var(--md-sys-color-on-surface); text-align: center; margin-bottom: 8px; }
+.mockup-login__field  { width: 100%; }
+.mockup-login__forgot { font-size: 14px; color: var(--md-sys-color-primary); text-align: right; }
+.mockup-login__action { margin-top: 8px; }
+.mockup-login__action .mockup-button { width: 100%; justify-content: center; }
+
+/* ── Header ────────────────────────────────────────────────────────────── */
+
+.mockup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  height: 64px;
+  background: var(--md-elevation-2);
+  width: 100%;
+}
+
+.mockup-header__logo     { font-size: 22px; font-weight: 400; color: var(--md-sys-color-on-surface); }
+.mockup-header__nav      { display: flex; gap: 8px; }
+.mockup-header__nav-item { font-size: 14px; font-weight: 500; color: var(--md-sys-color-on-surface-variant); cursor: pointer; padding: 8px 12px; border-radius: var(--md-shape-full); }
+.mockup-header__right    { display: flex; align-items: center; gap: 4px; }
+
+/* ── Footer ────────────────────────────────────────────────────────────── */
+
+.mockup-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 16px;
+  background: var(--md-sys-color-surface-container);
+  width: 100%;
+}
+
+.mockup-footer__links { display: flex; gap: 16px; }
+.mockup-footer__link  { font-size: 14px; color: var(--md-sys-color-primary); cursor: pointer; }
+.mockup-footer__text  { font-size: 12px; color: var(--md-sys-color-on-surface-variant); }
+
+/* ── Data Table ────────────────────────────────────────────────────────── */
+
+.mockup-data-table {
+  width: 100%;
+  border-radius: var(--md-shape-sm);
+  overflow: hidden;
+  background: var(--md-sys-color-surface);
+}
+
+.mockup-data-table__toolbar { padding: 8px 16px; }
+
+.mockup-data-table__search {
+  padding: 8px 12px;
+  border: none;
+  border-bottom: 1px solid var(--md-sys-color-outline);
+  background: var(--md-sys-color-surface-container-highest);
+  font-size: 14px;
+  color: var(--md-sys-color-on-surface-variant);
+  border-radius: var(--md-shape-xs) var(--md-shape-xs) 0 0;
+}
+
+.mockup-data-table__th {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  color: var(--md-sys-color-on-surface-variant);
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  background: transparent;
+}
+
+.mockup-data-table__sort     { font-size: 8px; margin-left: 4px; color: var(--md-sys-color-outline); }
+.mockup-data-table__td       { padding: 12px 16px; border-bottom: 1px solid var(--md-sys-color-outline-variant); font-size: 14px; color: var(--md-sys-color-on-surface); }
+.mockup-data-table__row:last-child .mockup-data-table__td { border-bottom: none; }
+
+.mockup-data-table__pagination {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+  color: var(--md-sys-color-on-surface-variant);
+  border-top: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.mockup-data-table__page-btn { cursor: pointer; padding: 4px 8px; color: var(--md-sys-color-primary); border-radius: var(--md-shape-full); }
+
+/* ── Chart Placeholder ─────────────────────────────────────────────────── */
+
+.mockup-chart {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--md-shape-md);
+  background: var(--md-elevation-1);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 1px 3px 1px rgba(0,0,0,0.15);
+  overflow: hidden;
+}
+
+.mockup-chart__title {
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--md-sys-color-on-surface);
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.mockup-chart__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+}
+
+.mockup-chart__label { font-size: 12px; color: var(--md-sys-color-on-surface-variant); text-transform: capitalize; letter-spacing: 0.5px; }
