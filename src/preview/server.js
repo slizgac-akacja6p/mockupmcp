@@ -1861,7 +1861,11 @@ export function startPreviewServer(port = config.previewPort) {
         responseBody = { status: 'rejected', reason };
       }
 
-      await store.updateScreen(projectId, screenId, { status: newStatus, ...(action === 'accept_with_comments' && { _approval_action: 'accept_with_comments' }) });
+      await store.updateScreen(projectId, screenId, {
+        status: newStatus,
+        ...(action === 'accept_with_comments' && { _approval_action: 'accept_with_comments' }),
+        ...(action === 'reject' && { reject_reason: reason }),
+      });
       res.json(responseBody);
     } catch (err) {
       res.status(404).json({ error: err.message });
