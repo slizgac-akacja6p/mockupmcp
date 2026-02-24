@@ -142,6 +142,18 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
     // eslint-disable-next-line no-unsanitized/property
     if (screenEl) screenEl.outerHTML = html;
 
+    // outerHTML replacement creates a new DOM node with no inline styles, so any
+    // zoom transform set by ZOOM_JS is silently discarded. Re-apply from the same
+    // localStorage key that ZOOM_JS writes, keeping the zoom level consistent.
+    const savedZoom = localStorage.getItem(`mockup-zoom-${screenId}`);
+    if (savedZoom) {
+      const newScreenEl = canvas.querySelector('.screen');
+      if (newScreenEl) {
+        newScreenEl.style.transform = `scale(${savedZoom})`;
+        newScreenEl.style.transformOrigin = 'top center';
+      }
+    }
+
     // Refresh cached data so hasChanged comparisons stay accurate
     const freshData = await api.getScreen(projectId, screenId);
     editorState.setScreenData(freshData);
