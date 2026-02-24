@@ -136,7 +136,16 @@ export class ProjectStore {
         throw err;
       }
     }
-    return JSON.parse(raw);
+    const project = JSON.parse(raw);
+    // Migration fallback: ensure all screens have versioning fields.
+    if (project.screens) {
+      for (const screen of project.screens) {
+        screen.version ??= 1;
+        screen.parent_screen_id ??= null;
+        screen.status ??= 'draft';
+      }
+    }
+    return project;
   }
 
   async listProjects() {
@@ -245,6 +254,9 @@ export class ProjectStore {
       style,
       color_scheme,
       elements: [],
+      version: 1,
+      parent_screen_id: null,
+      status: 'draft',
     };
     project.screens.push(screen);
     await this._save(project);
@@ -291,6 +303,18 @@ export class ProjectStore {
     project.screens.push(newScreen);
     await this._save(project);
     return newScreen;
+  }
+
+  async updateScreen(projectId, screenId, updates) {
+    this._validateId(screenId);
+    const project = await this.getProject(projectId);
+    const screen = this._findScreen(project, screenId);
+
+    // Merge updates into screen (allow partial updates).
+    Object.assign(screen, updates);
+
+    await this._save(project);
+    return screen;
   }
 
   async bulkMoveElements(projectId, screenId, updates) {
@@ -611,6 +635,9 @@ export class ProjectStore {
       background,
       style,
       elements: [],
+      version: 1,
+      parent_screen_id: null,
+      status: 'draft',
     };
 
     // Create elements and build refMap.
@@ -720,6 +747,9 @@ export class ProjectStore {
         background,
         style: screenStyle,
         elements: [],
+        version: 1,
+        parent_screen_id: null,
+        status: 'draft',
       };
 
       if (screenDef.ref) screenRefMap[screenDef.ref] = screen.id;
@@ -842,5 +872,31 @@ export class ProjectStore {
     await this._save(newProject);
 
     return { project: newProject };
+  }
+
+  // --- Versioning ---
+
+  async createScreenVersion(projectId, sourceScreenId) {
+    this._validateId(sourceScreenId);
+    const project = await this.getProject(projectId);
+    const source = this._findScreen(project, sourceScreenId);
+
+    // Clone with new ID and bump version.
+    const newScreen = structuredClone(source);
+    newScreen.id = generateId('scr');
+    newScreen.version = (source.version || 1) + 1;
+    newScreen.parent_screen_id = source.id;
+    newScreen.status = 'draft';
+    newScreen.name = `${source.name} v${newScreen.version}`;
+
+    // Regenerate all element IDs so the new version has independent elements.
+    newScreen.elements = source.elements.map((el) => ({
+      ...structuredClone(el),
+      id: generateId('el'),
+    }));
+
+    project.screens.push(newScreen);
+    await this._save(project);
+    return newScreen;
   }
 }
