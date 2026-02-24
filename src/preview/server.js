@@ -1145,6 +1145,8 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
     .toolbar-badge-add { background: #F59E0B; color: var(--surface-1); }
     .box-select-overlay { position: absolute; pointer-events: none; border: 1px solid var(--accent); background: var(--accent-subtle); }
     .element-selected-multi { outline: 2px solid var(--accent) !important; outline-offset: 1px; }
+    #toolbar-add-btn { border-radius: var(--radius-md); }
+    #toolbar-add-btn:hover { background: var(--surface-3); color: var(--text-primary); }
     .toast { background: var(--surface-3); color: var(--text-primary); padding: 8px 14px; border-radius: 6px; margin-top: 8px; font-size: 12px; animation: fadeInOut 2.5s forwards; border: 1px solid var(--border-default); }
     @keyframes fadeInOut { 0%{opacity:0;transform:translateY(8px)} 10%{opacity:1;transform:translateY(0)} 80%{opacity:1} 100%{opacity:0} }
   </style>
@@ -1167,6 +1169,12 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
       <button id="btn-delete-selected" class="toolbar-btn toolbar-btn-danger">Delete (<span id="multi-select-count">0</span>)</button>
     </div>
     ${ZOOM_CONTROLS_HTML}
+    <div class="toolbar-sep"></div>
+    <button id="toolbar-add-btn" class="toolbar-btn" title="Add component (B=Button, I=Input, C=Card, T=Text, R=Rect)">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
     <div id="lang-switcher" style="display:flex;align-items:center;gap:2px;margin-left:8px;">
       <button class="lang-btn active" data-lang="en" title="English">EN</button>
       <button class="lang-btn" data-lang="pl" title="Polski">PL</button>

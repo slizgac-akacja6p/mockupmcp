@@ -377,7 +377,7 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
 
       return { snapX: result.snappedX, snapY: result.snappedY };
     },
-    onDragEnd({ elementId, x, y }) {
+    async onDragEnd({ elementId, x, y }) {
       // Hide alignment guides now that the drag is complete
       guideRenderer.hideGuides();
 
@@ -389,8 +389,9 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
       history.push({ type: 'move', elementId, before, after: { x, y } });
       updateUndoRedoButtons();
 
-      // Fire-and-forget: persist and re-render
-      api.moveElement(projectId, screenId, elementId, { x, y }).then(() => reRender());
+      // Await persist + re-render so undo state is consistent after drag
+      await api.moveElement(projectId, screenId, elementId, { x, y });
+      await reRender();
     },
   });
 
@@ -610,6 +611,23 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
     });
   }
 
+  // --- toolbar add button ---
+  // Switches to the Components tab so the user can pick a component type.
+  // Briefly highlights the button to confirm the action.
+  const toolbarAddBtn = document.getElementById('toolbar-add-btn');
+  if (toolbarAddBtn) {
+    toolbarAddBtn.addEventListener('click', () => {
+      const componentsTab = document.querySelector('.panel-tab[data-tab="components"]');
+      if (componentsTab) componentsTab.click();
+      toolbarAddBtn.style.background = 'var(--accent-subtle)';
+      toolbarAddBtn.style.borderColor = 'var(--accent)';
+      setTimeout(() => {
+        toolbarAddBtn.style.background = '';
+        toolbarAddBtn.style.borderColor = '';
+      }, 1000);
+    });
+  }
+
   // --- multi-select delete button ---
   document.getElementById('btn-delete-selected')?.addEventListener('click', async () => {
     const ids = Array.from(selectionState.getSelectedIds());
@@ -645,6 +663,20 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
       }
       document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
+
+      // Refresh all translatable toolbar and panel labels after language change
+      const undoBtn = document.getElementById('btn-undo');
+      const redoBtn = document.getElementById('btn-redo');
+      if (undoBtn) undoBtn.title = _t('toolbar.undo', 'Undo (Cmd+Z)');
+      if (redoBtn) redoBtn.title = _t('toolbar.redo', 'Redo (Cmd+Shift+Z)');
+      document.querySelectorAll('.panel-tab').forEach(tab => {
+        const tabName = tab.dataset.tab;
+        if (tabName === 'properties') tab.textContent = _t('panel.properties', 'Properties');
+        if (tabName === 'components') tab.textContent = _t('panel.components', 'Components');
+      });
+      const searchInput = document.getElementById('palette-search');
+      if (searchInput) searchInput.placeholder = _t('palette.search', 'Search components...');
+
       // Re-render property panel with new language
       const selectedId = selectionState.getSelectedId();
       if (selectedId) {
