@@ -291,9 +291,9 @@
 - [x] Fix: canvas flex `min-width: 0` — right panel stays visible in viewport
 - [x] 919 tests pass
 
-## M18 — Design System Styles (PLANNED)
-**Status:** PLANNED
-**Branch:** `feature/m18-design-styles` (not started)
+## M18 — Design System Styles
+**Status:** DONE — PR #23 open (feature/m18-design-styles → develop)
+**Branch:** `feature/m18-design-styles`
 **Scope:** 12 new rendering styles + style inheritance (project default + per-screen override)
 **Design goal:** Enable mockups in any major design language or visual aesthetic
 
@@ -327,11 +327,59 @@
 - `material` → superseded by `material3`
 - `ios` → superseded by `hig`
 
-### DoD (to be detailed in task file)
-- [ ] Style inheritance: `projectStore` + `html-builder` support screen-level style override
-- [ ] 12 new CSS style files in `src/renderer/styles/`
-- [ ] Style registry updated (VALID_STYLES expanded)
-- [ ] Editor: project style dropdown in toolbar
-- [ ] Editor: per-screen style override in properties panel
-- [ ] Tests: 12 styles × 35 components rendering matrix
-- [ ] All existing tests pass
+### DoD
+- [x] Style inheritance: `projectStore` + `html-builder` support screen-level style override
+- [x] 12 new CSS style files in `src/renderer/styles/`
+- [x] Style registry updated (VALID_STYLES: 6→18), dynamic Zod enum
+- [x] Editor: project style dropdown in toolbar
+- [x] Editor: per-screen style override in properties panel
+- [x] PATCH /api/projects/:id endpoint added
+- [x] Tests: 1424 pass (was 919, +505 new)
+
+## M19 — Layers Panel
+**Status:** PLANNED
+**Branch:** `feature/m19-layers`
+**Scope:** Wizualny panel warstw w edytorze — lista elementów wg z_index, drag-to-reorder, bring-to-front/send-to-back, sync z canvasem.
+**Tasks:** `PM/tasks/M19.md`
+**Depends on:** nothing
+**DoD:** Panel warstw w sidebarze, drag reorder persistuje z_index, dwukierunkowa sync z canvasem, pinned elements chronione.
+
+## M20 — High-level Layout API
+**Status:** PLANNED
+**Branch:** `feature/m20-layout-api`
+**Scope:** Semantic layout — Claude opisuje sekcje, tool pozycjonuje elementy. Section library (10 sekcji v1). Nowy MCP tool + prompt.
+**Tasks:** `PM/tasks/M20.md`
+**Depends on:** nothing
+**DoD:** `mockup_create_screen_layout` tool, 10 sekcji, `layout_guide` MCP prompt, testy.
+
+## M21 — Versioning
+**Status:** PLANNED
+**Branch:** `feature/m21-versioning`
+**Scope:** Każda iteracja = nowy rekord screena. Status draft/approved. Sidebar version tree. Draft bez podglądu.
+**Tasks:** `PM/tasks/M21.md`
+**Depends on:** nothing (ale M23 wymaga M21)
+**DoD:** `mockup_create_screen_version`, `mockup_set_screen_status`, sidebar version tree, preview gate.
+
+## M22 — Comments per-element
+**Status:** PLANNED
+**Branch:** `feature/m22-comments`
+**Scope:** Komentarze przypisane do elementów. Numerowane piny w edytorze i PNG. MCP resource + 3 tools.
+**Tasks:** `PM/tasks/M22.md`
+**Depends on:** nothing (ale M23 korzysta z M22)
+**DoD:** CRUD komentarzy, piny na canvasie, PNG render z pinami+legendą, MCP resource.
+
+## M23 — Approval Flow Redesign
+**Status:** PLANNED
+**Branch:** `feature/m23-approval`
+**Scope:** 3 stany: rejected / accepted_with_comments / accepted. Integracja z M21+M22. Claude dostaje strukturalny feedback.
+**Tasks:** `PM/tasks/M23.md`
+**Depends on:** M21 + M22 (HARD)
+**DoD:** 3-state approval end-to-end, comments w response, 3 przyciski w edytorze, timeout 300s.
+
+## M24 — Slate Style (dark + light)
+**Status:** PLANNED
+**Branch:** `feature/m24-slate`
+**Scope:** Styl "slate" z Tailwind Slate palette. Dark + light mode przez `data-color-scheme` attribute. Generyczny mechanizm dla przyszłych styli.
+**Tasks:** `PM/tasks/M24.md`
+**Depends on:** M18 DONE
+**DoD:** slate.css z 35 komponentami × 2 schematy, `data-color-scheme` w html-builder, `color_scheme` param w MCP tools.
