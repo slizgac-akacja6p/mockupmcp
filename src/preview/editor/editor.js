@@ -14,6 +14,7 @@ import { findAlignmentGuides, createGuideRenderer } from './guides.js';
 import { createHistory, invertOperation } from './history.js';
 import { initShortcuts } from './shortcuts.js';
 import { initPalette, exitPaletteAddMode } from './palette.js';
+import { getComponentDefaults } from './palette-data.js';
 import * as api from './api-client.js';
 
 // i18n helper — safe fallback when the i18n module hasn't loaded yet or in Node.js tests.
@@ -289,10 +290,9 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
     const x = Math.round((e.clientX - rect.left) / zoom);
     const y = Math.round((e.clientY - rect.top) / zoom);
 
-    // Default sizes per component type — palette-data.js has the full catalog
-    // but these cover the keyboard-shortcut add targets without an extra import.
-    const SIZES = { button: [120, 36], input: [200, 36], card: [280, 160], text: [160, 24], rect: [120, 80] };
-    const [w, h] = SIZES[addModeType] || [120, 60];
+    // Use palette-data defaults so all 35 component types get their correct
+    // dimensions regardless of whether they appear in the keyboard-shortcut map.
+    const { width: w, height: h } = getComponentDefaults(addModeType);
 
     try {
       const created = await api.addElement(projectId, screenId, { type: addModeType, x, y, width: w, height: h });
