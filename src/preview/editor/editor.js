@@ -144,9 +144,28 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
   const initialData = await api.getScreen(projectId, screenId);
   editorState.setScreenData(initialData);
 
+  // --- selection visual update (surgical DOM — classList only, no rerender) ---
+  // Toggles .selected on individual elements to match the current selection
+  // state. Used after outerHTML swaps and wherever only visual refresh is needed.
+  function updateSelectionVisuals() {
+    const selectedIds = selectionState.getSelectedIds();
+    canvas.querySelectorAll('[data-element-id]').forEach(el => {
+      const id = el.dataset.elementId;
+      el.classList.toggle('selected', selectedIds.has(id));
+    });
+    // Restore resize handles for single-selected element
+    const singleId = selectionState.getSelectedId();
+    if (singleId && selectedIds.size === 1) {
+      const el = canvas.querySelector(`[data-element-id="${singleId}"]`);
+      if (el && resizeHandles) resizeHandles.showHandles(el);
+    }
+  }
+
   // --- re-render helper ---
   // Fetches fresh HTML from the server, swaps the .screen element, refreshes
   // the cached screen data, and restores the previous selection highlight.
+  // Only called after actual data mutations (PATCH/POST/DELETE), not for
+  // selection-only changes which use updateSelectionVisuals() instead.
   async function reRender() {
     const html = await api.getScreenFragment(projectId, screenId);
     const screenEl = canvas.querySelector('.screen');
@@ -170,15 +189,8 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
     const freshData = await api.getScreen(projectId, screenId);
     editorState.setScreenData(freshData);
 
-    // Restore visual highlight and resize handles if an element is still selected
-    const selectedId = selectionState.getSelectedId();
-    if (selectedId) {
-      const el = canvas.querySelector(`[data-element-id="${selectedId}"]`);
-      if (el) {
-        el.classList.add('selected');
-        if (resizeHandles) resizeHandles.showHandles(el);
-      }
-    }
+    // Restore selection visuals on the fresh DOM nodes
+    updateSelectionVisuals();
   }
 
   // --- toolbar undo/redo button state ---
