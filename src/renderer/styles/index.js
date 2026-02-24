@@ -14,6 +14,8 @@ const VALID_STYLES = [
   'material3', 'hig', 'fluent2', 'antd', 'carbon',
   'neubrutalism', 'glassmorphism', 'neumorphic', 'claymorphism',
   'dark-minimal', 'aurora', 'skeuomorphic',
+  // M24: 1 new style with color scheme support
+  'slate',
 ];
 
 export function loadStyle(name) {

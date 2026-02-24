@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { loadStyle, getAvailableStyles } from '../../src/renderer/styles/index.js';
 
 describe('style registry', () => {
-  it('getAvailableStyles returns all 18 styles', () => {
+  it('getAvailableStyles returns all 19 styles', () => {
     const styles = getAvailableStyles();
     // Original 6
     assert.ok(styles.includes('wireframe'));
@@ -25,7 +25,9 @@ describe('style registry', () => {
     assert.ok(styles.includes('dark-minimal'));
     assert.ok(styles.includes('aurora'));
     assert.ok(styles.includes('skeuomorphic'));
-    assert.equal(styles.length, 18);
+    // M24: 1 new style with color scheme support
+    assert.ok(styles.includes('slate'));
+    assert.equal(styles.length, 19);
   });
 
   for (const name of ['wireframe', 'material', 'ios', 'blueprint', 'flat', 'hand-drawn']) {

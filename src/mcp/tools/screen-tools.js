@@ -19,10 +19,15 @@ export async function registerScreenTools(server, store) {
         .enum(getAvailableStyles())
         .optional()
         .describe('Style override for this screen (defaults to project style)'),
+      color_scheme: z
+        .enum(['dark', 'light'])
+        .nullable()
+        .optional()
+        .describe('Color scheme for the screen. Only affects styles that support it (e.g., slate). "dark" or "light".'),
     },
-    async ({ project_id, name, width, height, background, style }) => {
+    async ({ project_id, name, width, height, background, style, color_scheme }) => {
       try {
-        const screen = await store.addScreen(project_id, name, width, height, background, style);
+        const screen = await store.addScreen(project_id, name, width, height, background, style, color_scheme);
         return {
           content: [{ type: 'text', text: JSON.stringify(screen, null, 2) }],
         };

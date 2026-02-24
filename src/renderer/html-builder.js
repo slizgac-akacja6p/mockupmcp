@@ -33,6 +33,9 @@ export function buildScreenHtml(screen, style = 'wireframe') {
     })
     .join('\n    ');
 
+  // Build color scheme attribute if present (used by styles like slate for dark/light support)
+  const colorSchemeAttr = screen.color_scheme ? ` data-color-scheme="${screen.color_scheme}"` : '';
+
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -46,7 +49,7 @@ export function buildScreenHtml(screen, style = 'wireframe') {
   </style>
 </head>
 <body>
-  <div class="screen" style="position:relative;width:${screen.width}px;height:${screen.height}px;background:${screen.background || '#FFFFFF'};overflow:hidden;">
+  <div class="screen"${colorSchemeAttr} style="position:relative;width:${screen.width}px;height:${screen.height}px;background:${screen.background || '#FFFFFF'};overflow:hidden;">
     ${elementsHtml}
   </div>
 </body>

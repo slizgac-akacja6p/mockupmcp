@@ -229,7 +229,7 @@ export class ProjectStore {
 
   // --- Screen methods ---
 
-  async addScreen(projectId, name, width, height, background = '#FFFFFF', style = null) {
+  async addScreen(projectId, name, width, height, background = '#FFFFFF', style = null, color_scheme = null) {
     const project = await this.getProject(projectId);
 
     // Fall back to project viewport dimensions when caller omits explicit size.
@@ -243,6 +243,7 @@ export class ProjectStore {
       height: resolvedHeight,
       background,
       style,
+      color_scheme,
       elements: [],
     };
     project.screens.push(screen);
