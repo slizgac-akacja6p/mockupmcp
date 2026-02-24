@@ -27,6 +27,7 @@ export function isMac() {
  * ORDERING IS CRITICAL: redo (Cmd+Shift+Z) must appear before undo (Cmd+Z)
  * because matchShortcut returns the first match — without this ordering,
  * Cmd+Shift+Z would be caught by the undo rule first.
+ * Similarly, Cmd+C (copy) must appear before plain C (addCard) so copy takes precedence.
  *
  * @type {Array<{ action: string, key: string, meta: boolean, shift: boolean }>}
  */
@@ -35,8 +36,15 @@ export const SHORTCUT_MAP = [
   { action: 'undo',           key: 'z',          meta: true,  shift: false }, // Cmd+Z
   { action: 'duplicate',      key: 'd',          meta: true,  shift: false }, // Cmd+D
   { action: 'selectAll',      key: 'a',          meta: true,  shift: false }, // Cmd+A
+  { action: 'copy',           key: 'c',          meta: true,  shift: false }, // Cmd+C
+  { action: 'paste',          key: 'v',          meta: true,  shift: false }, // Cmd+V
   { action: 'delete',         key: 'Backspace',  meta: false, shift: false },
   { action: 'delete',         key: 'Delete',     meta: false, shift: false },
+  { action: 'addButton',      key: 'b',          meta: false, shift: false }, // B
+  { action: 'addInput',       key: 'i',          meta: false, shift: false }, // I
+  { action: 'addCard',        key: 'c',          meta: false, shift: false }, // C (no meta)
+  { action: 'addText',        key: 't',          meta: false, shift: false }, // T
+  { action: 'addRect',        key: 'r',          meta: false, shift: false }, // R
   { action: 'moveUp',         key: 'ArrowUp',    meta: false, shift: false },
   { action: 'moveDown',       key: 'ArrowDown',  meta: false, shift: false },
   { action: 'moveLeft',       key: 'ArrowLeft',  meta: false, shift: false },

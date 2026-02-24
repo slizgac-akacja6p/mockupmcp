@@ -795,10 +795,12 @@ function buildComponentMetaJson() {
   return JSON.stringify({ types, defaults });
 }
 
-// Full editor page layout: sidebar | canvas (with rendered screen) | property panel.
+// Full editor page layout: sidebar | palette | canvas (with rendered screen) | property panel.
 // screenHtml is the raw fragment content (from buildScreenFragment) — not a full doc.
 // style param injects component-specific CSS so element styles (borders, etc.) render
 // correctly inside the editor canvas, matching what preview/screenshot produce.
+// Palette sidebar shows recent components + search + categories. ADD_MODE shows when
+// user presses shortcut to add element. Multi-select toolbar appears when >1 element selected.
 function buildEditorPage(screenHtml, projectId, screenId, projectName, screenName, style = 'wireframe') {
   const componentMetaJson = buildComponentMetaJson();
   // Component styles must come before EDITOR_CSS so editor rules can override them.
@@ -817,6 +819,42 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
   ${componentStyle}
   ${EDITOR_CSS}
   ${ZOOM_CSS}
+  <style>
+    #editor-palette {
+      width: 220px;
+      min-width: 220px;
+      background: #1e1e1e;
+      border-right: 1px solid #333;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      padding: 8px 0;
+      font-size: 12px;
+      color: #ccc;
+    }
+    .palette-section-title { padding: 4px 12px; color: #666; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+    .palette-recent-items { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 8px; }
+    .palette-recent-chip { background: #2a2a2a; border: 1px solid #444; border-radius: 4px; padding: 3px 8px; cursor: pointer; font-size: 11px; }
+    .palette-recent-chip:hover, .palette-recent-chip.active { background: #3b82f6; color: white; border-color: #3b82f6; }
+    .palette-search { padding: 8px; }
+    .palette-search input { width: 100%; background: #2a2a2a; border: 1px solid #444; border-radius: 4px; padding: 4px 8px; color: #ccc; font-size: 11px; box-sizing: border-box; }
+    .palette-category { margin-bottom: 4px; }
+    .palette-category-header { padding: 6px 12px 3px; color: #888; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; user-select: none; }
+    .palette-category-header:hover { color: #ccc; }
+    .palette-items { padding: 0 8px; }
+    .palette-item { padding: 5px 8px; border-radius: 4px; cursor: pointer; color: #bbb; display: flex; align-items: center; gap: 6px; }
+    .palette-item:hover { background: #2a2a2a; color: #fff; }
+    .palette-item.add-mode-active { background: #3b82f6; color: white; }
+    .palette-shortcuts-hint { padding: 8px 12px; color: #555; font-size: 10px; border-top: 1px solid #333; margin-top: auto; }
+    #multi-select-toolbar { display: none; gap: 4px; align-items: center; }
+    .toolbar-btn-danger { background: #dc2626 !important; color: white !important; border-color: #dc2626 !important; }
+    .toolbar-badge { padding: 2px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+    .toolbar-badge-add { background: #f59e0b; color: #1a1a1a; }
+    .box-select-overlay { position: absolute; pointer-events: none; }
+    .element-selected-multi { outline: 2px solid #3b82f6 !important; outline-offset: 1px; }
+    .toast { background: #333; color: #fff; padding: 8px 14px; border-radius: 6px; margin-top: 8px; font-size: 12px; animation: fadeInOut 2.5s forwards; }
+    @keyframes fadeInOut { 0%{opacity:0;transform:translateY(8px)} 10%{opacity:1;transform:translateY(0)} 80%{opacity:1} 100%{opacity:0} }
+  </style>
 </head>
 <body>
   ${SIDEBAR_HTML}
@@ -828,11 +866,30 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
     <button id="btn-redo" class="toolbar-btn" title="Redo (Cmd+Shift+Z)" disabled>&#8631;</button>
     <div class="toolbar-separator"></div>
     <button id="btn-grid" class="toolbar-btn toolbar-btn-active" title="Snap to grid (8px)">&#8862;</button>
+    <div id="add-mode-badge" style="display:none" class="toolbar-badge toolbar-badge-add">
+      ADD MODE: <span id="add-mode-label"></span> · Esc to cancel
+    </div>
+    <div id="multi-select-toolbar" style="display:none">
+      <button id="btn-delete-selected" class="toolbar-btn toolbar-btn-danger">Delete (<span id="multi-select-count">0</span>)</button>
+    </div>
     ${ZOOM_CONTROLS_HTML}
     <a class="preview-link" href="/preview/${projectId}/${screenId}">Preview</a>
   </div>
-  <div id="editor-canvas" data-project-id="${projectId}" data-screen-id="${screenId}">
-    ${screenHtml}
+  <div style="display: flex; flex: 1; margin-top: 48px;">
+    <div id="editor-palette">
+      <div class="palette-recent" id="palette-recent" style="display:none">
+        <div class="palette-section-title">RECENT</div>
+        <div class="palette-recent-items" id="palette-recent-items"></div>
+      </div>
+      <div class="palette-search">
+        <input type="text" id="palette-search-input" placeholder="Search components..." />
+      </div>
+      <div id="palette-categories"></div>
+      <div class="palette-shortcuts-hint">B=Btn I=Input C=Card T=Text R=Rect · Esc=Cancel</div>
+    </div>
+    <div id="editor-canvas" data-project-id="${projectId}" data-screen-id="${screenId}">
+      ${screenHtml}
+    </div>
   </div>
   <div id="editor-property-panel">
     <div class="panel-header">Properties</div>
@@ -840,6 +897,7 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
       <p class="panel-placeholder">Click an element to edit its properties</p>
     </div>
   </div>
+  <div id="toast-container" style="position:fixed;bottom:20px;right:20px;z-index:9999"></div>
   ${SIDEBAR_JS}
   ${ZOOM_JS}
   <script>window.__COMPONENT_META__ = ${componentMetaJson};</script>

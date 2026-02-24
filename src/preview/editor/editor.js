@@ -5,7 +5,7 @@
 // decoupled from the DOM so they can be tested in Node.js without a browser.
 // initEditor() is the single DOM-aware entry point and is only called at runtime.
 
-import { createSelectionState, findElementInScreen, initSelection } from './selection.js';
+import { createSelectionState, findElementInScreen, initSelection, initBoxSelect } from './selection.js';
 import { buildFieldDefinitions, buildUpdatePayload, renderPanelHtml, initPropertyPanel } from './property-panel.js';
 import { loadComponentMeta } from './component-meta.js';
 import { initDrag } from './drag.js';
@@ -13,6 +13,7 @@ import { initResize } from './resize.js';
 import { findAlignmentGuides, createGuideRenderer } from './guides.js';
 import { createHistory, invertOperation } from './history.js';
 import { initShortcuts } from './shortcuts.js';
+import { initPalette, exitPaletteAddMode } from './palette.js';
 import * as api from './api-client.js';
 
 // ---------------------------------------------------------------------------
@@ -121,6 +122,14 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
   // Grid snapping is on by default (8px grid). The toolbar toggle flips this.
   let gridEnabled = true;
 
+  // --- add mode state ---
+  // null = normal pointer mode; string = component type being added on click.
+  let addModeType = null;
+
+  // --- clipboard state ---
+  // Stores a shallow copy of the last copied element for paste operations.
+  let clipboard = null; // { type, properties, width, height }
+
   // Declared early so closures (onSelect, onDeselect, reRender) can reference
   // it safely before initResize() assigns the real value below.
   let resizeHandles = null;
@@ -226,8 +235,54 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
   }
 
   // Wire up selection and property panel
-  initSelection(canvas, selectionState, onSelect, onDeselect);
+  initSelection(canvas, selectionState, onSelect, onDeselect, (selectedIds) => {
+    updateMultiSelectToolbar(selectedIds);
+    updateMultiSelectVisual(selectedIds);
+  });
   initPropertyPanel(panel, handlePropertyChange);
+
+  // Box-select: drag over empty canvas to select multiple elements at once.
+  initBoxSelect(canvas, selectionState, () => {
+    return Array.from(document.querySelectorAll('[data-element-id]')).map(el => {
+      const r  = el.getBoundingClientRect();
+      const cr = canvas.getBoundingClientRect();
+      return { id: el.dataset.elementId, x: r.left - cr.left, y: r.top - cr.top, width: r.width, height: r.height };
+    });
+  }, (selectedIds) => {
+    updateMultiSelectToolbar(selectedIds);
+    updateMultiSelectVisual(selectedIds);
+  });
+
+  // Add-mode click: place a new element wherever the user clicks on the canvas.
+  // Stays in add mode after each placement for rapid sequential drops.
+  canvas.addEventListener('click', async (e) => {
+    if (!addModeType) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.round(e.clientX - rect.left);
+    const y = Math.round(e.clientY - rect.top);
+
+    // Default sizes per component type — palette-data.js has the full catalog
+    // but these cover the keyboard-shortcut add targets without an extra import.
+    const SIZES = { button: [120, 36], input: [200, 36], card: [280, 160], text: [160, 24], rect: [120, 80] };
+    const [w, h] = SIZES[addModeType] || [120, 60];
+
+    try {
+      await api.addElement(projectId, screenId, { type: addModeType, x, y, width: w, height: h });
+      await reRender();
+      showToast(`Added ${addModeType}`);
+    } catch (err) {
+      console.error('[editor] add element failed', err);
+    }
+    // Intentionally stay in add mode — user can press Esc to exit.
+  });
+
+  // Palette sidebar — handles category rendering, search, recent list, and
+  // entering add mode when the user clicks a component type in the sidebar.
+  initPalette({
+    onAddModeEnter(type) { enterAddMode(type); },
+    onAddModeExit()      { exitAddMode(); },
+    getAddModeType()     { return addModeType; },
+  });
 
   // --- drag ---
   initDrag(canvas, selectionState, {
@@ -328,6 +383,58 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
   // resizeHandles is assigned and onDeselect() can safely call hideHandles().
   onDeselect();
 
+  // --- toast notifications ---
+  function showToast(msg) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = msg;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 2500);
+  }
+
+  // --- multi-select toolbar helpers ---
+  function updateMultiSelectToolbar(selectedIds) {
+    const toolbar = document.getElementById('multi-select-toolbar');
+    const count   = document.getElementById('multi-select-count');
+    if (selectedIds.size > 1) {
+      if (toolbar) toolbar.style.display = 'flex';
+      if (count)   count.textContent = selectedIds.size;
+    } else {
+      if (toolbar) toolbar.style.display = 'none';
+    }
+  }
+
+  function updateMultiSelectVisual(selectedIds) {
+    // Remove stale outlines from a previous multi-select pass.
+    document.querySelectorAll('.element-selected-multi').forEach(el => {
+      el.classList.remove('element-selected-multi');
+    });
+    selectedIds.forEach(id => {
+      const el = document.querySelector(`[data-element-id="${id}"]`);
+      if (el) el.classList.add('element-selected-multi');
+    });
+  }
+
+  // --- add mode helpers ---
+  function enterAddMode(type) {
+    addModeType = type;
+    const badge = document.getElementById('add-mode-badge');
+    const label = document.getElementById('add-mode-label');
+    if (badge) badge.style.display = '';
+    if (label) label.textContent = type;
+    canvas.style.cursor = 'crosshair';
+  }
+
+  function exitAddMode() {
+    addModeType = null;
+    const badge = document.getElementById('add-mode-badge');
+    if (badge) badge.style.display = 'none';
+    canvas.style.cursor = '';
+    exitPaletteAddMode();
+  }
+
   // --- nudge helper (arrow key movement) ---
   async function nudgeSelected(dx, dy) {
     const selectedId = selectionState.getSelectedId();
@@ -385,6 +492,47 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
     moveDownLarge()  { nudgeSelected(0,  10); },
     moveLeftLarge()  { nudgeSelected(-10, 0); },
     moveRightLarge() { nudgeSelected( 10, 0); },
+    // Add-mode shortcuts — keyboard equivalents of clicking palette items.
+    addButton() { enterAddMode('button'); },
+    addInput()  { enterAddMode('input');  },
+    addCard()   { enterAddMode('card');   },
+    addText()   { enterAddMode('text');   },
+    addRect()   { enterAddMode('rectangle'); },
+    // Copy selected element into clipboard (in-memory only — no OS clipboard).
+    copy() {
+      const id = selectionState.getSelectedId();
+      if (!id) return;
+      const data = editorState.getScreenData();
+      const el = findElementInScreen(data, id);
+      if (el) {
+        clipboard = {
+          type: el.type,
+          width: el.width,
+          height: el.height,
+          properties: JSON.parse(JSON.stringify(el.properties ?? {}))
+        };
+        showToast('Copied');
+      }
+    },
+    // Paste clipboard content offset by 20px from the selected element (or a
+    // fixed position when nothing is selected).
+    async paste() {
+      if (!clipboard) return;
+      const selId = selectionState.getSelectedId();
+      const data  = editorState.getScreenData();
+      const selEl = selId ? findElementInScreen(data, selId) : null;
+      const x = (selEl?.x ?? 100) + 20;
+      const y = (selEl?.y ?? 100) + 20;
+      await api.addElement(projectId, screenId, {
+        type: clipboard.type,
+        x, y,
+        width: clipboard.width,
+        height: clipboard.height,
+        properties: { ...clipboard.properties },
+      });
+      await reRender();
+      showToast('Pasted — Cmd+V to paste again');
+    },
   });
 
   // --- toolbar buttons ---
@@ -412,6 +560,32 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
       btnGrid.classList.toggle('toolbar-btn-active', gridEnabled);
     });
   }
+
+  // --- multi-select delete button ---
+  document.getElementById('btn-delete-selected')?.addEventListener('click', async () => {
+    const ids = Array.from(selectionState.getSelectedIds());
+    try {
+      for (const id of ids) {
+        try {
+          await api.deleteElement(projectId, screenId, id);
+        } catch (err) {
+          console.error('[editor] delete element failed', id, err);
+        }
+      }
+    } finally {
+      selectionState.deselect();
+      updateMultiSelectToolbar(new Set());
+      await reRender();
+    }
+  });
+
+  // --- Escape: cancel add mode (selection.js Escape handler deselects, this
+  //     intercepts first so add mode is exited before deselect fires).
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && addModeType !== null) {
+      exitAddMode();
+    }
+  });
 
   // --- polling (3 s) ---
   // Detects external edits (e.g. from Claude via MCP tools) and refreshes the

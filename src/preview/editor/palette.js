@@ -1,100 +1,230 @@
-// Client-side component palette panel — populated from the catalog baked in at inject time.
-export function buildPaletteJS(categories) {
-  const catalogJSON = JSON.stringify(categories.map(cat => ({
-    name: cat.name,
-    components: cat.components.map(c => ({
-      type: c.type,
-      label: c.label,
-      width: c.width,
-      height: c.height,
-      properties: c.properties,
-    })),
-  })));
+// palette.js — Component palette sidebar (client-side ES module)
+//
+// Renders 35 components in 6 categories, manages add mode and recent
+// component tracking. Requires the DOM structure baked into the editor page
+// by server.js: #palette-categories, #palette-recent, #palette-recent-items,
+// #palette-search-input.
 
-  return `<script>
-(function() {
-  var CATALOG = ${catalogJSON};
+import { getPaletteCategories } from './palette-data.js';
 
-  var palette = document.createElement('div');
-  palette.className = 'editor-palette';
-  palette.id = 'editor-palette';
+// localStorage key for the 5 most recently used component types.
+const RECENT_KEY = 'palette-recent';
+const MAX_RECENT = 5;
 
-  CATALOG.forEach(function(cat) {
-    var h4 = document.createElement('h4');
-    h4.textContent = cat.name;
-    palette.appendChild(h4);
+// ---------------------------------------------------------------------------
+// Recent component persistence
+// ---------------------------------------------------------------------------
 
-    cat.components.forEach(function(comp) {
-      var item = document.createElement('div');
-      item.className = 'palette-item';
-      item.textContent = comp.label;
-      item.draggable = true;
-      item.dataset.type = comp.type;
-      item.dataset.width = comp.width;
-      item.dataset.height = comp.height;
-      item.dataset.properties = JSON.stringify(comp.properties);
-
-      item.addEventListener('dragstart', function(e) {
-        e.dataTransfer.setData('application/x-mockup-component', JSON.stringify({
-          type: comp.type,
-          width: comp.width,
-          height: comp.height,
-          properties: comp.properties,
-        }));
-        e.dataTransfer.effectAllowed = 'copy';
-      });
-
-      palette.appendChild(item);
-    });
-  });
-
-  document.body.appendChild(palette);
-
-  document.addEventListener('editor:modeChange', function(e) {
-    if (e.detail.mode === 'edit') {
-      palette.classList.add('visible');
-    } else {
-      palette.classList.remove('visible');
-    }
-  });
-
-  // Handle drop on the screen canvas
-  var screenEl = document.querySelector('.screen');
-  if (screenEl) {
-    screenEl.addEventListener('dragover', function(e) {
-      if (window._editorMode !== 'edit') return;
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'copy';
-    });
-
-    screenEl.addEventListener('drop', function(e) {
-      if (window._editorMode !== 'edit') return;
-      e.preventDefault();
-      var data = e.dataTransfer.getData('application/x-mockup-component');
-      if (!data) return;
-      var comp = JSON.parse(data);
-      var rect = screenEl.getBoundingClientRect();
-      var x = e.clientX - rect.left;
-      var y = e.clientY - rect.top;
-      document.dispatchEvent(new CustomEvent('element:added', {
-        detail: {
-          element: {
-            type: comp.type,
-            x: Math.round(x),
-            y: Math.round(y),
-            width: comp.width,
-            height: comp.height,
-            properties: comp.properties,
-          },
-        },
-      }));
-    });
+/**
+ * Read the recent list from localStorage.
+ * @returns {string[]} Array of component type names (newest-first).
+ */
+export function loadRecent() {
+  try {
+    return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
+  } catch {
+    return [];
   }
-})();
-<\/script>`;
 }
 
-// Catalog is baked in at module load time (server-side) so the client receives
-// a static JSON string — no runtime imports or dynamic lookups needed.
-import { getPaletteCategories } from './palette-data.js';
-export const PALETTE_JS = buildPaletteJS(getPaletteCategories());
+/**
+ * Prepend a type to the recent list and persist it.
+ * Keeps the list at most MAX_RECENT entries, deduplicating before prepend.
+ *
+ * @param {string} type
+ * @returns {string[]} Updated recent list.
+ */
+export function pushRecent(type) {
+  const prev = loadRecent().filter(t => t !== type);
+  const next = [type, ...prev].slice(0, MAX_RECENT);
+  try {
+    localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+  } catch {
+    // localStorage may be blocked in sandboxed contexts — silently skip.
+  }
+  return next;
+}
+
+// ---------------------------------------------------------------------------
+// Search filtering (pure — easy to unit-test)
+// ---------------------------------------------------------------------------
+
+/**
+ * Filter a flat list of component labels against a search query.
+ *
+ * @param {Array<{ type: string, label: string }>} components
+ * @param {string} query
+ * @returns {Array<{ type: string, label: string }>} Matching components (case-insensitive).
+ */
+export function filterComponents(components, query) {
+  const q = query.trim().toLowerCase();
+  if (!q) return components;
+  return components.filter(c =>
+    c.label.toLowerCase().includes(q) || c.type.toLowerCase().includes(q)
+  );
+}
+
+// ---------------------------------------------------------------------------
+// DOM rendering helpers (internal)
+// ---------------------------------------------------------------------------
+
+/** Clear all children of a DOM node without using innerHTML. */
+function clearChildren(el) {
+  while (el.firstChild) el.removeChild(el.firstChild);
+}
+
+/**
+ * Rebuild the recent-chips row from the current localStorage state.
+ * Shows #palette-recent when list is non-empty.
+ *
+ * @param {string}   activeType - The currently active add-mode type, or null.
+ * @param {(type: string) => void} onClickChip
+ */
+function renderRecent(activeType, onClickChip) {
+  const container = document.getElementById('palette-recent');
+  const list      = document.getElementById('palette-recent-items');
+  if (!container || !list) return;
+
+  const recent = loadRecent();
+  container.style.display = recent.length ? '' : 'none';
+  clearChildren(list);
+
+  for (const type of recent) {
+    const chip = document.createElement('div');
+    chip.className = 'palette-recent-chip' + (type === activeType ? ' active' : '');
+    chip.textContent = type;
+    chip.dataset.type = type;
+    chip.addEventListener('click', () => onClickChip(type));
+    list.appendChild(chip);
+  }
+}
+
+/**
+ * Render all categories into #palette-categories.
+ *
+ * @param {string}   activeType   - Type string of the add-mode-active item, or null.
+ * @param {string}   searchQuery  - Current search filter value.
+ * @param {(type: string) => void} onClickItem
+ */
+function renderCategories(activeType, searchQuery, onClickItem) {
+  const container = document.getElementById('palette-categories');
+  if (!container) return;
+
+  const categories = getPaletteCategories();
+  clearChildren(container);
+
+  for (const cat of categories) {
+    // Determine which items survive the search filter.
+    const visible = filterComponents(cat.components, searchQuery);
+
+    // Skip entirely empty categories during a search.
+    if (searchQuery.trim() && visible.length === 0) continue;
+
+    const section = document.createElement('div');
+    section.className = 'palette-category';
+    section.dataset.category = cat.name;
+
+    const header = document.createElement('div');
+    header.className = 'palette-category-header';
+    header.textContent = cat.name;
+
+    const items = document.createElement('div');
+    items.className = 'palette-items';
+
+    // Collapse/expand on header click — collapsed state stored inline so it
+    // survives a category re-render without needing external state.
+    header.addEventListener('click', () => {
+      const collapsed = items.style.display === 'none';
+      items.style.display = collapsed ? '' : 'none';
+    });
+
+    for (const comp of visible) {
+      const item = document.createElement('div');
+      item.className = 'palette-item' + (comp.type === activeType ? ' add-mode-active' : '');
+      item.dataset.type = comp.type;
+
+      // Small colour square acts as a simple visual icon without SVG deps.
+      const icon = document.createElement('span');
+      icon.style.cssText = 'display:inline-block;width:10px;height:10px;border-radius:2px;background:#4a90e2;flex-shrink:0;';
+
+      const labelEl = document.createElement('span');
+      labelEl.textContent = comp.label;
+
+      item.appendChild(icon);
+      item.appendChild(labelEl);
+
+      item.addEventListener('click', () => onClickItem(comp.type));
+      items.appendChild(item);
+    }
+
+    section.appendChild(header);
+    section.appendChild(items);
+    container.appendChild(section);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+
+/** Currently active add-mode type inside this module (module-level singleton). */
+let _activeType = null;
+let _onAddModeEnter = null;
+let _onAddModeExit  = null;
+
+/**
+ * Initialise the component palette sidebar.
+ *
+ * Must be called once after the DOM is ready (editor page load).
+ *
+ * @param {{
+ *   onAddModeEnter: (componentType: string) => void,
+ *   onAddModeExit:  () => void,
+ *   getAddModeType: () => string|null,
+ * }} options
+ */
+export function initPalette(options) {
+  _onAddModeEnter = options.onAddModeEnter;
+  _onAddModeExit  = options.onAddModeExit;
+
+  let searchQuery = '';
+
+  // Callback shared by category items and recent chips.
+  function enterAddMode(type) {
+    _activeType = type;
+    pushRecent(type);
+    renderAll();
+    if (_onAddModeEnter) _onAddModeEnter(type);
+  }
+
+  function renderAll() {
+    renderCategories(_activeType, searchQuery, enterAddMode);
+    renderRecent(_activeType, enterAddMode);
+  }
+
+  // Search input wiring
+  const searchInput = document.getElementById('palette-search-input');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      searchQuery = e.target.value;
+      renderAll();
+    });
+  }
+
+  // Initial render
+  renderAll();
+}
+
+/**
+ * Remove the add-mode-active class from all palette items and clear internal
+ * state. Called by editor.js when add mode is cancelled (e.g. Escape key or
+ * successful element placement).
+ */
+export function exitPaletteAddMode() {
+  _activeType = null;
+  if (_onAddModeExit) _onAddModeExit();
+
+  // Update DOM directly — avoids a full re-render just for class removal.
+  document.querySelectorAll('.palette-item.add-mode-active, .palette-recent-chip.active')
+    .forEach(el => el.classList.remove('add-mode-active', 'active'));
+}
