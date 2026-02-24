@@ -1445,6 +1445,21 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
     .element-selected-multi { outline: 2px solid var(--accent) !important; outline-offset: 1px; }
     .toast { background: var(--surface-3); color: var(--text-primary); padding: 8px 14px; border-radius: 6px; margin-top: 8px; font-size: 12px; animation: fadeInOut 2.5s forwards; border: 1px solid var(--border-default); }
     @keyframes fadeInOut { 0%{opacity:0;transform:translateY(8px)} 10%{opacity:1;transform:translateY(0)} 80%{opacity:1} 100%{opacity:0} }
+    /* Layers panel */
+    #layers-container { display: flex; flex-direction: column; height: 100%; overflow-y: auto; padding: 0; }
+    .layers-empty { padding: 16px 12px; text-align: center; color: var(--text-muted); font-size: 12px; }
+    .layers-list { display: flex; flex-direction: column; gap: 0; }
+    .layers-row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: var(--surface-2); border: 1px solid transparent; border-radius: 4px; margin: 0 8px 4px 8px; cursor: pointer; user-select: none; transition: background 0.1s, border 0.1s; }
+    .layers-row:hover { background: var(--surface-3); border-color: var(--border-default); }
+    .layers-row.selected { background: var(--accent-subtle); border-color: var(--accent); }
+    .layers-row.dragging { opacity: 0.6; background: var(--accent-subtle); }
+    .layers-row.drop-target { background: var(--accent-subtle); border: 2px solid var(--accent); }
+    .layers-drag-handle { flex-shrink: 0; color: var(--text-muted); cursor: grab; font-size: 10px; }
+    .layers-drag-handle:active { cursor: grabbing; }
+    .layers-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary); font-size: 12px; }
+    .layers-eye-btn { flex-shrink: 0; background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 12px; padding: 2px; }
+    .layers-eye-btn:hover { color: var(--text-primary); }
+    .layers-lock-icon { flex-shrink: 0; color: var(--text-muted); font-size: 12px; }
   </style>
 </head>
 <body data-theme="dark">
@@ -1498,6 +1513,7 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
       <div id="editor-panel-tabs">
         <button class="panel-tab active" data-tab="properties">Properties</button>
         <button class="panel-tab" data-tab="components">Components</button>
+        <button class="panel-tab" data-tab="layers">Layers</button>
       </div>
       <div id="editor-tab-properties" class="panel-tab-content active">
         <div id="editor-property-panel">
@@ -1520,6 +1536,9 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
           <div id="palette-categories"></div>
           <div class="palette-shortcuts-hint">B=Btn I=Input C=Card T=Text R=Rect · Esc=Cancel</div>
         </div>
+      </div>
+      <div id="editor-tab-layers" class="panel-tab-content">
+        <div id="layers-container"></div>
       </div>
     </div>
   </div>

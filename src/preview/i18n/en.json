@@ -16,6 +16,7 @@
   "toolbar.toggleTheme": "Toggle light/dark theme",
   "panel.properties": "Properties",
   "panel.components": "Components",
+  "panel.layers": "Layers",
   "panel.element": "Element",
   "panel.positionAndSize": "Position & Size",
   "panel.style": "Style",
@@ -54,5 +55,9 @@
   "sidebar.newScreen": "New Screen",
   "sidebar.addScreen": "+ Add Screen",
   "addMode.hint": "Click on canvas to add",
-  "addMode.cancel": "Press Esc to cancel"
+  "addMode.cancel": "Press Esc to cancel",
+  "layers.bringToFront": "Bring to front",
+  "layers.sendToBack": "Send to back",
+  "layers.pinned": "Pinned (z≥10)",
+  "layers.noElements": "No elements"
 }
