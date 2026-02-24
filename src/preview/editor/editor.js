@@ -5,7 +5,7 @@
 // decoupled from the DOM so they can be tested in Node.js without a browser.
 // initEditor() is the single DOM-aware entry point and is only called at runtime.
 
-import { createSelectionState, findElementInScreen, initSelection, initBoxSelect } from './selection.js';
+import { createSelectionState, findElementId, findElementInScreen, initSelection, initBoxSelect } from './selection.js';
 import { buildFieldDefinitions, buildUpdatePayload, renderPanelHtml, initPropertyPanel } from './property-panel.js';
 import { loadComponentMeta } from './component-meta.js';
 import { initDrag } from './drag.js';
@@ -253,10 +253,19 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
     updateMultiSelectVisual(selectedIds);
   });
 
-  // Add-mode click: place a new element wherever the user clicks on the canvas.
-  // Stays in add mode after each placement for rapid sequential drops.
+  // Add-mode click: place a new element on empty canvas space, or exit add
+  // mode when the user clicks an existing element (so selection takes over).
+  // Single-shot: exits add mode after one successful placement.
   canvas.addEventListener('click', async (e) => {
     if (!addModeType) return;
+
+    // Clicked on an existing element — exit add mode so selection works
+    const clickedId = findElementId(e.target);
+    if (clickedId) {
+      exitAddMode();
+      return;
+    }
+
     const rect = canvas.getBoundingClientRect();
     const x = Math.round(e.clientX - rect.left);
     const y = Math.round(e.clientY - rect.top);
@@ -267,13 +276,23 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
     const [w, h] = SIZES[addModeType] || [120, 60];
 
     try {
-      await api.addElement(projectId, screenId, { type: addModeType, x, y, width: w, height: h });
+      const created = await api.addElement(projectId, screenId, { type: addModeType, x, y, width: w, height: h });
       await reRender();
+
+      // Record add operation for undo support
+      history.push({
+        type: 'add',
+        elementId: created.id,
+        before: null,
+        after: { type: addModeType, x, y, width: w, height: h, properties: created.properties ?? {} },
+      });
+      updateUndoRedoButtons();
+
       showToast(`Added ${addModeType}`);
     } catch (err) {
       console.error('[editor] add element failed', err);
     }
-    // Intentionally stay in add mode — user can press Esc to exit.
+    exitAddMode();
   });
 
   // Palette sidebar — handles category rendering, search, recent list, and
@@ -523,14 +542,25 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
       const selEl = selId ? findElementInScreen(data, selId) : null;
       const x = (selEl?.x ?? 100) + 20;
       const y = (selEl?.y ?? 100) + 20;
-      await api.addElement(projectId, screenId, {
+      const pastePayload = {
         type: clipboard.type,
         x, y,
         width: clipboard.width,
         height: clipboard.height,
         properties: { ...clipboard.properties },
-      });
+      };
+      const created = await api.addElement(projectId, screenId, pastePayload);
       await reRender();
+
+      // Record paste as add operation for undo support
+      history.push({
+        type: 'add',
+        elementId: created.id,
+        before: null,
+        after: pastePayload,
+      });
+      updateUndoRedoButtons();
+
       showToast('Pasted — Cmd+V to paste again');
     },
   });

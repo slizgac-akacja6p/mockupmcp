@@ -9,11 +9,11 @@ import { config } from '../config.js';
 
 // Centered background styling injected into every preview page so the mockup
 // renders on a neutral canvas without modifying the stored screen data.
-// Layout mirrors the editor canvas: gray background, centered screen with shadow.
-// Sidebar margin-left comes from SIDEBAR_CSS (260px / 40px collapsed).
+// Dark theme matches the editor so switching between preview and edit feels
+// seamless. Sidebar margin-left comes from SIDEBAR_CSS (260px / 40px collapsed).
 const PREVIEW_STYLE = `
 <style>
-  html { background: #e8e8e8; min-height: 100vh; }
+  html { background: #1A1A1A; min-height: 100vh; }
   body {
     display: flex; justify-content: center; align-items: flex-start;
     width: auto !important; height: auto !important;
@@ -22,9 +22,10 @@ const PREVIEW_STYLE = `
     min-height: calc(100vh - 68px);
     overflow-x: hidden;
     overflow: visible !important;
+    background: #1A1A1A;
   }
   body.sidebar-collapsed { margin-left: 40px; }
-  .screen { box-shadow: 0 4px 16px rgba(0,0,0,0.18); }
+  .screen { box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
 </style>`;
 
 // CSS keyframe animations for screen-to-screen transitions (push, fade, slide-up).
@@ -199,45 +200,46 @@ const ZOOM_CSS = `
   .zoom-controls {
     display: flex; align-items: center; gap: 2px;
   }
+  /* Dark zoom controls — preview toolbar uses the same dark palette as editor */
   .zoom-btn {
-    width: 26px; height: 26px; border: 1px solid #dee2e6; border-radius: 4px;
-    background: #fff; cursor: pointer; font-size: 14px; font-weight: 600;
-    color: #495057; display: flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border: 1px solid #333333; border-radius: 4px;
+    background: #252525; cursor: pointer; font-size: 14px; font-weight: 600;
+    color: #888888; display: flex; align-items: center; justify-content: center;
     transition: background 0.1s; padding: 0; line-height: 1;
   }
-  .zoom-btn:hover { background: #e9ecef; }
+  .zoom-btn:hover { background: #2C2C2E; border-color: #888888; }
   .zoom-level {
     min-width: 38px; text-align: center; font-size: 12px; font-weight: 500;
-    color: #495057; padding: 0 2px;
+    color: #888888; padding: 0 2px;
   }
-  /* Preview toolbar — matches editor toolbar style */
+  /* Preview toolbar — dark theme matching the editor toolbar */
   #preview-toolbar {
     position: fixed; top: 0; left: 260px; right: 0; height: 48px; z-index: 9999;
-    background: #f8f9fa; border-bottom: 1px solid #dee2e6;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    background: #252525; border-bottom: 1px solid #333333;
+    box-shadow: none;
     display: flex; align-items: center; padding: 0 16px; gap: 12px;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px;
     transition: left 0.3s;
   }
   #preview-toolbar .back-btn {
     padding: 5px 10px; font-size: 12px; font-weight: 500;
-    border: 1px solid #dee2e6; border-radius: 5px;
-    background: #fff; color: #495057; cursor: pointer;
+    border: 1px solid #333333; border-radius: 5px;
+    background: #252525; color: #888888; cursor: pointer;
     text-decoration: none; display: flex; align-items: center; gap: 4px;
     transition: background 0.1s;
   }
-  #preview-toolbar .back-btn:hover { background: #e9ecef; }
+  #preview-toolbar .back-btn:hover { background: #2C2C2E; border-color: #888888; color: #E5E5E5; }
   #preview-toolbar .screen-name {
-    font-weight: 600; font-size: 14px; flex: 1; color: #212529;
+    font-weight: 600; font-size: 14px; flex: 1; color: #E5E5E5;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   #preview-toolbar a.edit-link {
     padding: 6px 14px; font-size: 12px; font-weight: 500;
     border: none; border-radius: 5px;
-    background: #4A90D9; color: #fff; text-decoration: none;
+    background: #6366F1; color: #fff; text-decoration: none;
     transition: background 0.15s; white-space: nowrap;
   }
-  #preview-toolbar a.edit-link:hover { background: #3a7bc8; }
+  #preview-toolbar a.edit-link:hover { background: #818CF8; }
   body.sidebar-collapsed #preview-toolbar { left: 40px; }
   @media (max-width: 768px) { #preview-toolbar { left: 0; } }
 </style>`;
@@ -394,49 +396,50 @@ function buildReloadScript(projectId, updatedAt) {
 
 // Sidebar: left panel showing project tree with collapsible navigation.
 // Uses mockup-sidebar prefix on all classes to avoid conflicts with mockup content.
+// Dark theme by default — matches both preview and editor dark canvas.
 const SIDEBAR_CSS = `
 <style>
   #mockup-sidebar {
     position: fixed; top: 0; left: 0; bottom: 0; width: 260px;
-    background: #f5f5f5; border-right: 1px solid #ddd; z-index: 9990;
+    background: #1C1C1E; border-right: 1px solid #333333; z-index: 9990;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: 13px; color: #333; overflow-y: auto;
+    font-size: 13px; color: #E5E5E5; overflow-y: auto;
     transition: transform 0.3s ease;
   }
   #mockup-sidebar.collapsed { transform: translateX(-220px); }
   #mockup-sidebar-toggle {
     position: absolute; top: 12px; right: -32px; width: 28px; height: 28px;
-    background: #f5f5f5; border: 1px solid #ddd; border-left: none;
+    background: #1C1C1E; border: 1px solid #333333; border-left: none;
     border-radius: 0 4px 4px 0; cursor: pointer; display: flex;
-    align-items: center; justify-content: center; font-size: 14px; color: #666;
+    align-items: center; justify-content: center; font-size: 14px; color: #888888;
   }
-  #mockup-sidebar-toggle:hover { background: #e8e8e8; }
+  #mockup-sidebar-toggle:hover { background: #2C2C2E; }
   #mockup-sidebar h3 {
     margin: 0; padding: 16px 12px 8px; font-size: 11px; text-transform: uppercase;
-    letter-spacing: 0.5px; color: #999;
+    letter-spacing: 0.5px; color: #555555;
   }
   .mockup-sidebar-project { padding: 4px 0; }
   .mockup-sidebar-project-name {
     padding: 6px 12px; font-weight: 600; cursor: pointer; display: flex;
-    align-items: center; gap: 6px;
+    align-items: center; gap: 6px; color: #E5E5E5;
   }
-  .mockup-sidebar-project-name:hover { background: #e8e8e8; }
+  .mockup-sidebar-project-name:hover { background: #2C2C2E; }
   .mockup-sidebar-project-name .arrow { font-size: 10px; transition: transform 0.2s; }
   .mockup-sidebar-project-name .arrow.open { transform: rotate(90deg); }
   .mockup-sidebar-folder { padding: 2px 0; }
   .mockup-sidebar-folder-name {
     padding: 6px 12px; font-weight: 600; cursor: pointer; display: flex;
-    align-items: center; gap: 6px; color: #666;
+    align-items: center; gap: 6px; color: #888888;
   }
-  .mockup-sidebar-folder-name:hover { background: #e8e8e8; }
+  .mockup-sidebar-folder-name:hover { background: #2C2C2E; }
   .mockup-sidebar-folder-name .arrow { font-size: 10px; transition: transform 0.2s; }
   .mockup-sidebar-folder-name .arrow.open { transform: rotate(90deg); }
   .mockup-sidebar-screen {
     padding: 5px 12px 5px 28px; cursor: pointer; text-decoration: none;
-    display: block; color: #555; border-radius: 4px; margin: 1px 8px;
+    display: block; color: #888888; border-radius: 4px; margin: 1px 8px;
   }
-  .mockup-sidebar-screen:hover { background: #e0e0e0; }
-  .mockup-sidebar-screen.active { background: #d0e3f5; color: #1a5a9e; font-weight: 500; }
+  .mockup-sidebar-screen:hover { background: #2C2C2E; color: #E5E5E5; }
+  .mockup-sidebar-screen.active { background: #6366F1; color: #FFFFFF; font-weight: 500; }
   body { margin-left: 260px; transition: margin-left 0.3s; }
   body.sidebar-collapsed { margin-left: 40px; }
   @media (max-width: 768px) {
@@ -692,7 +695,7 @@ const EDITOR_CSS = `
   }
 
   #editor-toolbar {
-    position: fixed; top: 0; left: 260px; right: 380px; height: 48px; z-index: 9999;
+    position: fixed; top: 0; left: 260px; right: 260px; height: 48px; z-index: 9999;
     background: var(--toolbar-bg); border-bottom: 1px solid var(--border);
     box-shadow: none;
     display: flex; align-items: center; padding: 0 16px; gap: 12px;
@@ -717,7 +720,7 @@ const EDITOR_CSS = `
   #editor-canvas {
     position: relative;
     flex: 1;
-    margin-right: 380px; margin-top: 0;
+    margin-top: 0;
     min-height: calc(100vh - 48px);
     display: flex; align-items: flex-start; justify-content: center; padding: 20px 24px;
     background: var(--editor-bg);
@@ -727,14 +730,20 @@ const EDITOR_CSS = `
   }
   #editor-canvas .screen { box-shadow: 0 4px 24px rgba(0,0,0,0.4); overflow: visible !important; }
 
-  #editor-property-panel {
-    position: fixed; top: 48px; right: 0; bottom: 0; width: 380px;
+  #editor-right-panel {
+    width: 260px; min-width: 260px;
+    display: flex; flex-direction: column;
     background: var(--panel-bg); border-left: 1px solid var(--border);
-    box-shadow: none;
-    z-index: 9998;
+    overflow: hidden;
+  }
+  #editor-property-panel {
+    flex: 0 0 auto;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel-bg);
     font-family: var(--font-ui); font-size: 13px;
     overflow-y: auto;
     color: var(--text-primary);
+    max-height: 60%;
   }
   #editor-property-panel .panel-header {
     padding: 16px 24px 12px; border-bottom: 1px solid var(--border); margin-bottom: 0;
@@ -845,6 +854,47 @@ const EDITOR_CSS = `
     transition: background 0.15s;
   }
   .panel-delete-btn:hover { background: rgba(255, 69, 58, 0.1); }
+
+  /* Compact number input inside position pair cells */
+  .panel-field--compact .panel-input--compact {
+    width: 100%; padding: 6px 8px; font-size: 13px;
+  }
+  /* Inline field row (label left, widget right) — used for boolean toggles */
+  .panel-field--inline {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .panel-field--inline .panel-label { margin-bottom: 0; }
+  /* Two-column grid for x+y and width+height pairs */
+  .panel-pos-pair {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;
+  }
+  .panel-pos-pair .panel-field { margin-bottom: 0; }
+  /* Color field: swatch (native picker) + hex text input side by side */
+  .panel-color-row { display: flex; align-items: center; gap: 6px; }
+  .panel-color-swatch {
+    width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 4px;
+    cursor: pointer; padding: 2px; background: var(--panel-input-bg); flex-shrink: 0;
+  }
+  .panel-input--color-text { flex: 1; }
+
+  /* Light theme overrides — toggled via data-theme="light" on <body>.
+     Provides a clean daytime palette for designers who prefer light backgrounds. */
+  body[data-theme="light"] {
+    --editor-bg: #F5F5F5;
+    --sidebar-bg: #FFFFFF;
+    --toolbar-bg: #FFFFFF;
+    --panel-bg: #FFFFFF;
+    --panel-input-bg: #F5F5F5;
+    --text-primary: #1A1A1A;
+    --text-secondary: #666666;
+    --text-heading: #999999;
+    --text-muted: #BBBBBB;
+    --border: #E0E0E0;
+    --border-subtle: #EEEEEE;
+    --surface-hover: #F0F0F0;
+    --dot-grid: #E8E8E8;
+  }
 </style>`;
 
 // Build the component metadata blob that the editor's component-meta.js reads
@@ -888,16 +938,14 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
   ${ZOOM_CSS}
   <style>
     #editor-palette {
-      width: 220px;
-      min-width: 220px;
-      background: var(--sidebar-bg);
-      border-right: 1px solid var(--border);
+      flex: 1;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
       padding: 8px 0;
       font-size: 12px;
       color: var(--text-secondary);
+      background: var(--panel-bg);
     }
     .palette-section-title { padding: 4px 12px; color: var(--text-heading); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
     .palette-recent-items { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 8px; }
@@ -944,25 +992,27 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
     <a class="preview-link" href="/preview/${projectId}/${screenId}">Preview</a>
   </div>
   <div id="editor-flex-wrapper">
-    <div id="editor-palette">
-      <div class="palette-recent" id="palette-recent" style="display:none">
-        <div class="palette-section-title">RECENT</div>
-        <div class="palette-recent-items" id="palette-recent-items"></div>
-      </div>
-      <div class="palette-search">
-        <input type="text" id="palette-search-input" placeholder="Search components..." />
-      </div>
-      <div id="palette-categories"></div>
-      <div class="palette-shortcuts-hint">B=Btn I=Input C=Card T=Text R=Rect · Esc=Cancel</div>
-    </div>
     <div id="editor-canvas" data-project-id="${projectId}" data-screen-id="${screenId}">
       ${screenHtml}
     </div>
-  </div>
-  <div id="editor-property-panel">
-    <div class="panel-header">Properties</div>
-    <div class="panel-body">
-      <p class="panel-placeholder">Click an element to edit its properties</p>
+    <div id="editor-right-panel">
+      <div id="editor-property-panel">
+        <div class="panel-header">Properties</div>
+        <div class="panel-body">
+          <p class="panel-placeholder">Click an element to edit its properties</p>
+        </div>
+      </div>
+      <div id="editor-palette">
+        <div class="palette-recent" id="palette-recent" style="display:none">
+          <div class="palette-section-title">RECENT</div>
+          <div class="palette-recent-items" id="palette-recent-items"></div>
+        </div>
+        <div class="palette-search">
+          <input type="text" id="palette-search-input" placeholder="Search components..." />
+        </div>
+        <div id="palette-categories"></div>
+        <div class="palette-shortcuts-hint">B=Btn I=Input C=Card T=Text R=Rect · Esc=Cancel</div>
+      </div>
     </div>
   </div>
   <div id="toast-container" style="position:fixed;bottom:20px;right:20px;z-index:9999"></div>

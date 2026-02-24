@@ -6,6 +6,21 @@
 
 import { getComponentDefaults } from './component-meta.js';
 
+// ---------------------------------------------------------------------------
+// Toggle switch CSS — injected once into <head> on first panel render.
+// Kept here so the panel is self-contained and doesn't require server-side
+// CSS changes when the panel widget set evolves.
+// ---------------------------------------------------------------------------
+const TOGGLE_SWITCH_CSS = `
+<style id="prop-panel-toggle-css">
+.prop-toggle { position: relative; display: inline-block; width: 32px; height: 18px; }
+.prop-toggle input { opacity: 0; width: 0; height: 0; }
+.prop-toggle-slider { position: absolute; inset: 0; background: #333; border-radius: 9px; transition: .2s; cursor: pointer; }
+.prop-toggle-slider:before { content: ''; position: absolute; width: 14px; height: 14px; left: 2px; bottom: 2px; background: #888; border-radius: 50%; transition: .2s; }
+input:checked + .prop-toggle-slider { background: #6366F1; }
+input:checked + .prop-toggle-slider:before { transform: translateX(14px); background: white; }
+</style>`;
+
 // Fields that live at element level in the data model, not inside .properties.
 const POSITION_FIELDS = new Set(['x', 'y', 'width', 'height']);
 
@@ -173,17 +188,32 @@ function escPanelVal(val) {
     .replace(/>/g,  '&gt;');
 }
 
+// Human-readable section titles for each group name in the panel.
+const GROUP_TITLES = {
+  info:       'Element',
+  position:   'Position & Size',
+  properties: 'Style',
+};
+
 /**
  * Render the property panel HTML from a list of field definitions.
  * Groups are rendered as labelled sections; each field gets data-field and
  * data-field-type attributes so initPropertyPanel() can bind events without
  * querying by name.
  *
+ * Layout decisions:
+ *  - Position group: x+y on one row, width+height on another (2-column grid)
+ *    with compact number inputs + range sliders below each pair.
+ *  - Color fields: native color picker swatch + text input side by side so
+ *    the hex value is always visible and editable.
+ *  - Boolean fields: toggle switch (checkbox + slider) instead of a select so
+ *    state is immediately obvious without reading a dropdown label.
+ *
  * @param {ReturnType<typeof buildFieldDefinitions>} fields
  * @returns {string}
  */
 export function renderPanelHtml(fields) {
-  // Group fields preserving encounter order of group names
+  // Group fields preserving encounter order of group names.
   const groupOrder = [];
   const grouped = {};
 
@@ -195,77 +225,97 @@ export function renderPanelHtml(fields) {
     grouped[field.group].push(field);
   }
 
-  // Range slider limits for position fields so the slider covers a useful range
-  // without requiring manual typing for extreme values.
+  // Range slider limits for position fields so the slider covers a useful
+  // range without requiring manual typing for extreme values.
   const RANGE_LIMITS = { x: 1000, y: 1500, width: 1000, height: 1500 };
 
-  function renderField(f, group) {
+  function renderNumberWithSlider(f) {
+    const maxVal = RANGE_LIMITS[f.name] || 1000;
+    const minVal = (f.name === 'width' || f.name === 'height') ? 1 : 0;
+    return `<div class="panel-field panel-field--compact">
+  <label class="panel-label">${escPanelVal(f.name)}</label>
+  <input type="number" class="panel-input panel-input--compact"
+         data-field="${escPanelVal(f.name)}"
+         data-field-type="number"
+         value="${escPanelVal(f.value)}">
+  <input type="range" class="panel-slider"
+         data-field="${escPanelVal(f.name)}"
+         data-field-type="number"
+         min="${minVal}" max="${maxVal}"
+         value="${escPanelVal(f.value)}">
+</div>`;
+  }
+
+  function renderField(f) {
     const disabledAttr = f.readonly ? ' disabled' : '';
 
-    // Position fields: label + number input on one row, full-width slider below.
-    // Stacking vertically avoids overflow in the 280px panel that the old
-    // side-by-side (label | slider | number) layout caused.
-    if (group === 'position' && f.fieldType === 'number' && !f.readonly) {
-      const maxVal = RANGE_LIMITS[f.name] || 1000;
-      const minVal = (f.name === 'width' || f.name === 'height') ? 1 : 0;
-      return `<div class="panel-field">
-  <div class="panel-range-combo">
-    <div class="panel-field-header">
-      <label class="panel-label">${escPanelVal(f.name)}</label>
-      <input type="number" class="panel-input"
-             data-field="${escPanelVal(f.name)}"
-             data-field-type="number"
-             value="${escPanelVal(f.value)}">
-    </div>
-    <input type="range" class="panel-slider"
+    if (f.fieldType === 'boolean') {
+      // Toggle switch: visually clear on/off without reading a dropdown value.
+      const checkedAttr = f.value === true ? ' checked' : '';
+      return `<div class="panel-field panel-field--inline">
+  <label class="panel-label">${escPanelVal(f.name)}</label>
+  <label class="prop-toggle">
+    <input type="checkbox"
            data-field="${escPanelVal(f.name)}"
-           data-field-type="number"
-           min="${minVal}" max="${maxVal}"
-           value="${escPanelVal(f.value)}">
+           data-field-type="boolean"
+           value="true"${checkedAttr}${disabledAttr}>
+    <span class="prop-toggle-slider"></span>
+  </label>
+</div>`;
+    }
+
+    if (f.fieldType === 'color') {
+      // Color swatch (native picker) + text input side by side so the hex
+      // value is always readable and editable without opening the picker.
+      return `<div class="panel-field">
+  <label class="panel-label">${escPanelVal(f.name)}</label>
+  <div class="panel-color-row">
+    <input type="color" class="panel-color-swatch"
+           data-field="${escPanelVal(f.name)}"
+           data-field-type="color"
+           value="${escPanelVal(f.value)}"${disabledAttr}>
+    <input type="text" class="panel-input panel-input--color-text"
+           data-field="${escPanelVal(f.name)}"
+           data-field-type="color"
+           value="${escPanelVal(f.value)}"${disabledAttr}>
   </div>
 </div>`;
     }
 
-    const input = f.fieldType === 'boolean'
-      ? `<select
-           class="panel-input"
-           data-field="${escPanelVal(f.name)}"
-           data-field-type="${escPanelVal(f.fieldType)}"${disabledAttr}>
-           <option value="true"${f.value === true  ? ' selected' : ''}>true</option>
-           <option value="false"${f.value === false ? ' selected' : ''}>false</option>
-         </select>`
-      : `<input
-           class="panel-input"
-           type="${f.fieldType === 'number' ? 'number' : f.fieldType === 'color' ? 'color' : 'text'}"
-           data-field="${escPanelVal(f.name)}"
-           data-field-type="${escPanelVal(f.fieldType)}"
-           value="${escPanelVal(f.value)}"${disabledAttr}>`;
-
+    const inputType = f.fieldType === 'number' ? 'number' : 'text';
     return `<div class="panel-field">
   <label class="panel-label">${escPanelVal(f.name)}</label>
-  ${input}
+  <input class="panel-input"
+         type="${inputType}"
+         data-field="${escPanelVal(f.name)}"
+         data-field-type="${escPanelVal(f.fieldType)}"
+         value="${escPanelVal(f.value)}"${disabledAttr}>
 </div>`;
   }
 
   const sections = groupOrder.map((group) => {
     const groupFields = grouped[group];
+    const title = GROUP_TITLES[group] || group;
 
-    // Position group: render x,y and width,height in a 2-column grid
-    // so related dimension pairs sit side by side.
     if (group === 'position') {
-      const fieldHtmls = groupFields.map(f => renderField(f, group));
-      return `<div class="panel-group" data-group="${escPanelVal(group)}">
-  <div class="panel-group-title">${escPanelVal(group)}</div>
-  <div class="panel-position-grid">
-    ${fieldHtmls.join('\n    ')}
+      // x+y on one row, width+height on another — pairs share a label row.
+      const [xF, yF, wF, hF] = groupFields;
+      return `<div class="panel-group" data-group="position">
+  <div class="panel-group-title">${escPanelVal(title)}</div>
+  <div class="panel-pos-pair">
+    ${renderNumberWithSlider(xF)}
+    ${renderNumberWithSlider(yF)}
+  </div>
+  <div class="panel-pos-pair">
+    ${renderNumberWithSlider(wF)}
+    ${renderNumberWithSlider(hF)}
   </div>
 </div>`;
     }
 
-    const rows = groupFields.map(f => renderField(f, group));
-
+    const rows = groupFields.map(f => renderField(f));
     return `<div class="panel-group" data-group="${escPanelVal(group)}">
-  <div class="panel-group-title">${escPanelVal(group)}</div>
+  <div class="panel-group-title">${escPanelVal(title)}</div>
   ${rows.join('\n  ')}
 </div>`;
   });
@@ -282,11 +332,24 @@ export function renderPanelHtml(fields) {
  * Parses the changed value to the correct runtime type and forwards a
  * single-key change map to onSave so the caller can build the PATCH payload.
  *
+ * Also injects toggle-switch CSS once into <head> and installs a
+ * light/dark theme toggle button into the editor toolbar.
+ *
  * @param {Element} panelEl
  * @param {(changes: Record<string, unknown>) => void} onSave
  */
 export function initPropertyPanel(panelEl, onSave) {
-  // Sync range slider → companion number input in real-time while dragging
+  // Inject toggle-switch styles once — idempotent via the id guard.
+  if (!document.getElementById('prop-panel-toggle-css')) {
+    document.head.insertAdjacentHTML('beforeend', TOGGLE_SWITCH_CSS);
+  }
+
+  // Install light/dark theme toggle into the editor toolbar if not already
+  // present. The button self-inserts before the Preview link so it requires
+  // no changes to buildEditorPage in server.js.
+  _installThemeToggle();
+
+  // Sync range slider → companion number input in real-time while dragging.
   panelEl.addEventListener('input', (e) => {
     const slider = e.target;
     if (slider.type !== 'range' || !slider.classList.contains('panel-slider')) return;
@@ -302,26 +365,84 @@ export function initPropertyPanel(panelEl, onSave) {
     const fieldName = input.dataset.field;
     const fieldType = input.dataset.fieldType;
 
-    // Ignore events from elements that aren't panel fields
+    // Ignore events from elements that aren't panel fields.
     if (!fieldName || !fieldType) return;
 
-    const parsed = parseFieldValue(input.value, fieldType);
+    // Checkbox (boolean toggle): use .checked, not .value.
+    const rawValue = input.type === 'checkbox' ? input.checked : input.value;
+    const parsed = parseFieldValue(rawValue, fieldType);
 
-    // Sync number input → companion range slider
+    // Sync number input → companion range slider.
     if (input.type === 'number') {
       const slider = panelEl.querySelector(
         `input[type="range"][data-field="${fieldName}"]`
       );
       if (slider) slider.value = parsed;
     }
-    // Sync range slider → companion number input (on final commit)
+    // Sync range slider → companion number input (on final commit).
     if (input.type === 'range') {
       const numberInput = panelEl.querySelector(
         `input[type="number"][data-field="${fieldName}"]`
       );
       if (numberInput) numberInput.value = parsed;
     }
+    // Keep the color text input in sync when the native color swatch changes.
+    if (input.type === 'color') {
+      const textInput = panelEl.querySelector(
+        `input[type="text"][data-field="${fieldName}"]`
+      );
+      if (textInput) textInput.value = input.value;
+    }
+    // Keep the color swatch in sync when the text input changes.
+    if (input.type === 'text' && fieldType === 'color') {
+      const swatchInput = panelEl.querySelector(
+        `input[type="color"][data-field="${fieldName}"]`
+      );
+      if (swatchInput) swatchInput.value = input.value;
+    }
 
     onSave({ [fieldName]: parsed });
   });
+}
+
+// ---------------------------------------------------------------------------
+// Light/Dark theme toggle — self-installs into the editor toolbar.
+// ---------------------------------------------------------------------------
+
+/**
+ * Insert a moon/sun toggle button into #editor-toolbar (before .preview-link).
+ * Reads/writes the `editor-theme` key in localStorage and toggles
+ * data-theme="light"|"dark" on <body> so CSS vars can be overridden.
+ * Idempotent — safe to call multiple times.
+ */
+function _installThemeToggle() {
+  if (document.getElementById('theme-toggle-btn')) return;
+  const toolbar = document.getElementById('editor-toolbar');
+  if (!toolbar) return;
+
+  const btn = document.createElement('button');
+  btn.id = 'theme-toggle-btn';
+  btn.className = 'toolbar-btn';
+  btn.title = 'Toggle light/dark theme';
+  btn.style.cssText = 'font-size:15px;width:32px;height:32px;';
+
+  // Restore persisted theme before rendering the correct icon.
+  const saved = localStorage.getItem('editor-theme') || 'dark';
+  document.body.dataset.theme = saved;
+  btn.textContent = saved === 'light' ? '\u2600\uFE0F' : '\uD83C\uDF19';
+
+  btn.addEventListener('click', () => {
+    const next = document.body.dataset.theme === 'light' ? 'dark' : 'light';
+    document.body.dataset.theme = next;
+    btn.textContent = next === 'light' ? '\u2600\uFE0F' : '\uD83C\uDF19';
+    localStorage.setItem('editor-theme', next);
+  });
+
+  // Insert before the Preview link so it stays at the right side of toolbar.
+  const previewLink = toolbar.querySelector('a.preview-link');
+  if (previewLink) {
+    toolbar.insertBefore(btn, previewLink);
+  } else {
+    toolbar.appendChild(btn);
+  }
 }

@@ -222,7 +222,7 @@
 - [x] Component palette — 35 components in 6 categories, drag-to-canvas drop
 - [x] Property inspector — dynamic prop editing per component type
 - [x] Sync module — debounced REST client + undo/redo history (UndoStack)
-- [x] html-builder: data-el-id on element wrappers for canvas targeting
+- [x] html-builder: data-element-id on element wrappers for canvas targeting
 - [x] All modules wired via document CustomEvents
 - [x] 842+ tests pass
 
