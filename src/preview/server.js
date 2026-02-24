@@ -883,6 +883,9 @@ const EDITOR_CSS = `
     position: absolute;
     width: 8px !important;
     height: 8px !important;
+    /* Centre the handle on its anchor point so left/top can target the exact
+       corner or midpoint without manual half-size offsets. */
+    transform: translate(-50%, -50%);
     background: white !important;
     border: 2px solid var(--accent) !important;
     border-radius: 2px !important;

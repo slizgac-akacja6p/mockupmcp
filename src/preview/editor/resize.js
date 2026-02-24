@@ -177,9 +177,8 @@ export function initResize(container, selectionState, options) {
       'position:absolute',
       'width:8px',
       'height:8px',
-      // translate(-50%,-50%) centres the handle on its anchor point so we
-      // can position it at the exact corner/midpoint without manual half-offsets.
-      'transform:translate(-50%,-50%)',
+      // translate(-50%,-50%) now lives in the CSS .resize-handle rule so
+      // the :hover scale(1.2) can layer on top without inline-style conflicts.
       'background:#fff',
       'border:1px solid #0057ff',
       'border-radius:2px',
@@ -193,20 +192,25 @@ export function initResize(container, selectionState, options) {
   });
 
   // Place handles around the element's current bounding box.
-  // Handles live in `container` but element coords are in `.screen` space,
-  // so we must convert through the screen's offset and zoom scale.
+  // Handles live in `container` (positioned absolutely within it) so their
+  // left/top must be relative to the container's content box.  We use
+  // getBoundingClientRect() on both `.screen` and `container` because
+  // .screen has `transform: scale(zoom)` which changes its visual position
+  // but does NOT affect layout properties like offsetLeft/offsetTop.
   function positionHandles(rect) {
     const { left, top, width, height } = rect;
 
-    // Read .screen offset and scale from container so handles align with
-    // the visually rendered element (which is scaled+offset inside container).
     const screenEl = container.querySelector('.screen');
+    const canvasRect = container.getBoundingClientRect();
     let offsetX = 0;
     let offsetY = 0;
     let scale = 1;
     if (screenEl) {
-      offsetX = screenEl.offsetLeft;
-      offsetY = screenEl.offsetTop;
+      // getBoundingClientRect reflects the actual visual position after
+      // transform:scale, unlike offsetLeft which ignores transforms.
+      const screenRect = screenEl.getBoundingClientRect();
+      offsetX = screenRect.left - canvasRect.left + container.scrollLeft;
+      offsetY = screenRect.top  - canvasRect.top  + container.scrollTop;
       const transform = screenEl.style.transform || '';
       const match = transform.match(/scale\(([^)]+)\)/);
       scale = match ? parseFloat(match[1]) : 1;
@@ -214,7 +218,7 @@ export function initResize(container, selectionState, options) {
 
     // Convert element coordinates (screen space) to container coordinates.
     // No manual half-offset needed — transform:translate(-50%,-50%) on the
-    // handle elements centres them on the anchor point automatically.
+    // handle elements (via CSS) centres them on the anchor point automatically.
     const cx = offsetX + left * scale;
     const cy = offsetY + top * scale;
     const cw = width * scale;
