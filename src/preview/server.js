@@ -127,6 +127,12 @@ const LINK_SCRIPT = `
         currentScreen.remove();
         newScreen.classList.remove(inClass);
         newScreen.style.position = '';
+        // Clean up the temporary container styles set for the animation.
+        // Leaving position:relative and overflow:hidden on body breaks the
+        // preview layout and causes zoom (transform:scale) to mis-clip
+        // absolute-positioned elements inside the screen.
+        newScreen.parentNode.style.position = '';
+        newScreen.parentNode.style.overflow = '';
       }
 
       if (!skipHistory) {
