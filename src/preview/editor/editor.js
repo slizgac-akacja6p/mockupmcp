@@ -14,6 +14,7 @@ import { findAlignmentGuides, createGuideRenderer } from './guides.js';
 import { createHistory, invertOperation } from './history.js';
 import { initShortcuts } from './shortcuts.js';
 import { initPalette, exitPaletteAddMode } from './palette.js';
+import { initLayers, renderLayers, onSelectionChange, updateScreenData } from './layers.js';
 import { getComponentDefaults } from './palette-data.js';
 import * as api from './api-client.js';
 
@@ -190,6 +191,10 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
     const freshData = await api.getScreen(projectId, screenId);
     editorState.setScreenData(freshData);
 
+    // Update layers panel with new data
+    updateScreenData(freshData);
+    renderLayers();
+
     // Restore selection visuals on the fresh DOM nodes
     updateSelectionVisuals();
   }
@@ -242,6 +247,9 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
     // Show resize handles around the selected element
     const el = canvas.querySelector(`[data-element-id="${id}"]`);
     if (el && resizeHandles) resizeHandles.showHandles(el);
+
+    // Highlight corresponding row in layers panel
+    onSelectionChange(id);
   }
 
   function onDeselect() {
@@ -274,6 +282,9 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
 
     if (resizeHandles) resizeHandles.hideHandles();
     guideRenderer.hideGuides();
+
+    // Clear layers panel selection
+    onSelectionChange(null);
   }
 
   // Wire up selection and property panel
@@ -355,6 +366,15 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
     onAddModeEnter(type) { enterAddMode(type); },
     onAddModeExit()      { exitAddMode(); },
     getAddModeType()     { return addModeType; },
+  });
+
+  // Layers panel — shows elements sorted by z_index with drag-to-reorder
+  initLayers({
+    projectId,
+    screenId,
+    apiClient: api,
+    selectionModule: selectionState,
+    screenData: initialData,
   });
 
   // --- drag ---
@@ -714,6 +734,7 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
         const tabName = tab.dataset.tab;
         if (tabName === 'properties') tab.textContent = _t('panel.properties', 'Properties');
         if (tabName === 'components') tab.textContent = _t('panel.components', 'Components');
+        if (tabName === 'layers') tab.textContent = _t('panel.layers', 'Layers');
       });
       const searchInput = document.getElementById('palette-search');
       if (searchInput) searchInput.placeholder = _t('palette.search', 'Search components...');
