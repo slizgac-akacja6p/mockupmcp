@@ -348,11 +348,18 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
       selectionState.select(id);
       onSelect(id);
 
-      // Hide resize handles while dragging — they would lag behind the
-      // translate-based visual feedback and look broken.
-      if (resizeHandles) resizeHandles.hideHandles();
+      // Show resize handles at the element's current position — they will
+      // be updated every frame via onDragMove → updateHandles() below.
+      const dragTarget = canvas.querySelector(`[data-element-id="${id}"]`);
+      if (dragTarget && resizeHandles) resizeHandles.showHandles(dragTarget);
     },
     onDragMove(elId, wouldBeX, wouldBeY) {
+      // Update resize handle positions to follow the element during drag.
+      // getBoundingClientRect on the element reflects its CSS transform,
+      // so handles track the visual position accurately.
+      const draggedEl = canvas.querySelector(`[data-element-id="${elId}"]`);
+      if (draggedEl && resizeHandles) resizeHandles.updateHandles(draggedEl);
+
       // Compute alignment guides against all other elements on the screen
       const data = editorState.getScreenData();
       if (!data || !data.elements) return null;

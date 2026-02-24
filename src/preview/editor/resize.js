@@ -159,7 +159,7 @@ export function computeResizeResult(handle, startRect, deltaX, deltaY, shiftKey,
  *   gridSize?: number,
  *   onResizeEnd: (result: { elementId: string, x: number, y: number, width: number, height: number }) => void
  * }} options
- * @returns {{ showHandles: (elementDom: Element) => void, hideHandles: () => void }}
+ * @returns {{ showHandles: (elementDom: Element) => void, hideHandles: () => void, updateHandles: (elementDom: Element) => void }}
  */
 export function initResize(container, selectionState, options) {
   const {
@@ -367,5 +367,41 @@ export function initResize(container, selectionState, options) {
     handleEls.forEach((el) => { el.style.display = 'none'; });
   }
 
-  return { showHandles, hideHandles };
+  // Reposition handles around an element using its live bounding rect.
+  // Unlike showHandles (which reads stale inline styles), this uses
+  // getBoundingClientRect so handles track the element during drag when
+  // movement is applied via CSS transform: translate().
+  function updateHandles(el) {
+    if (!el) return;
+    const canvasRect = container.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+
+    const x = elRect.left - canvasRect.left + container.scrollLeft;
+    const y = elRect.top - canvasRect.top + container.scrollTop;
+    const w = elRect.width;
+    const h = elRect.height;
+
+    // positionHandles expects screen-space coords and applies its own zoom
+    // scaling. Since getBoundingClientRect already returns zoomed values,
+    // we bypass positionHandles and set handle positions directly.
+    const positions = {
+      nw: { x: x,         y: y },
+      n:  { x: x + w / 2, y: y },
+      ne: { x: x + w,     y: y },
+      e:  { x: x + w,     y: y + h / 2 },
+      se: { x: x + w,     y: y + h },
+      s:  { x: x + w / 2, y: y + h },
+      sw: { x: x,         y: y + h },
+      w:  { x: x,         y: y + h / 2 },
+    };
+
+    handleEls.forEach((hEl) => {
+      const pos = positions[hEl.dataset.handle];
+      hEl.style.left    = `${pos.x}px`;
+      hEl.style.top     = `${pos.y}px`;
+      hEl.style.display = 'block';
+    });
+  }
+
+  return { showHandles, hideHandles, updateHandles };
 }
