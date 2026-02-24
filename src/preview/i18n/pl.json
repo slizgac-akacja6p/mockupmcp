@@ -59,5 +59,10 @@
   "panel.positionAndSize": "Pozycja i rozmiar",
   "panel.style": "Styl",
   "panel.selectElement": "Zaznacz element, aby edytować właściwości",
-  "toast.added": "Dodano"
+  "toast.added": "Dodano",
+  "comments": "Komentarze",
+  "addComment": "Dodaj komentarz",
+  "resolveComment": "Rozwiąż",
+  "noComments": "Brak komentarzy",
+  "commentResolved": "Rozwiązany"
 }
