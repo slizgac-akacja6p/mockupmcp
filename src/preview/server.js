@@ -685,7 +685,7 @@ const EDITOR_CSS = `
     --radius-lg: 10px;
 
     --danger: #FF453A;
-    --dot-grid: #2D2D2D;
+    --dot-grid: rgba(255, 255, 255, 0.04);
     --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
 
@@ -860,7 +860,15 @@ const EDITOR_CSS = `
     border-radius: 50%; background: var(--accent); cursor: pointer;
     border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.4);
   }
+  /* Canvas element styling — shadow + selection outline */
+  .element { box-shadow: var(--shadow-sm); }
   .element.selected { outline: 2px solid var(--accent) !important; outline-offset: 1px; }
+
+  /* Resize handles on selected elements */
+  .resize-handle {
+    width: 6px; height: 6px;
+    background: var(--accent); border: 1px solid white; border-radius: 1px;
+  }
 
   .toolbar-separator {
     width: 1px; height: 24px; background: var(--border-subtle);
@@ -1030,22 +1038,26 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
     .palette-recent-items { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 8px; }
     .palette-recent-chip { background: var(--surface-3); border: 1px solid var(--border-default); border-radius: 4px; padding: 3px 8px; cursor: pointer; font-size: 11px; color: var(--text-primary); }
     .palette-recent-chip:hover, .palette-recent-chip.active { background: var(--accent); color: white; border-color: var(--accent); }
-    .palette-search { padding: 8px; }
-    .palette-search input { width: 100%; background: var(--surface-2); border: 1px solid var(--border-default); border-radius: 4px; padding: 4px 8px; color: var(--text-primary); font-size: 11px; box-sizing: border-box; }
+    .palette-search { padding: 8px; position: relative; }
+    .palette-search input { width: 100%; background: var(--surface-2); border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: 6px 8px 6px 28px; color: var(--text-primary); font-size: var(--text-sm); box-sizing: border-box; }
     .palette-search input:focus { border-color: var(--accent); outline: none; }
+    .palette-search-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 12px; pointer-events: none; }
     .palette-category { margin-bottom: 4px; }
-    .palette-category-header { padding: 6px 12px 3px; color: var(--text-muted); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; user-select: none; }
+    .palette-category-header { padding: 8px 12px 4px; color: var(--text-secondary); font-size: var(--text-xxs); text-transform: uppercase; letter-spacing: 0.08em; cursor: pointer; user-select: none; display: flex; align-items: center; gap: 4px; border-top: 1px solid var(--border-subtle); }
     .palette-category-header:hover { color: var(--text-primary); }
+    .palette-category-header .chevron { transition: transform 0.15s; font-size: 8px; }
+    .palette-category.collapsed .chevron { transform: rotate(-90deg); }
+    .palette-category.collapsed .palette-category-items { display: none; }
     .palette-items { padding: 0 8px; }
-    .palette-item { padding: 5px 8px; border-radius: 4px; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
-    .palette-item:hover { background: var(--surface-3); color: var(--text-primary); }
-    .palette-item.add-mode-active { background: var(--accent); color: white; }
+    .palette-item { padding: 5px 8px; border-radius: var(--radius-md); cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; background: var(--surface-2); border: 1px solid transparent; transition: background 0.1s, border 0.1s; margin-bottom: 2px; }
+    .palette-item:hover { background: var(--surface-3); color: var(--text-primary); border: 1px solid var(--border-default); }
+    .palette-item.add-mode-active { background: var(--accent); color: white; border-color: var(--accent); }
     .palette-shortcuts-hint { padding: 8px 12px; color: var(--text-muted); font-size: 10px; border-top: 1px solid var(--border-default); margin-top: auto; }
     #multi-select-toolbar { display: none; gap: 4px; align-items: center; }
     .toolbar-btn-danger { background: var(--danger) !important; color: white !important; border-color: var(--danger) !important; }
     .toolbar-badge { padding: 2px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; }
     .toolbar-badge-add { background: #F59E0B; color: var(--surface-1); }
-    .box-select-overlay { position: absolute; pointer-events: none; }
+    .box-select-overlay { position: absolute; pointer-events: none; border: 1px solid var(--accent); background: var(--accent-subtle); }
     .element-selected-multi { outline: 2px solid var(--accent) !important; outline-offset: 1px; }
     .toast { background: var(--surface-3); color: var(--text-primary); padding: 8px 14px; border-radius: 6px; margin-top: 8px; font-size: 12px; animation: fadeInOut 2.5s forwards; border: 1px solid var(--border-default); }
     @keyframes fadeInOut { 0%{opacity:0;transform:translateY(8px)} 10%{opacity:1;transform:translateY(0)} 80%{opacity:1} 100%{opacity:0} }
@@ -1094,6 +1106,7 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
             <div class="palette-recent-items" id="palette-recent-items"></div>
           </div>
           <div class="palette-search">
+            <span class="palette-search-icon">&#128269;</span>
             <input type="text" id="palette-search-input" placeholder="Search components..." />
           </div>
           <div id="palette-categories"></div>
