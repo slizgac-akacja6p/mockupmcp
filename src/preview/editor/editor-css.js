@@ -10,7 +10,6 @@ export const EDITOR_CSS = `<style>
   }
   #editor-toolbar .btn-edit { background: #4A90E2; color: white; }
   #editor-toolbar .btn-edit.active { background: #357ABD; }
-  #editor-toolbar .btn-approve { background: #27AE60; color: white; margin-left: auto; }
   #editor-toolbar .btn-snap { background: #555; color: #ccc; }
   #editor-toolbar .btn-snap.active { background: #4A90E2; color: white; }
   #editor-toolbar .btn-undo, #editor-toolbar .btn-redo { background: #444; color: #ccc; min-width: 32px; }
@@ -22,7 +21,7 @@ export const EDITOR_CSS = `<style>
     font-family: -apple-system, sans-serif; font-size: 12px; display: none;
   }
   .editor-palette.visible { display: block; }
-  .editor-palette h4 { color: #888; text-transform: uppercase; font-size: 10px; letter-spacing: 1px; margin: 12px 0 4px; }
+  .editor-palette h4 { color: #888; text-transform: uppercase; font-size: 10px; letter-spacing: 1px; margin: 12px 0 4px; background: #1e1e1e; }
   .editor-palette .palette-item {
     padding: 6px 8px; border-radius: 4px; cursor: grab; background: #2a2a2a;
     margin-bottom: 2px; border: 1px solid #333;

@@ -6,7 +6,6 @@ export const TOOLBAR_HTML = `<div id="editor-toolbar" style="display:none">
   <button class="btn-redo" onclick="window._editorRedo()" title="Redo">&#8618;</button>
   <span class="separator"></span>
   <span class="mode-label" id="editor-mode-label">View mode</span>
-  <button class="btn-approve" id="btn-approve" style="display:none" onclick="window._editorApprove()">Approve Changes</button>
 </div>`;
 
 export const TOOLBAR_JS = `<script>
@@ -19,13 +18,11 @@ export const TOOLBAR_JS = `<script>
   window._editorToggleMode = function() {
     var btn = document.getElementById('btn-toggle-edit');
     var label = document.getElementById('editor-mode-label');
-    var approveBtn = document.getElementById('btn-approve');
     if (window._editorMode === 'view') {
       window._editorMode = 'edit';
       btn.classList.add('active');
       btn.textContent = 'View';
       label.textContent = 'Edit mode';
-      if (approveBtn) approveBtn.style.display = 'flex';
       document.body.classList.add('editor-mode-active');
       document.dispatchEvent(new CustomEvent('editor:modeChange', { detail: { mode: 'edit' } }));
     } else {
@@ -33,7 +30,6 @@ export const TOOLBAR_JS = `<script>
       btn.classList.remove('active');
       btn.textContent = 'Edit';
       label.textContent = 'View mode';
-      if (approveBtn) approveBtn.style.display = 'none';
       document.body.classList.remove('editor-mode-active');
       document.dispatchEvent(new CustomEvent('editor:modeChange', { detail: { mode: 'view' } }));
     }
@@ -52,10 +48,6 @@ export const TOOLBAR_JS = `<script>
 
   window._editorRedo = function() {
     document.dispatchEvent(new CustomEvent('editor:redo'));
-  };
-
-  window._editorApprove = function() {
-    document.dispatchEvent(new CustomEvent('editor:approve'));
   };
 
   document.addEventListener('keydown', function(e) {
