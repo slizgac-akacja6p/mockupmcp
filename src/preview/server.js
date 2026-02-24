@@ -645,49 +645,73 @@ function buildEditButton(projectId, screenId) {
 const EDITOR_CSS = `
 <style>
   :root {
-    --editor-bg: #1A1A1A;
-    --sidebar-bg: #1C1C1E;
-    --toolbar-bg: #252525;
-    --panel-bg: #1C1C1E;
-    --panel-input-bg: #252525;
+    /* Surface hierarchy */
+    --surface-0: #0A0A0B;
+    --surface-1: #111113;
+    --surface-2: #1A1A1F;
+    --surface-3: #242429;
+    --surface-4: #2E2E35;
+
+    /* Accent */
     --accent: #6366F1;
     --accent-hover: #818CF8;
+    --accent-gradient: linear-gradient(135deg, #6366F1, #8B5CF6);
     --accent-subtle: rgba(99, 102, 241, 0.15);
+    --accent-glow: 0 0 20px rgba(99, 102, 241, 0.3);
+
+    /* Borders */
+    --border-subtle: rgba(255, 255, 255, 0.04);
+    --border-default: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.16);
+
+    /* Text */
     --text-primary: #E5E5E5;
     --text-secondary: #888888;
-    --text-heading: #555555;
-    --text-muted: #444444;
-    --border: #333333;
-    --border-subtle: #2C2C2E;
-    --surface-hover: #2C2C2E;
+    --text-muted: #555555;
+    --text-xxs: 10px;
+    --text-xs: 11px;
+    --text-sm: 12px;
+    --text-base: 13px;
+    --text-md: 14px;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+
+    /* Border radius */
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 10px;
+
     --danger: #FF453A;
     --dot-grid: #2D2D2D;
     --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
 
   /* Reset the sidebar's body margin — editor layout manages offsets explicitly */
-  body { margin: 0 !important; background: var(--editor-bg); }
+  body { margin: 0 !important; background: var(--surface-0); }
 
   /* Dark sidebar override — editor uses dark sidebar matching the mockup,
      while preview pages keep the default light sidebar from SIDEBAR_CSS. */
   #mockup-sidebar {
-    background: var(--sidebar-bg) !important;
-    border-right-color: var(--border) !important;
+    background: var(--surface-1) !important;
+    border-right-color: var(--border-default) !important;
     color: var(--text-primary) !important;
   }
   #mockup-sidebar-toggle {
-    background: var(--sidebar-bg) !important;
-    border-color: var(--border) !important;
+    background: var(--surface-1) !important;
+    border-color: var(--border-default) !important;
     color: var(--text-secondary) !important;
   }
-  #mockup-sidebar-toggle:hover { background: var(--surface-hover) !important; }
-  #mockup-sidebar h3 { color: var(--text-heading) !important; }
+  #mockup-sidebar-toggle:hover { background: var(--surface-3) !important; }
+  #mockup-sidebar h3 { color: var(--text-muted) !important; }
   .mockup-sidebar-project-name { color: var(--text-primary) !important; }
-  .mockup-sidebar-project-name:hover { background: var(--surface-hover) !important; }
+  .mockup-sidebar-project-name:hover { background: var(--surface-3) !important; }
   .mockup-sidebar-folder-name { color: var(--text-secondary) !important; }
-  .mockup-sidebar-folder-name:hover { background: var(--surface-hover) !important; }
+  .mockup-sidebar-folder-name:hover { background: var(--surface-3) !important; }
   .mockup-sidebar-screen { color: var(--text-secondary) !important; }
-  .mockup-sidebar-screen:hover { background: var(--surface-hover) !important; }
+  .mockup-sidebar-screen:hover { background: var(--surface-3) !important; }
   .mockup-sidebar-screen.active {
     background: var(--accent) !important;
     color: #FFFFFF !important;
@@ -696,7 +720,7 @@ const EDITOR_CSS = `
 
   #editor-toolbar {
     position: fixed; top: 0; left: 260px; right: 260px; height: 48px; z-index: 9999;
-    background: var(--toolbar-bg); border-bottom: 1px solid var(--border);
+    background: var(--surface-2); border-bottom: 1px solid var(--border-default);
     box-shadow: none;
     display: flex; align-items: center; padding: 0 16px; gap: 12px;
     font-family: var(--font-ui); font-size: 13px;
@@ -706,7 +730,7 @@ const EDITOR_CSS = `
   }
   #editor-toolbar .edit-mode-badge {
     font-size: 10px; font-weight: 500; color: var(--text-secondary);
-    background: var(--panel-input-bg); border-radius: 3px; padding: 2px 6px;
+    background: var(--surface-2); border-radius: 3px; padding: 2px 6px;
     text-transform: uppercase; letter-spacing: 0.4px;
   }
   #editor-toolbar a.preview-link {
@@ -723,7 +747,7 @@ const EDITOR_CSS = `
     margin-top: 0;
     min-height: calc(100vh - 48px);
     display: flex; align-items: flex-start; justify-content: center; padding: 20px 24px;
-    background: var(--editor-bg);
+    background: var(--surface-0);
     /* Dot grid pattern matching mockup — 52px spacing, 3px dots */
     background-image: radial-gradient(circle, var(--dot-grid) 1px, transparent 1px);
     background-size: 52px 52px;
@@ -733,22 +757,22 @@ const EDITOR_CSS = `
   #editor-right-panel {
     width: 260px; min-width: 260px;
     display: flex; flex-direction: column;
-    background: var(--panel-bg); border-left: 1px solid var(--border);
+    background: var(--surface-1); border-left: 1px solid var(--border-default);
     overflow: hidden;
   }
   #editor-property-panel {
     flex: 0 0 auto;
-    border-bottom: 1px solid var(--border);
-    background: var(--panel-bg);
+    border-bottom: 1px solid var(--border-default);
+    background: var(--surface-1);
     font-family: var(--font-ui); font-size: 13px;
     overflow-y: auto;
     color: var(--text-primary);
     max-height: 60%;
   }
   #editor-property-panel .panel-header {
-    padding: 16px 24px 12px; border-bottom: 1px solid var(--border); margin-bottom: 0;
+    padding: 16px 24px 12px; border-bottom: 1px solid var(--border-default); margin-bottom: 0;
     font-size: 13px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.5px; color: var(--text-heading); background: var(--panel-bg);
+    letter-spacing: 0.5px; color: var(--text-muted); background: var(--surface-1);
     position: sticky; top: 0; z-index: 1;
   }
   #editor-property-panel .panel-body { padding: 16px 24px 24px; }
@@ -758,7 +782,7 @@ const EDITOR_CSS = `
   .panel-group { margin-bottom: 16px; }
   .panel-group-title {
     font-size: 13px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.3px; color: var(--text-heading);
+    letter-spacing: 0.3px; color: var(--text-muted);
     padding: 14px 0 8px; border-top: 1px solid var(--border-subtle); margin-top: 4px;
   }
   .panel-group:first-child .panel-group-title { border-top: none; margin-top: 0; }
@@ -771,8 +795,8 @@ const EDITOR_CSS = `
   .panel-field input[type="text"],
   .panel-field input[type="color"],
   .panel-field select {
-    width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 4px;
-    font-size: 14px; box-sizing: border-box; background: var(--panel-input-bg);
+    width: 100%; padding: 10px 12px; border: 1px solid var(--border-default); border-radius: 4px;
+    font-size: 14px; box-sizing: border-box; background: var(--surface-2);
     color: var(--text-primary);
     transition: border-color 0.15s;
   }
@@ -798,8 +822,8 @@ const EDITOR_CSS = `
   .panel-field-header label { margin-bottom: 0; }
   .panel-field-header input[type="number"] {
     width: 80px; text-align: right; padding: 6px 10px;
-    border: 1px solid var(--border); border-radius: 4px;
-    font-size: 14px; font-weight: 500; background: var(--panel-input-bg);
+    border: 1px solid var(--border-default); border-radius: 4px;
+    font-size: 14px; font-weight: 500; background: var(--surface-2);
     color: var(--text-primary);
   }
   .panel-range-combo {
@@ -807,7 +831,7 @@ const EDITOR_CSS = `
   }
   .panel-range-combo input[type="range"] {
     width: 100%; height: 4px; -webkit-appearance: none; appearance: none;
-    background: var(--border); border-radius: 2px; outline: none;
+    background: var(--border-default); border-radius: 2px; outline: none;
   }
   .panel-range-combo input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none; width: 16px; height: 16px;
@@ -817,16 +841,16 @@ const EDITOR_CSS = `
   .element.selected { outline: 2px solid var(--accent) !important; outline-offset: 1px; }
 
   .toolbar-separator {
-    width: 1px; height: 24px; background: var(--border);
+    width: 1px; height: 24px; background: var(--border-default);
   }
   .toolbar-btn {
-    width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 4px;
-    background: var(--panel-input-bg); cursor: pointer; font-size: 16px; color: var(--text-secondary);
+    width: 32px; height: 32px; border: 1px solid var(--border-default); border-radius: 4px;
+    background: var(--surface-2); cursor: pointer; font-size: 16px; color: var(--text-secondary);
     display: flex; align-items: center; justify-content: center;
     transition: background 0.15s, border-color 0.15s;
     padding: 0;
   }
-  .toolbar-btn:hover:not(:disabled) { background: var(--surface-hover); border-color: var(--text-secondary); }
+  .toolbar-btn:hover:not(:disabled) { background: var(--surface-3); border-color: var(--text-secondary); }
   .toolbar-btn:disabled { opacity: 0.4; cursor: default; }
   .toolbar-btn-active { background: var(--accent-subtle); border-color: var(--accent); color: var(--accent); }
 
@@ -840,10 +864,10 @@ const EDITOR_CSS = `
 
   /* Dark overrides for shared zoom controls inside editor toolbar */
   #editor-toolbar .zoom-btn {
-    background: var(--panel-input-bg); border-color: var(--border);
+    background: var(--surface-2); border-color: var(--border-default);
     color: var(--text-secondary);
   }
-  #editor-toolbar .zoom-btn:hover { background: var(--surface-hover); }
+  #editor-toolbar .zoom-btn:hover { background: var(--surface-3); }
   #editor-toolbar .zoom-level { color: var(--text-secondary); }
 
   /* Delete element button at bottom of property panel */
@@ -873,26 +897,26 @@ const EDITOR_CSS = `
   /* Color field: swatch (native picker) + hex text input side by side */
   .panel-color-row { display: flex; align-items: center; gap: 6px; }
   .panel-color-swatch {
-    width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 4px;
-    cursor: pointer; padding: 2px; background: var(--panel-input-bg); flex-shrink: 0;
+    width: 32px; height: 32px; border: 1px solid var(--border-default); border-radius: 4px;
+    cursor: pointer; padding: 2px; background: var(--surface-2); flex-shrink: 0;
   }
   .panel-input--color-text { flex: 1; }
 
   /* Light theme overrides — toggled via data-theme="light" on <body>.
-     Provides a clean daytime palette for designers who prefer light backgrounds. */
+     Provides a clean daytime palette for designers who prefer light backgrounds.
+     Maps new surface/border tokens to light equivalents. */
   body[data-theme="light"] {
-    --editor-bg: #F5F5F5;
-    --sidebar-bg: #FFFFFF;
-    --toolbar-bg: #FFFFFF;
-    --panel-bg: #FFFFFF;
-    --panel-input-bg: #F5F5F5;
+    --surface-0: #F5F5F5;
+    --surface-1: #FFFFFF;
+    --surface-2: #F5F5F5;
+    --surface-3: #F0F0F0;
+    --surface-4: #E8E8E8;
     --text-primary: #1A1A1A;
     --text-secondary: #666666;
-    --text-heading: #999999;
-    --text-muted: #BBBBBB;
-    --border: #E0E0E0;
-    --border-subtle: #EEEEEE;
-    --surface-hover: #F0F0F0;
+    --text-muted: #999999;
+    --border-subtle: rgba(0, 0, 0, 0.06);
+    --border-default: #E0E0E0;
+    --border-strong: #CCCCCC;
     --dot-grid: #E8E8E8;
   }
 </style>`;
@@ -945,30 +969,30 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
       padding: 8px 0;
       font-size: 12px;
       color: var(--text-secondary);
-      background: var(--panel-bg);
+      background: var(--surface-1);
     }
-    .palette-section-title { padding: 4px 12px; color: var(--text-heading); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+    .palette-section-title { padding: 4px 12px; color: var(--text-muted); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
     .palette-recent-items { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 8px; }
-    .palette-recent-chip { background: var(--surface-hover); border: 1px solid var(--border); border-radius: 4px; padding: 3px 8px; cursor: pointer; font-size: 11px; color: var(--text-primary); }
+    .palette-recent-chip { background: var(--surface-3); border: 1px solid var(--border-default); border-radius: 4px; padding: 3px 8px; cursor: pointer; font-size: 11px; color: var(--text-primary); }
     .palette-recent-chip:hover, .palette-recent-chip.active { background: var(--accent); color: white; border-color: var(--accent); }
     .palette-search { padding: 8px; }
-    .palette-search input { width: 100%; background: var(--panel-input-bg); border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; color: var(--text-primary); font-size: 11px; box-sizing: border-box; }
+    .palette-search input { width: 100%; background: var(--surface-2); border: 1px solid var(--border-default); border-radius: 4px; padding: 4px 8px; color: var(--text-primary); font-size: 11px; box-sizing: border-box; }
     .palette-search input:focus { border-color: var(--accent); outline: none; }
     .palette-category { margin-bottom: 4px; }
-    .palette-category-header { padding: 6px 12px 3px; color: var(--text-heading); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; user-select: none; }
+    .palette-category-header { padding: 6px 12px 3px; color: var(--text-muted); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; user-select: none; }
     .palette-category-header:hover { color: var(--text-primary); }
     .palette-items { padding: 0 8px; }
     .palette-item { padding: 5px 8px; border-radius: 4px; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
-    .palette-item:hover { background: var(--surface-hover); color: var(--text-primary); }
+    .palette-item:hover { background: var(--surface-3); color: var(--text-primary); }
     .palette-item.add-mode-active { background: var(--accent); color: white; }
-    .palette-shortcuts-hint { padding: 8px 12px; color: var(--text-muted); font-size: 10px; border-top: 1px solid var(--border); margin-top: auto; }
+    .palette-shortcuts-hint { padding: 8px 12px; color: var(--text-muted); font-size: 10px; border-top: 1px solid var(--border-default); margin-top: auto; }
     #multi-select-toolbar { display: none; gap: 4px; align-items: center; }
     .toolbar-btn-danger { background: var(--danger) !important; color: white !important; border-color: var(--danger) !important; }
     .toolbar-badge { padding: 2px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; }
-    .toolbar-badge-add { background: #F59E0B; color: var(--sidebar-bg); }
+    .toolbar-badge-add { background: #F59E0B; color: var(--surface-1); }
     .box-select-overlay { position: absolute; pointer-events: none; }
     .element-selected-multi { outline: 2px solid var(--accent) !important; outline-offset: 1px; }
-    .toast { background: var(--surface-hover); color: var(--text-primary); padding: 8px 14px; border-radius: 6px; margin-top: 8px; font-size: 12px; animation: fadeInOut 2.5s forwards; border: 1px solid var(--border); }
+    .toast { background: var(--surface-3); color: var(--text-primary); padding: 8px 14px; border-radius: 6px; margin-top: 8px; font-size: 12px; animation: fadeInOut 2.5s forwards; border: 1px solid var(--border-default); }
     @keyframes fadeInOut { 0%{opacity:0;transform:translateY(8px)} 10%{opacity:1;transform:translateY(0)} 80%{opacity:1} 100%{opacity:0} }
   </style>
 </head>
