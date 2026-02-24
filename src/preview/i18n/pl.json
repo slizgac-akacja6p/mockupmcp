@@ -48,5 +48,11 @@
   "sidebar.newScreen": "Nowy ekran",
   "sidebar.addScreen": "+ Dodaj ekran",
   "addMode.hint": "Kliknij na canvas, aby dodac",
-  "addMode.cancel": "Nacisnij Esc, aby anulowac"
+  "addMode.cancel": "Nacisnij Esc, aby anulowac",
+  "toolbar.toggleTheme": "Przełącz motyw",
+  "panel.element": "Element",
+  "panel.positionAndSize": "Pozycja i rozmiar",
+  "panel.style": "Styl",
+  "panel.selectElement": "Zaznacz element, aby edytować właściwości",
+  "toast.added": "Dodano"
 }

@@ -1166,12 +1166,15 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
     import { initEditor } from '/editor/js/editor.js';
     const canvas = document.getElementById('editor-canvas');
     const panel = document.getElementById('editor-property-panel');
-    initEditor({
-      projectId: canvas.dataset.projectId,
-      screenId: canvas.dataset.screenId,
-      canvas,
-      panel,
-    });
+    (async () => {
+      await window.initI18n?.();
+      initEditor({
+        projectId: canvas.dataset.projectId,
+        screenId: canvas.dataset.screenId,
+        canvas,
+        panel,
+      });
+    })();
   </script>
 </body>
 </html>`;

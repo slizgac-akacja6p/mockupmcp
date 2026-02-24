@@ -7,6 +7,21 @@
 
 import { getPaletteCategories } from './palette-data.js';
 
+// Safe i18n helper — delegates to window.t when available (loaded via /i18n/index.js),
+// falls back to the provided fallback or the raw key when running outside browser context.
+const _t = (key, fallback) => (typeof globalThis.window !== 'undefined' && typeof window.t === 'function' ? window.t(key, fallback) : (fallback ?? key));
+
+// Maps English category names (as defined in palette-data.js) to i18n keys so
+// category headers are translated when a non-English locale is active.
+const CATEGORY_KEY_MAP = {
+  'Layout':     'palette.categories.layout',
+  'Forms':      'palette.categories.forms',
+  'Display':    'palette.categories.display',
+  'Navigation': 'palette.categories.navigation',
+  'Feedback':   'palette.categories.feedback',
+  'Media':      'palette.categories.media',
+};
+
 // localStorage key for the 5 most recently used component types.
 const RECENT_KEY = 'palette-recent';
 const MAX_RECENT = 5;
@@ -126,7 +141,8 @@ function renderCategories(activeType, searchQuery, onClickItem) {
 
     const header = document.createElement('div');
     header.className = 'palette-category-header';
-    header.textContent = cat.name;
+    const catKey = CATEGORY_KEY_MAP[cat.name] ?? cat.name;
+    header.textContent = _t(catKey, cat.name);
 
     const items = document.createElement('div');
     items.className = 'palette-items';
