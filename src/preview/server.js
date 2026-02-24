@@ -762,14 +762,34 @@ const EDITOR_CSS = `
     background: var(--surface-1); border-left: 1px solid var(--border-default);
     overflow: hidden;
   }
-  #editor-property-panel {
-    flex: 0 0 auto;
+  /* Tab navigation for right panel — Properties | Components */
+  #editor-panel-tabs {
+    display: flex;
     border-bottom: 1px solid var(--border-default);
+    background: var(--surface-1);
+    flex-shrink: 0;
+  }
+  .panel-tab {
+    flex: 1; padding: 8px 4px;
+    font-size: var(--text-xs); font-weight: 500;
+    color: var(--text-secondary); background: transparent;
+    border: none; cursor: pointer;
+    transition: color 0.15s, background 0.15s;
+    letter-spacing: 0.02em;
+  }
+  .panel-tab:hover { color: var(--text-primary); background: var(--surface-3); }
+  .panel-tab.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
+  .panel-tab-content {
+    display: none; flex: 1; overflow-y: auto; flex-direction: column;
+  }
+  .panel-tab-content.active { display: flex; }
+
+  #editor-property-panel {
+    flex: 1;
     background: var(--surface-1);
     font-family: var(--font-ui); font-size: 13px;
     overflow-y: auto;
     color: var(--text-primary);
-    max-height: 60%;
   }
   #editor-property-panel .panel-header {
     padding: 16px 24px 12px; border-bottom: 1px solid var(--border-default); margin-bottom: 0;
@@ -1041,22 +1061,30 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
       ${screenHtml}
     </div>
     <div id="editor-right-panel">
-      <div id="editor-property-panel">
-        <div class="panel-header">Properties</div>
-        <div class="panel-body">
-          <p class="panel-placeholder">Click an element to edit its properties</p>
+      <div id="editor-panel-tabs">
+        <button class="panel-tab active" data-tab="properties">Properties</button>
+        <button class="panel-tab" data-tab="components">Components</button>
+      </div>
+      <div id="editor-tab-properties" class="panel-tab-content active">
+        <div id="editor-property-panel">
+          <div class="panel-header">Properties</div>
+          <div class="panel-body">
+            <p class="panel-placeholder">Click an element to edit its properties</p>
+          </div>
         </div>
       </div>
-      <div id="editor-palette">
-        <div class="palette-recent" id="palette-recent" style="display:none">
-          <div class="palette-section-title">RECENT</div>
-          <div class="palette-recent-items" id="palette-recent-items"></div>
+      <div id="editor-tab-components" class="panel-tab-content">
+        <div id="editor-palette">
+          <div class="palette-recent" id="palette-recent" style="display:none">
+            <div class="palette-section-title">RECENT</div>
+            <div class="palette-recent-items" id="palette-recent-items"></div>
+          </div>
+          <div class="palette-search">
+            <input type="text" id="palette-search-input" placeholder="Search components..." />
+          </div>
+          <div id="palette-categories"></div>
+          <div class="palette-shortcuts-hint">B=Btn I=Input C=Card T=Text R=Rect · Esc=Cancel</div>
         </div>
-        <div class="palette-search">
-          <input type="text" id="palette-search-input" placeholder="Search components..." />
-        </div>
-        <div id="palette-categories"></div>
-        <div class="palette-shortcuts-hint">B=Btn I=Input C=Card T=Text R=Rect · Esc=Cancel</div>
       </div>
     </div>
   </div>
@@ -1064,6 +1092,23 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
   ${SIDEBAR_JS}
   ${ZOOM_JS}
   <script>window.__COMPONENT_META__ = ${componentMetaJson};</script>
+  <script>
+    // Tab switching for right panel (Properties | Components)
+    (function() {
+      var tabs = document.getElementById('editor-panel-tabs');
+      if (!tabs) return;
+      tabs.addEventListener('click', function(e) {
+        var btn = e.target.closest('.panel-tab');
+        if (!btn) return;
+        var tabName = btn.dataset.tab;
+        tabs.querySelectorAll('.panel-tab').forEach(function(t) { t.classList.remove('active'); });
+        btn.classList.add('active');
+        document.querySelectorAll('.panel-tab-content').forEach(function(c) { c.classList.remove('active'); });
+        var target = document.getElementById('editor-tab-' + tabName);
+        if (target) target.classList.add('active');
+      });
+    })();
+  </script>
   <script type="module">
     import { initEditor } from '/editor/js/editor.js';
     const canvas = document.getElementById('editor-canvas');
@@ -1316,6 +1361,16 @@ export function startPreviewServer(port = config.previewPort) {
     } catch (err) {
       res.status(404).json({ error: err.message });
     }
+  });
+
+  // Serve i18n locale files — only allow lowercase alpha lang codes to prevent
+  // path traversal (e.g. "../secret" is stripped to "secret" which won't match).
+  app.get('/i18n/:lang.json', (req, res) => {
+    const lang = req.params.lang.replace(/[^a-z]/g, '');
+    const localePath = pathJoin(__dirname, 'i18n', `${lang}.json`);
+    res.sendFile(localePath, (err) => {
+      if (err) res.status(404).json({ error: 'Locale not found' });
+    });
   });
 
   const server = app.listen(port, () => {
