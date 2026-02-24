@@ -136,26 +136,27 @@ describe('MCP Resources — approval', () => {
       uri: `mockup://projects/${projectId}/screens/${screenId}/approval`,
     });
     const data = JSON.parse(result.contents[0].text);
+    // New M23 resource reads status from store — default is 'draft', approved is false
     assert.equal(data.approved, false);
-    assert.equal(data.approvedAt, null);
-    assert.equal(data.elementCount, 1);
+    assert.equal(data.status, 'draft');
+    assert.equal(data.version, 1);
+    assert.equal(data.parent_screen_id, null);
+    assert.ok(Array.isArray(data.unresolved_comments));
   });
 
-  it('returns approved after editSessions update', async () => {
-    const { editSessions } = await import('../../src/preview/routes/approval-api.js');
-    const key = `${projectId}/${screenId}`;
-    editSessions.set(key, {
-      snapshot: [],
-      approved: true,
-      approvedAt: '2026-01-01T00:00:00.000Z',
-      summary: '1 added',
-    });
+  it('returns approved after store update', async () => {
+    // New M23 flow: set screen status via store instead of editSessions Map
+    await store.updateScreen(projectId, screenId, { status: 'approved' });
+
     const result = await client.readResource({
       uri: `mockup://projects/${projectId}/screens/${screenId}/approval`,
     });
     const data = JSON.parse(result.contents[0].text);
     assert.equal(data.approved, true);
-    assert.equal(data.summary, '1 added');
-    editSessions.clear();
+    assert.equal(data.status, 'approved');
+    assert.equal(data.screen_id, screenId);
+
+    // Reset
+    await store.updateScreen(projectId, screenId, { status: 'draft' });
   });
 });

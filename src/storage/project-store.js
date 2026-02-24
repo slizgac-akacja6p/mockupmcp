@@ -895,6 +895,12 @@ export class ProjectStore {
       id: generateId('el'),
     }));
 
+    // Carry over unresolved comments so reviewers can track outstanding feedback.
+    // Resolved comments are not copied — they were already addressed in the source version.
+    newScreen.comments = (source.comments || [])
+      .filter(c => !c.resolved)
+      .map(c => ({ ...structuredClone(c), id: generateId('cmt') }));
+
     project.screens.push(newScreen);
     await this._save(project);
     return newScreen;

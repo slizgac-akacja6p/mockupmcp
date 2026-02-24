@@ -185,7 +185,9 @@ export async function registerResources(server, store) {
     }
   );
 
-  // --- Dynamic: screen approval status ---
+  // --- Dynamic: screen approval status (M23) ---
+  // Returns versioning and comment data alongside status so the MCP client
+  // can decide whether to create a new version without extra round-trips.
   const approvalTemplate = new ResourceTemplate(
     'mockup://projects/{projectId}/screens/{screenId}/approval',
     { list: undefined }
@@ -194,21 +196,25 @@ export async function registerResources(server, store) {
   server.resource(
     'screen-approval',
     approvalTemplate,
-    { description: 'Screen approval status — approved flag, timestamp, change summary' },
+    { description: 'Screen approval status — status, version, unresolved comments, parent screen ID' },
     async (uri, variables) => {
       const { projectId, screenId } = variables;
-      const elements = await store.listElements(projectId, screenId);
-      let session = null;
-      try {
-        const { editSessions } = await import('../preview/routes/approval-api.js');
-        session = editSessions.get(`${projectId}/${screenId}`);
-      } catch { /* preview not running — return defaults */ }
+      const project = await store.getProject(projectId);
+      const screen = project.screens.find(s => s.id === screenId);
+      if (!screen) throw new Error(`Screen ${screenId} not found in project ${projectId}`);
+
+      const unresolvedComments = (screen.comments || []).filter(c => !c.resolved);
+
       const data = {
-        approved: session?.approved ?? false,
-        approvedAt: session?.approvedAt ?? null,
-        summary: session?.summary ?? null,
-        elementCount: elements.length,
+        screen_id: screenId,
+        version: screen.version ?? 1,
+        status: screen.status ?? 'draft',
+        unresolved_comments: unresolvedComments,
+        parent_screen_id: screen.parent_screen_id ?? null,
+        // backward compat: mirrors old approved boolean
+        approved: screen.status === 'approved',
       };
+
       return {
         contents: [{
           uri: uri.toString(),

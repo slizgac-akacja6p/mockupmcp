@@ -119,6 +119,57 @@ describe('Screen Versioning', () => {
     });
   });
 
+  describe('createScreenVersion — comment migration', () => {
+    it('copies unresolved comments with new IDs', async () => {
+      // Set up comments on the source screen
+      const comments = [
+        { id: 'cmt_open1', element_id: 'el_abc', text: 'Fix this', resolved: false, pin_number: 1 },
+        { id: 'cmt_open2', element_id: null, text: 'Needs work', resolved: false, pin_number: 2 },
+        { id: 'cmt_done', element_id: 'el_xyz', text: 'Already fixed', resolved: true },
+      ];
+      await store.updateScreen(projectId, screenId, { comments });
+
+      const newVersion = await store.createScreenVersion(projectId, screenId);
+
+      // Only unresolved comments should be copied
+      assert.equal(newVersion.comments.length, 2);
+      // IDs should be regenerated (not identical to source)
+      for (const comment of newVersion.comments) {
+        assert.ok(comment.id.startsWith('cmt_'), `Comment ID should have cmt_ prefix, got: ${comment.id}`);
+        assert.notEqual(comment.id, 'cmt_open1');
+        assert.notEqual(comment.id, 'cmt_open2');
+      }
+      // Content should be preserved
+      const texts = newVersion.comments.map(c => c.text);
+      assert.ok(texts.includes('Fix this'));
+      assert.ok(texts.includes('Needs work'));
+      assert.ok(!texts.includes('Already fixed'), 'Resolved comment should NOT be copied');
+    });
+
+    it('does NOT copy resolved comments', async () => {
+      // Set up only resolved comments
+      const comments = [
+        { id: 'cmt_r1', element_id: null, text: 'Done', resolved: true },
+        { id: 'cmt_r2', element_id: null, text: 'Also done', resolved: true },
+      ];
+      await store.updateScreen(projectId, screenId, { comments });
+
+      const newVersion = await store.createScreenVersion(projectId, screenId);
+
+      assert.equal(newVersion.comments.length, 0);
+    });
+
+    it('handles screen with no comments', async () => {
+      // Clear comments on source
+      await store.updateScreen(projectId, screenId, { comments: undefined });
+
+      const newVersion = await store.createScreenVersion(projectId, screenId);
+
+      assert.ok(Array.isArray(newVersion.comments));
+      assert.equal(newVersion.comments.length, 0);
+    });
+  });
+
   describe('updateScreen with status', () => {
     it('sets status to approved', async () => {
       const updated = await store.updateScreen(projectId, screenId, { status: 'approved' });

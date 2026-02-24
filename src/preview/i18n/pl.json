@@ -59,5 +59,15 @@
   "panel.positionAndSize": "Pozycja i rozmiar",
   "panel.style": "Styl",
   "panel.selectElement": "Zaznacz element, aby edytować właściwości",
-  "toast.added": "Dodano"
+  "toast.added": "Dodano",
+  "approval.accept": "Zatwierdz",
+  "approval.acceptWithComments": "Zatwierdz z komentarzami",
+  "approval.reject": "Odrzuc",
+  "approval.rejectReason": "Powod odrzucenia",
+  "approval.rejectReasonPlaceholder": "Opisz co nalezy zmienic...",
+  "approval.confirmAcceptWithComments": "Ekran zostanie oznaczony jako wymagajacy zmian na podstawie komentarzy.",
+  "approval.noUnresolvedComments": "Brak nierozwi\u0105zanych komentarzy",
+  "approval.success.accepted": "Ekran zatwierdzony",
+  "approval.success.acceptedWithComments": "Zatwierdzono z komentarzami \u2014 wymagana iteracja",
+  "approval.success.rejected": "Ekran odrzucony"
 }
