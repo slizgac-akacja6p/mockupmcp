@@ -238,7 +238,8 @@ export function initPalette(options) {
  */
 export function exitPaletteAddMode() {
   _activeType = null;
-  if (_onAddModeExit) _onAddModeExit();
+  // Do NOT call _onAddModeExit here — editor.js calls us directly via exitAddMode(),
+  // so invoking the callback would loop back into exitAddMode() causing a stack overflow.
 
   // Update DOM directly — avoids a full re-render just for class removal.
   document.querySelectorAll('.palette-item.add-mode-active, .palette-recent-chip.active')

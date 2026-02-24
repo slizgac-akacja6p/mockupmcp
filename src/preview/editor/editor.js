@@ -269,18 +269,13 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
     updateMultiSelectVisual(selectedIds);
   });
 
-  // Add-mode click: place a new element on empty canvas space, or exit add
-  // mode when the user clicks an existing element (so selection takes over).
+  // Add-mode click: place a new element at the clicked canvas position.
   // Single-shot: exits add mode after one successful placement.
+  // We intentionally do NOT bail out when clicking on an existing element —
+  // the canvas is often fully covered by elements, so honoring clicks on top
+  // of them is the only way add mode can ever work.
   canvas.addEventListener('click', async (e) => {
     if (!addModeType) return;
-
-    // Clicked on an existing element — exit add mode so selection works
-    const clickedId = findElementId(e.target);
-    if (clickedId) {
-      exitAddMode();
-      return;
-    }
 
     // Use the .screen element (actual mockup) as the coordinate reference,
     // not #editor-canvas (the flex wrapper) which has centering padding/offsets
