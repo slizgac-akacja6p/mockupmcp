@@ -1380,6 +1380,7 @@ const STYLE_OPTIONS = [
   { value: 'dark-minimal',   label: 'Dark Minimal' },
   { value: 'aurora',         label: 'Aurora' },
   { value: 'skeuomorphic',   label: 'Skeuomorphic' },
+  { value: 'slate',          label: 'Slate' },
 ];
 
 function buildStyleOptionsHtml(selectedValue) {
