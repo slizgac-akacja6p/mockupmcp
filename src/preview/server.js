@@ -745,6 +745,7 @@ const EDITOR_CSS = `
   #editor-canvas {
     position: relative;
     flex: 1;
+    min-width: 0;
     margin-top: 0;
     min-height: calc(100vh - 48px);
     display: flex; align-items: flex-start; justify-content: center; padding: 20px 24px;
