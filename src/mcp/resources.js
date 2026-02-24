@@ -185,5 +185,39 @@ export async function registerResources(server, store) {
     }
   );
 
-  console.error('[MockupMCP] 3 static + 2 dynamic resources registered');
+  // --- Dynamic: screen approval status ---
+  const approvalTemplate = new ResourceTemplate(
+    'mockup://projects/{projectId}/screens/{screenId}/approval',
+    { list: undefined }
+  );
+
+  server.resource(
+    'screen-approval',
+    approvalTemplate,
+    { description: 'Screen approval status — approved flag, timestamp, change summary' },
+    async (uri, variables) => {
+      const { projectId, screenId } = variables;
+      const elements = await store.listElements(projectId, screenId);
+      let session = null;
+      try {
+        const { editSessions } = await import('../preview/routes/approval-api.js');
+        session = editSessions.get(`${projectId}/${screenId}`);
+      } catch { /* preview not running — return defaults */ }
+      const data = {
+        approved: session?.approved ?? false,
+        approvedAt: session?.approvedAt ?? null,
+        summary: session?.summary ?? null,
+        elementCount: elements.length,
+      };
+      return {
+        contents: [{
+          uri: uri.toString(),
+          text: JSON.stringify(data, null, 2),
+          mimeType: 'application/json',
+        }],
+      };
+    }
+  );
+
+  console.error('[MockupMCP] 3 static + 3 dynamic resources registered');
 }

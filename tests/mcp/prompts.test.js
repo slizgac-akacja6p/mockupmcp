@@ -7,10 +7,7 @@ import { pathToFileURL } from 'node:url';
 import { describe, it, before } from 'node:test';
 import assert from 'node:assert/strict';
 
-// Register the loader hook using the percent-encoded path (required because the
-// project directory contains `###` characters which are URI-reserved).
-const LOADER_URL =
-  'file:///Users/maciejgajda/Documents/%23%23%23%20MACIEK%20%23%23%23/002%20WORK/MGGS/MGGS%20MockupMCP/tests/mcp/_screenshot-loader.mjs';
+const LOADER_URL = new URL('./_screenshot-loader.mjs', import.meta.url).href;
 register(LOADER_URL, pathToFileURL('./'));
 
 // Dynamic import so the module resolution runs AFTER the loader is registered.

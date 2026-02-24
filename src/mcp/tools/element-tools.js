@@ -195,6 +195,37 @@ export function registerElementTools(server, store) {
   );
 
   server.tool(
+    'mockup_bulk_add_elements',
+    'Add multiple elements to a screen in a single call. Much faster than individual mockup_add_element calls when building layouts.',
+    {
+      project_id: z.string().describe('Project ID'),
+      screen_id: z.string().describe('Screen ID'),
+      elements: z.array(z.object({
+        type: z.string().describe('Element type (rectangle, text, button, card, etc.)'),
+        x: z.number().describe('X position in pixels'),
+        y: z.number().describe('Y position in pixels'),
+        width: z.number().describe('Width in pixels'),
+        height: z.number().describe('Height in pixels'),
+        properties: z.record(z.any()).optional().default({}).describe('Component properties'),
+        z_index: z.number().optional().default(0).describe('Z-index layer'),
+      })).describe('Array of elements to add'),
+    },
+    async ({ project_id, screen_id, elements }) => {
+      try {
+        const added = await store.bulkAddElements(project_id, screen_id, elements);
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({ added: added.length, elements: added }, null, 2),
+          }],
+        };
+      } catch (err) {
+        return { content: [{ type: 'text', text: `Error: ${err.message}` }], isError: true };
+      }
+    }
+  );
+
+  server.tool(
     'mockup_remove_link',
     'Remove a navigation link from an element',
     {
