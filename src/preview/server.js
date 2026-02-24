@@ -126,6 +126,10 @@ const LINK_SCRIPT = `
         currentScreen.parentNode.insertBefore(wrapper, currentScreen);
         wrapper.appendChild(currentScreen);
 
+        // Capture original position before overriding for animation — html-builder.js
+        // sets position:relative inline, clearing to '' would leave position:static which
+        // breaks absolute children in Safari (they escape to viewport).
+        const savedPosition = newScreen.style.position || 'relative';
         newScreen.style.position = 'absolute';
         newScreen.style.top = '0';
         newScreen.style.left = '0';
@@ -143,7 +147,7 @@ const LINK_SCRIPT = `
         wrapper.parentNode.insertBefore(newScreen, wrapper);
         wrapper.remove();
 
-        newScreen.style.position = '';
+        newScreen.style.position = savedPosition;
         newScreen.style.left = '';
         newScreen.style.top = '';
       }
