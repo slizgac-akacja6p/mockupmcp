@@ -16,6 +16,9 @@ import { initShortcuts } from './shortcuts.js';
 import { initPalette, exitPaletteAddMode } from './palette.js';
 import * as api from './api-client.js';
 
+// i18n helper — safe fallback when the i18n module hasn't loaded yet or in Node.js tests.
+const _t = (key, fallback) => (typeof globalThis.window !== 'undefined' && typeof window.t === 'function' ? window.t(key, fallback) : (fallback ?? key));
+
 // ---------------------------------------------------------------------------
 // Change detection
 // ---------------------------------------------------------------------------
@@ -229,7 +232,7 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
   }
 
   function onDeselect() {
-    panel.innerHTML = '<p class="panel-placeholder">Select an element to edit its properties</p>';
+    panel.innerHTML = '<p class="panel-placeholder">' + _t('panel.selectElement', 'Select an element to edit its properties') + '</p>';
     if (resizeHandles) resizeHandles.hideHandles();
     guideRenderer.hideGuides();
   }
@@ -288,7 +291,7 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
       });
       updateUndoRedoButtons();
 
-      showToast(`Added ${addModeType}`);
+      showToast(_t('toast.added', 'Added') + ' ' + addModeType);
     } catch (err) {
       console.error('[editor] add element failed', err);
     }
@@ -530,7 +533,7 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
           height: el.height,
           properties: JSON.parse(JSON.stringify(el.properties ?? {}))
         };
-        showToast('Copied');
+        showToast(_t('toast.copied', 'Copied'));
       }
     },
     // Paste clipboard content offset by 20px from the selected element (or a
@@ -561,7 +564,7 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
       });
       updateUndoRedoButtons();
 
-      showToast('Pasted — Cmd+V to paste again');
+      showToast(_t('toast.pasted', 'Pasted'));
     },
   });
 
@@ -616,6 +619,54 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
       exitAddMode();
     }
   });
+
+  // --- language switcher ---
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const lang = btn.dataset.lang;
+      if (typeof window.setLanguage === 'function') {
+        await window.setLanguage(lang);
+      }
+      document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      // Re-render property panel with new language
+      const selectedId = selectionState.getSelectedId();
+      if (selectedId) {
+        onSelect(selectedId);
+      } else {
+        onDeselect();
+      }
+    });
+  });
+
+  // Restore active language button from persisted preference
+  const savedLang = localStorage.getItem('editor-lang') || 'en';
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.lang === savedLang);
+  });
+
+  // --- sidebar collapse toggle ---
+  const collapseBtn = document.getElementById('editor-sidebar-collapse-btn');
+  if (collapseBtn) {
+    const sidebar = collapseBtn.closest('#mockup-sidebar');
+    const wrapper = document.getElementById('editor-flex-wrapper');
+    const toolbar = document.getElementById('editor-toolbar');
+    const isCollapsed = localStorage.getItem('editor-sidebar-collapsed') === 'true';
+
+    function applyCollapse(collapsed) {
+      if (sidebar) sidebar.classList.toggle('collapsed', collapsed);
+      if (wrapper) wrapper.classList.toggle('sidebar-collapsed', collapsed);
+      if (toolbar) toolbar.classList.toggle('sidebar-collapsed', collapsed);
+      collapseBtn.textContent = collapsed ? '\u203A' : '\u2039';
+      localStorage.setItem('editor-sidebar-collapsed', String(collapsed));
+    }
+
+    applyCollapse(isCollapsed);
+    collapseBtn.addEventListener('click', () => {
+      const nowCollapsed = !sidebar?.classList.contains('collapsed');
+      applyCollapse(nowCollapsed);
+    });
+  }
 
   // --- polling (3 s) ---
   // Detects external edits (e.g. from Claude via MCP tools) and refreshes the

@@ -888,6 +888,27 @@ const EDITOR_CSS = `
   .toolbar-btn:disabled { opacity: 0.4; cursor: default; }
   .toolbar-btn-active { background: var(--accent-subtle); border-color: var(--accent); color: var(--accent); }
 
+  .lang-btn {
+    padding: 3px 7px;
+    font-size: var(--text-xs);
+    font-weight: 600;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .lang-btn.active {
+    background: var(--surface-3);
+    color: var(--text-primary);
+    border-color: var(--border-strong);
+  }
+  .lang-btn:hover:not(.active) {
+    background: var(--surface-3);
+    color: var(--text-primary);
+  }
+
   /* Mode toggle buttons — pill style for select/add mode */
   .mode-btn {
     border-radius: var(--radius-md); padding: 4px 10px;
@@ -1080,6 +1101,10 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
       <button id="btn-delete-selected" class="toolbar-btn toolbar-btn-danger">Delete (<span id="multi-select-count">0</span>)</button>
     </div>
     ${ZOOM_CONTROLS_HTML}
+    <div id="lang-switcher" style="display:flex;align-items:center;gap:2px;margin-left:8px;">
+      <button class="lang-btn active" data-lang="en" title="English">EN</button>
+      <button class="lang-btn" data-lang="pl" title="Polski">PL</button>
+    </div>
     <a class="preview-link" href="/preview/${projectId}/${screenId}">Preview</a>
   </div>
   <div id="editor-flex-wrapper">
@@ -1119,6 +1144,7 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
   ${SIDEBAR_JS}
   ${ZOOM_JS}
   <script>window.__COMPONENT_META__ = ${componentMetaJson};</script>
+  <script src="/i18n/index.js"></script>
   <script>
     // Tab switching for right panel (Properties | Components)
     (function() {

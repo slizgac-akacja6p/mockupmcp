@@ -6,6 +6,9 @@
 
 import { getComponentDefaults } from './component-meta.js';
 
+// i18n helper — safe fallback when the i18n module hasn't loaded yet or in Node.js tests.
+const _t = (key, fallback) => (typeof globalThis.window !== 'undefined' && typeof window.t === 'function' ? window.t(key, fallback) : (fallback ?? key));
+
 // ---------------------------------------------------------------------------
 // Toggle switch CSS — injected once into <head> on first panel render.
 // Kept here so the panel is self-contained and doesn't require server-side
@@ -189,11 +192,14 @@ function escPanelVal(val) {
 }
 
 // Human-readable section titles for each group name in the panel.
-const GROUP_TITLES = {
-  info:       'Element',
-  position:   'Position & Size',
-  properties: 'Style',
-};
+// Computed at render time so i18n picks up the current language.
+function getGroupTitles() {
+  return {
+    info:       _t('panel.element', 'Element'),
+    position:   _t('panel.positionAndSize', 'Position & Size'),
+    properties: _t('panel.style', 'Style'),
+  };
+}
 
 /**
  * Render the property panel HTML from a list of field definitions.
@@ -293,9 +299,10 @@ export function renderPanelHtml(fields) {
 </div>`;
   }
 
+  const groupTitles = getGroupTitles();
   const sections = groupOrder.map((group) => {
     const groupFields = grouped[group];
-    const title = GROUP_TITLES[group] || group;
+    const title = groupTitles[group] || group;
 
     if (group === 'position') {
       // x+y on one row, width+height on another — pairs share a label row.
@@ -423,18 +430,18 @@ function _installThemeToggle() {
   const btn = document.createElement('button');
   btn.id = 'theme-toggle-btn';
   btn.className = 'toolbar-btn';
-  btn.title = 'Toggle light/dark theme';
+  btn.title = _t('toolbar.toggleTheme', 'Toggle light/dark theme');
   btn.style.cssText = 'font-size:15px;width:32px;height:32px;';
 
   // Restore persisted theme before rendering the correct icon.
   const saved = localStorage.getItem('editor-theme') || 'dark';
   document.body.dataset.theme = saved;
-  btn.textContent = saved === 'light' ? '\u2600\uFE0F' : '\uD83C\uDF19';
+  btn.textContent = saved === 'light' ? '\u2600' : '\u263E';
 
   btn.addEventListener('click', () => {
     const next = document.body.dataset.theme === 'light' ? 'dark' : 'light';
     document.body.dataset.theme = next;
-    btn.textContent = next === 'light' ? '\u2600\uFE0F' : '\uD83C\uDF19';
+    btn.textContent = next === 'light' ? '\u2600' : '\u263E';
     localStorage.setItem('editor-theme', next);
   });
 
