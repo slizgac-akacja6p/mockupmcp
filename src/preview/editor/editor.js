@@ -627,23 +627,6 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
     });
   }
 
-  // --- toolbar add button ---
-  // Switches to the Components tab so the user can pick a component type.
-  // Briefly highlights the button to confirm the action.
-  const toolbarAddBtn = document.getElementById('toolbar-add-btn');
-  if (toolbarAddBtn) {
-    toolbarAddBtn.addEventListener('click', () => {
-      const componentsTab = document.querySelector('.panel-tab[data-tab="components"]');
-      if (componentsTab) componentsTab.click();
-      toolbarAddBtn.style.background = 'var(--accent-subtle)';
-      toolbarAddBtn.style.borderColor = 'var(--accent)';
-      setTimeout(() => {
-        toolbarAddBtn.style.background = '';
-        toolbarAddBtn.style.borderColor = '';
-      }, 1000);
-    });
-  }
-
   // --- multi-select delete button ---
   document.getElementById('btn-delete-selected')?.addEventListener('click', async () => {
     const ids = Array.from(selectionState.getSelectedIds());

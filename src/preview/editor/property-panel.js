@@ -450,43 +450,31 @@ export function initPropertyPanel(panelEl, onSave) {
 }
 
 // ---------------------------------------------------------------------------
-// Light/Dark theme toggle — self-installs into the editor toolbar.
+// Light/Dark theme toggle — wired to #theme-toggle-btn in left sidebar.
 // ---------------------------------------------------------------------------
 
 /**
- * Insert a moon/sun toggle button into #editor-toolbar (before .preview-link).
+ * Wire click handler on the pre-rendered #theme-toggle-btn in #sidebar-theme-toggle.
  * Reads/writes the `editor-theme` key in localStorage and toggles
  * data-theme="light"|"dark" on <body> so CSS vars can be overridden.
- * Idempotent — safe to call multiple times.
+ * Idempotent — safe to call multiple times (guards via data attribute).
  */
 function _installThemeToggle() {
-  if (document.getElementById('theme-toggle-btn')) return;
-  const toolbar = document.getElementById('editor-toolbar');
-  if (!toolbar) return;
+  const btn = document.getElementById('theme-toggle-btn');
+  if (!btn || btn.dataset.wired) return;
+  btn.dataset.wired = '1';
 
-  const btn = document.createElement('button');
-  btn.id = 'theme-toggle-btn';
-  btn.className = 'toolbar-btn';
-  btn.title = _t('toolbar.toggleTheme', 'Toggle light/dark theme');
-  btn.style.cssText = 'font-size:15px;width:32px;height:32px;';
+  const icon = btn.querySelector('#theme-icon');
 
   // Restore persisted theme before rendering the correct icon.
   const saved = localStorage.getItem('editor-theme') || 'dark';
   document.body.dataset.theme = saved;
-  btn.textContent = saved === 'light' ? '\u2600' : '\u263E';
+  if (icon) icon.textContent = saved === 'light' ? '\u2600' : '\u263E';
 
   btn.addEventListener('click', () => {
     const next = document.body.dataset.theme === 'light' ? 'dark' : 'light';
     document.body.dataset.theme = next;
-    btn.textContent = next === 'light' ? '\u2600' : '\u263E';
+    if (icon) icon.textContent = next === 'light' ? '\u2600' : '\u263E';
     localStorage.setItem('editor-theme', next);
   });
-
-  // Insert before the Preview link so it stays at the right side of toolbar.
-  const previewLink = toolbar.querySelector('a.preview-link');
-  if (previewLink) {
-    toolbar.insertBefore(btn, previewLink);
-  } else {
-    toolbar.appendChild(btn);
-  }
 }

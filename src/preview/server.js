@@ -699,7 +699,10 @@ const EDITOR_CSS = `
     background: var(--surface-1) !important;
     border-right: 1px solid var(--border-default) !important;
     color: var(--text-primary) !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
+  #mockup-sidebar-tree { flex: 1; overflow-y: auto; }
   #mockup-sidebar-toggle {
     background: var(--surface-1) !important;
     border-color: var(--border-default) !important;
@@ -717,6 +720,33 @@ const EDITOR_CSS = `
     background: var(--accent) !important;
     color: #FFFFFF !important;
     font-weight: 500;
+  }
+
+  /* Theme toggle pinned to sidebar bottom via flex margin-top:auto */
+  #sidebar-theme-toggle {
+    margin-top: auto;
+    padding: 12px 8px;
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  #sidebar-theme-toggle button {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 16px;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #sidebar-theme-toggle button:hover {
+    background: var(--surface-3);
+    color: var(--text-primary);
   }
 
   #editor-toolbar {
@@ -975,13 +1005,46 @@ const EDITOR_CSS = `
   #editor-flex-wrapper.sidebar-collapsed { margin-left: 48px; }
   #editor-toolbar.sidebar-collapsed { left: 48px; }
 
-  /* Dark overrides for shared zoom controls inside editor toolbar */
-  #editor-toolbar .zoom-btn {
-    background: var(--surface-2); border-color: var(--border-default);
-    color: var(--text-secondary);
+  /* Floating zoom controls — bottom-right of canvas, above right panel */
+  #zoom-controls {
+    position: fixed;
+    bottom: 20px;
+    right: 316px;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: var(--surface-3);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    padding: 4px 6px;
+    z-index: 100;
+    box-shadow: var(--shadow-md);
   }
-  #editor-toolbar .zoom-btn:hover { background: var(--surface-3); }
-  #editor-toolbar .zoom-level { color: var(--text-secondary); }
+  #zoom-controls .zoom-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 16px;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    padding: 0;
+  }
+  #zoom-controls .zoom-btn:hover {
+    background: var(--surface-4);
+  }
+  #zoom-controls .zoom-level {
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    min-width: 36px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
 
   /* Delete element button at bottom of property panel */
   .panel-delete-btn {
@@ -1149,15 +1212,23 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
     .toolbar-badge-add { background: #F59E0B; color: var(--surface-1); }
     .box-select-overlay { position: absolute; pointer-events: none; border: 1px solid var(--accent); background: var(--accent-subtle); }
     .element-selected-multi { outline: 2px solid var(--accent) !important; outline-offset: 1px; }
-    #toolbar-add-btn { border-radius: var(--radius-md); }
-    #toolbar-add-btn:hover { background: var(--surface-3); color: var(--text-primary); }
     .toast { background: var(--surface-3); color: var(--text-primary); padding: 8px 14px; border-radius: 6px; margin-top: 8px; font-size: 12px; animation: fadeInOut 2.5s forwards; border: 1px solid var(--border-default); }
     @keyframes fadeInOut { 0%{opacity:0;transform:translateY(8px)} 10%{opacity:1;transform:translateY(0)} 80%{opacity:1} 100%{opacity:0} }
   </style>
 </head>
 <body data-theme="dark">
   <script>document.body.dataset.theme = localStorage.getItem('editor-theme') || 'dark';</script>
-  ${SIDEBAR_HTML.replace('<h3>Projects</h3>', '<button id="editor-sidebar-collapse-btn">&#x203A;</button><h3>Projects</h3>')}
+  <div id="mockup-sidebar">
+    <button id="mockup-sidebar-toggle" aria-label="Toggle sidebar">&lsaquo;</button>
+    <button id="editor-sidebar-collapse-btn">&#x203A;</button>
+    <h3>Projects</h3>
+    <div id="mockup-sidebar-tree"></div>
+    <div id="sidebar-theme-toggle">
+      <button id="theme-toggle-btn" title="Toggle theme">
+        <span id="theme-icon">&#9790;</span>
+      </button>
+    </div>
+  </div>
   <div id="editor-toolbar">
     <span class="screen-name">${screenName}</span>
     <span class="edit-mode-badge">Edit mode</span>
@@ -1172,13 +1243,6 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
     <div id="multi-select-toolbar" style="display:none">
       <button id="btn-delete-selected" class="toolbar-btn toolbar-btn-danger">Delete (<span id="multi-select-count">0</span>)</button>
     </div>
-    ${ZOOM_CONTROLS_HTML}
-    <div class="toolbar-sep"></div>
-    <button id="toolbar-add-btn" class="toolbar-btn" title="Add component (B=Button, I=Input, C=Card, T=Text, R=Rect)">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-    </button>
     <div id="lang-switcher" style="display:flex;align-items:center;gap:2px;margin-left:8px;">
       <button class="lang-btn active" data-lang="en" title="English">EN</button>
       <button class="lang-btn" data-lang="pl" title="Polski">PL</button>
@@ -1188,6 +1252,12 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
   <div id="editor-flex-wrapper">
     <div id="editor-canvas" data-project-id="${projectId}" data-screen-id="${screenId}">
       ${screenHtml}
+      <div id="zoom-controls">
+        <button class="zoom-btn" data-zoom="out" title="Zoom out">&minus;</button>
+        <span class="zoom-level">100%</span>
+        <button class="zoom-btn" data-zoom="in" title="Zoom in">+</button>
+        <button class="zoom-btn" data-zoom="fit" title="Fit to width">&#8865;</button>
+      </div>
     </div>
     <div id="editor-right-panel">
       <div id="editor-panel-tabs">
