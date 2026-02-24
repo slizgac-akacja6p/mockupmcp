@@ -369,7 +369,7 @@
 **DoD:** CRUD komentarzy, piny na canvasie, PNG render z pinami+legendą, MCP resource.
 
 ## M23 — Approval Flow Redesign
-**Status:** PLANNED
+**Status:** DONE (PR #30)
 **Branch:** `feature/m23-approval`
 **Scope:** 3 stany: rejected / accepted_with_comments / accepted. Integracja z M21+M22. Claude dostaje strukturalny feedback.
 **Tasks:** `PM/tasks/M23.md`
@@ -377,7 +377,7 @@
 **DoD:** 3-state approval end-to-end, comments w response, 3 przyciski w edytorze, timeout 300s.
 
 ## M24 — Slate Style (dark + light)
-**Status:** PLANNED
+**Status:** DONE (PR #26)
 **Branch:** `feature/m24-slate`
 **Scope:** Styl "slate" z Tailwind Slate palette. Dark + light mode przez `data-color-scheme` attribute. Generyczny mechanizm dla przyszłych styli.
 **Tasks:** `PM/tasks/M24.md`
