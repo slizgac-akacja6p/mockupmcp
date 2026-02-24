@@ -803,27 +803,27 @@ const EDITOR_CSS = `
   }
   .panel-group { margin-bottom: 16px; }
   .panel-group-title {
-    font-size: 13px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.3px; color: var(--text-muted);
-    padding: 14px 0 8px; border-top: 1px solid var(--border-subtle); margin-top: 4px;
+    font-size: var(--text-xxs); font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--text-secondary);
+    padding: 14px 0 6px; border-top: 1px solid var(--border-subtle); margin-top: 4px;
   }
   .panel-group:first-child .panel-group-title { border-top: none; margin-top: 0; }
   .panel-field { margin-bottom: 10px; }
   .panel-field label {
-    display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;
-    font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;
+    display: block; font-size: var(--text-xxs); color: var(--text-secondary); margin-bottom: 4px;
+    font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;
   }
   .panel-field input[type="number"],
   .panel-field input[type="text"],
   .panel-field input[type="color"],
   .panel-field select {
-    width: 100%; padding: 10px 12px; border: 1px solid var(--border-default); border-radius: 4px;
-    font-size: 14px; box-sizing: border-box; background: var(--surface-2);
+    width: 100%; padding: 4px 8px; border: 1px solid var(--border-default); border-radius: var(--radius-sm);
+    font-size: var(--text-sm); box-sizing: border-box; background: var(--surface-2);
     color: var(--text-primary);
     transition: border-color 0.15s;
   }
   .panel-field input:focus, .panel-field select:focus {
-    border-color: var(--accent); outline: none; box-shadow: 0 0 0 2px var(--accent-subtle);
+    border-color: var(--accent); outline: none; box-shadow: var(--accent-glow);
   }
   .panel-field input:disabled {
     background: var(--border-subtle); color: var(--text-secondary);
@@ -863,7 +863,11 @@ const EDITOR_CSS = `
   .element.selected { outline: 2px solid var(--accent) !important; outline-offset: 1px; }
 
   .toolbar-separator {
-    width: 1px; height: 24px; background: var(--border-default);
+    width: 1px; height: 24px; background: var(--border-subtle);
+  }
+  .toolbar-sep {
+    width: 1px; height: 24px; background: var(--border-subtle);
+    margin: 0 4px; align-self: center;
   }
   .toolbar-btn {
     width: 32px; height: 32px; border: 1px solid var(--border-default); border-radius: 4px;
@@ -875,6 +879,16 @@ const EDITOR_CSS = `
   .toolbar-btn:hover:not(:disabled) { background: var(--surface-3); border-color: var(--text-secondary); }
   .toolbar-btn:disabled { opacity: 0.4; cursor: default; }
   .toolbar-btn-active { background: var(--accent-subtle); border-color: var(--accent); color: var(--accent); }
+
+  /* Mode toggle buttons — pill style for select/add mode */
+  .mode-btn {
+    border-radius: var(--radius-md); padding: 4px 10px;
+    font-size: var(--text-sm); border: none;
+    background: transparent; color: var(--text-secondary);
+    cursor: pointer; transition: background 0.15s, color 0.15s;
+  }
+  .mode-btn.active { background: var(--accent-gradient); color: white; }
+  .mode-btn:hover:not(.active) { background: var(--surface-3); color: var(--text-primary); }
 
   #editor-flex-wrapper {
     display: flex; flex: 1;
@@ -932,7 +946,7 @@ const EDITOR_CSS = `
   .panel-field--inline .panel-label { margin-bottom: 0; }
   /* Two-column grid for x+y and width+height pairs */
   .panel-pos-pair {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 8px;
   }
   .panel-pos-pair .panel-field { margin-bottom: 0; }
   /* Color field: swatch (native picker) + hex text input side by side */
