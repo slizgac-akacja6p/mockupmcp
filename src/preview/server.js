@@ -285,13 +285,14 @@ const ZOOM_JS = `
     var sidebarW = (sidebar && sidebar.classList.contains('collapsed')) ? 40 : 260;
     var toolbarH = 48;
     var panelEl = document.getElementById("property-panel") || document.querySelector(".property-panel"); var panelW = panelEl ? panelEl.offsetWidth : 0;
+    var paletteEl = document.getElementById("editor-palette"); var paletteW = paletteEl ? paletteEl.offsetWidth : 0;
     var padW = 48;  // horizontal padding inside the canvas area
     var padH = 40;  // vertical padding below toolbar
 
     // On mobile the sidebar is off-screen, so don't subtract its width.
     if (window.innerWidth <= 768) sidebarW = 0;
 
-    var availW = window.innerWidth - sidebarW - panelW - padW;
+    var availW = window.innerWidth - sidebarW - paletteW - panelW - padW;
     var availH = window.innerHeight - toolbarH - padH;
 
     // Read the screen's intrinsic (un-scaled) dimensions from inline style so
@@ -669,8 +670,10 @@ const EDITOR_CSS = `
     position: relative;  /* anchor for absolute-positioned resize handles */
     /* Do NOT set overflow:hidden — selection outlines and drag handles extend
        beyond the screen boundary and must not be clipped by the canvas. */
-    /* Offset for sidebar (260px) and property panel (280px) */
-    margin-left: 260px; margin-right: 380px; margin-top: 48px;
+    /* No margin-left — sidebar offset is on the flex wrapper; canvas fills
+       remaining space after the 220px palette via flex:1. */
+    flex: 1;
+    margin-right: 380px; margin-top: 0;
     min-height: calc(100vh - 48px);
     display: flex; align-items: flex-start; justify-content: center; padding: 20px 24px;
     background: #e8e8e8;
@@ -776,8 +779,15 @@ const EDITOR_CSS = `
   .toolbar-btn:disabled { opacity: 0.4; cursor: default; }
   .toolbar-btn-active { background: #e8f0fa; border-color: #a3c4e6; color: #2a6db5; }
 
+  /* Flex wrapper between sidebar and property panel — houses palette + canvas.
+     margin-left accounts for the fixed sidebar; margin-top for the fixed toolbar. */
+  #editor-flex-wrapper {
+    display: flex; flex: 1;
+    margin-left: 260px; margin-top: 48px;
+  }
+
   body.sidebar-collapsed #editor-toolbar { left: 40px; }
-  body.sidebar-collapsed #editor-canvas { margin-left: 40px; }
+  body.sidebar-collapsed #editor-flex-wrapper { margin-left: 40px; }
 </style>`;
 
 // Build the component metadata blob that the editor's component-meta.js reads
@@ -875,7 +885,7 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
     ${ZOOM_CONTROLS_HTML}
     <a class="preview-link" href="/preview/${projectId}/${screenId}">Preview</a>
   </div>
-  <div style="display: flex; flex: 1; margin-top: 48px;">
+  <div id="editor-flex-wrapper">
     <div id="editor-palette">
       <div class="palette-recent" id="palette-recent" style="display:none">
         <div class="palette-section-title">RECENT</div>
