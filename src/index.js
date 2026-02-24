@@ -4,7 +4,7 @@ import { registerResources } from './mcp/resources.js';
 import { registerPrompts } from './mcp/prompts.js';
 import { startHttpTransport } from './mcp/http-transport.js';
 import { startPreviewServer } from './preview/server.js';
-import { closeBrowser } from './renderer/screenshot.js';
+import { closeBrowser, warmUp } from './renderer/screenshot.js';
 import { ProjectStore } from './storage/project-store.js';
 import { config } from './config.js';
 
@@ -16,6 +16,9 @@ async function main() {
 
   const store = new ProjectStore(config.dataDir);
   const transport = config.mcpTransport;
+
+  // Pre-warm Puppeteer browser + page pool (non-blocking, logs on completion)
+  warmUp().catch(err => console.error('[MockupMCP] Browser warm-up failed (will lazy-init):', err.message));
 
   // Start preview HTTP server
   const previewServer = startPreviewServer(config.previewPort);
