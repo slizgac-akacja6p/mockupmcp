@@ -157,4 +157,51 @@ export async function registerScreenTools(server, store) {
       }
     }
   );
+
+  // --- Versioning tools ---
+
+  server.tool(
+    'mockup_create_screen_version',
+    'Create a new version of a screen. The new version clones the source screen with all elements, increments version number, and sets status to "draft". Version name is automatically derived as "Original Name vN".',
+    {
+      project_id: z.string().describe('Project ID'),
+      screen_id: z.string().describe('Source screen ID to version from'),
+    },
+    async ({ project_id, screen_id }) => {
+      try {
+        const screen = await store.createScreenVersion(project_id, screen_id);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(screen, null, 2) }],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: 'text', text: `Error: ${error.message}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.tool(
+    'mockup_set_screen_status',
+    'Set the approval status of a screen: "draft" (in progress), "approved" (ready), or "rejected" (needs revision).',
+    {
+      project_id: z.string().describe('Project ID'),
+      screen_id: z.string().describe('Screen ID'),
+      status: z.enum(['draft', 'approved', 'rejected']).describe('Status: draft | approved | rejected'),
+    },
+    async ({ project_id, screen_id, status }) => {
+      try {
+        const screen = await store.updateScreen(project_id, screen_id, { status });
+        return {
+          content: [{ type: 'text', text: JSON.stringify(screen, null, 2) }],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: 'text', text: `Error: ${error.message}` }],
+          isError: true,
+        };
+      }
+    }
+  );
 }
