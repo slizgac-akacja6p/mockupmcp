@@ -282,8 +282,12 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
     }
 
     const rect = canvas.getBoundingClientRect();
-    const x = Math.round(e.clientX - rect.left);
-    const y = Math.round(e.clientY - rect.top);
+    // Divide by zoom scale so the element lands at the clicked mockup coordinate,
+    // not at the scaled viewport coordinate (which would be off at any zoom != 1).
+    const zoomMatch = document.querySelector('.screen')?.style.transform?.match(/scale\(([^)]+)\)/);
+    const zoom = zoomMatch ? parseFloat(zoomMatch[1]) : 1;
+    const x = Math.round((e.clientX - rect.left) / zoom);
+    const y = Math.round((e.clientY - rect.top) / zoom);
 
     // Default sizes per component type — palette-data.js has the full catalog
     // but these cover the keyboard-shortcut add targets without an extra import.

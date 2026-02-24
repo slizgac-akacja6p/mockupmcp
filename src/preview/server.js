@@ -720,7 +720,7 @@ const EDITOR_CSS = `
   }
 
   #editor-toolbar {
-    position: fixed; top: 0; left: 240px; right: 280px; height: 48px; z-index: 9999;
+    position: fixed; top: 0; left: 240px; right: 300px; height: 48px; z-index: 9999;
     background: var(--surface-2); border-bottom: 1px solid var(--border-subtle);
     box-shadow: none;
     display: flex; align-items: center; padding: 0 16px; gap: 12px;
@@ -757,7 +757,7 @@ const EDITOR_CSS = `
   #editor-canvas .screen { box-shadow: 0 4px 24px rgba(0,0,0,0.4); overflow: visible !important; }
 
   #editor-right-panel {
-    width: 280px; min-width: 280px;
+    width: 300px; min-width: 300px;
     display: flex; flex-direction: column;
     background: var(--surface-1); border-left: 1px solid var(--border-default);
     overflow: hidden;
@@ -808,7 +808,7 @@ const EDITOR_CSS = `
     padding: 14px 0 6px; border-top: 1px solid var(--border-subtle); margin-top: 4px;
   }
   .panel-group:first-child .panel-group-title { border-top: none; margin-top: 0; }
-  .panel-field { margin-bottom: 10px; }
+  .panel-field { margin-bottom: 6px; }
   .panel-field label {
     display: block; font-size: var(--text-xxs); color: var(--text-secondary); margin-bottom: 4px;
     font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;
@@ -1056,10 +1056,10 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
       background: var(--surface-1);
     }
     .palette-section-title { padding: 4px 12px; color: var(--text-muted); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
-    .palette-recent-items { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 8px; }
+    .palette-recent-items { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 12px; }
     .palette-recent-chip { background: var(--surface-3); border: 1px solid var(--border-default); border-radius: 4px; padding: 3px 8px; cursor: pointer; font-size: 11px; color: var(--text-primary); }
     .palette-recent-chip:hover, .palette-recent-chip.active { background: var(--accent); color: white; border-color: var(--accent); }
-    .palette-search { padding: 8px; position: relative; }
+    .palette-search { padding: 8px 12px; position: relative; }
     .palette-search input { width: 100%; background: var(--surface-2); border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: 6px 8px 6px 28px; color: var(--text-primary); font-size: var(--text-sm); box-sizing: border-box; }
     .palette-search input:focus { border-color: var(--accent); outline: none; }
     .palette-search-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 12px; pointer-events: none; }
@@ -1069,8 +1069,8 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
     .palette-category-header .chevron { transition: transform 0.15s; font-size: 8px; }
     .palette-category.collapsed .chevron { transform: rotate(-90deg); }
     .palette-category.collapsed .palette-category-items { display: none; }
-    .palette-items { padding: 0 8px; }
-    .palette-item { padding: 5px 8px; border-radius: var(--radius-md); cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; background: var(--surface-2); border: 1px solid transparent; transition: background 0.1s, border 0.1s; margin-bottom: 2px; }
+    .palette-items { padding: 0 12px; }
+    .palette-item { padding: 6px 12px; border-radius: var(--radius-md); cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; background: var(--surface-2); border: 1px solid transparent; transition: background 0.1s, border 0.1s; margin-bottom: 2px; }
     .palette-item:hover { background: var(--surface-3); color: var(--text-primary); border: 1px solid var(--border-default); }
     .palette-item.add-mode-active { background: var(--accent); color: white; border-color: var(--accent); }
     .palette-shortcuts-hint { padding: 8px 12px; color: var(--text-muted); font-size: 10px; border-top: 1px solid var(--border-default); margin-top: auto; }
@@ -1166,9 +1166,12 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
     import { initEditor } from '/editor/js/editor.js';
     const canvas = document.getElementById('editor-canvas');
     const panel = document.getElementById('editor-property-panel');
+    // await initEditor so language-switcher listeners are registered only after
+    // the locale has fully loaded — avoids a race where clicks fire before
+    // window.setLanguage is wired up by initI18n.
     (async () => {
       await window.initI18n?.();
-      initEditor({
+      await initEditor({
         projectId: canvas.dataset.projectId,
         screenId: canvas.dataset.screenId,
         canvas,

@@ -177,6 +177,9 @@ export function initResize(container, selectionState, options) {
       'position:absolute',
       'width:8px',
       'height:8px',
+      // translate(-50%,-50%) centres the handle on its anchor point so we
+      // can position it at the exact corner/midpoint without manual half-offsets.
+      'transform:translate(-50%,-50%)',
       'background:#fff',
       'border:1px solid #0057ff',
       'border-radius:2px',
@@ -194,7 +197,6 @@ export function initResize(container, selectionState, options) {
   // so we must convert through the screen's offset and zoom scale.
   function positionHandles(rect) {
     const { left, top, width, height } = rect;
-    const half = 4; // half of handle size (8px)
 
     // Read .screen offset and scale from container so handles align with
     // the visually rendered element (which is scaled+offset inside container).
@@ -210,21 +212,23 @@ export function initResize(container, selectionState, options) {
       scale = match ? parseFloat(match[1]) : 1;
     }
 
-    // Convert element coordinates (screen space) to container coordinates
+    // Convert element coordinates (screen space) to container coordinates.
+    // No manual half-offset needed — transform:translate(-50%,-50%) on the
+    // handle elements centres them on the anchor point automatically.
     const cx = offsetX + left * scale;
     const cy = offsetY + top * scale;
     const cw = width * scale;
     const ch = height * scale;
 
     const positions = {
-      nw: { x: cx - half,          y: cy - half },
-      n:  { x: cx + cw / 2 - half, y: cy - half },
-      ne: { x: cx + cw - half,     y: cy - half },
-      e:  { x: cx + cw - half,     y: cy + ch / 2 - half },
-      se: { x: cx + cw - half,     y: cy + ch - half },
-      s:  { x: cx + cw / 2 - half, y: cy + ch - half },
-      sw: { x: cx - half,          y: cy + ch - half },
-      w:  { x: cx - half,          y: cy + ch / 2 - half },
+      nw: { x: cx,          y: cy },
+      n:  { x: cx + cw / 2, y: cy },
+      ne: { x: cx + cw,     y: cy },
+      e:  { x: cx + cw,     y: cy + ch / 2 },
+      se: { x: cx + cw,     y: cy + ch },
+      s:  { x: cx + cw / 2, y: cy + ch },
+      sw: { x: cx,          y: cy + ch },
+      w:  { x: cx,          y: cy + ch / 2 },
     };
 
     handleEls.forEach((el) => {
