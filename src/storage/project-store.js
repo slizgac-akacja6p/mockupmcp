@@ -352,6 +352,32 @@ export class ProjectStore {
     return element;
   }
 
+  async bulkAddElements(projectId, screenId, elements) {
+    this._validateId(screenId);
+    const project = await this.getProject(projectId);
+    const screen = this._findScreen(project, screenId);
+
+    const added = [];
+    for (const el of elements) {
+      const { type, x = 0, y = 0, width = 100, height = 40, properties = {}, z_index = 0 } = el;
+      const element = {
+        id: generateId('el'),
+        type,
+        x,
+        y,
+        width,
+        height,
+        z_index,
+        properties,
+      };
+      screen.elements.push(element);
+      added.push(element);
+    }
+
+    await this._save(project);
+    return added;
+  }
+
   async updateElement(projectId, screenId, elementId, properties) {
     this._validateId(screenId);
     this._validateId(elementId);
