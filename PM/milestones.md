@@ -226,5 +226,19 @@
 - [x] All modules wired via document CustomEvents
 - [x] 842+ tests pass
 
+## M14 — Preview UX Fixes + Performance (fix/preview-ux)
+**Status:** DONE
+**Branch:** `fix/preview-ux`
+**Scope:** Safari SPA navigation bug, mockup canvas redesign, Puppeteer page pool
+**DoD:**
+- [x] swapScreen: wrapper div for animation (Safari overflow:hidden fix)
+- [x] swapScreen: preserve position:relative on .screen after transition (Safari absolute-child escape fix)
+- [x] Playwright webkit: 265 children visible after round-trip, position preserved
+- [x] Mockup screens: canvas darkened (#151515) for Landing Page + Screen Preview
+- [x] Mockup screens: Light/Dark toggle added to bottom of sidebar in all 4 screens
+- [x] Puppeteer page pool (POOL_SIZE=3): warm render ~22-37ms vs ~58-81ms baseline (2x)
+- [x] warmUp() at startup: zero cold-start penalty on first render
+- [x] 838 tests pass
+
 ## PRD Completion
 **All PRD items implemented.** 25 tools, 5 resources, 3 prompts, 6 styles, 35 components, 7 templates.
