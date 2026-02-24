@@ -72,7 +72,13 @@ const LINK_SCRIPT = `
 
   document.addEventListener('click', async (e) => {
     const el = e.target.closest('[data-link-to]');
-    if (!el || isTransitioning) return;
+    // Safety timeout: if isTransitioning gets stuck (e.g. due to a JS engine
+    // quirk or a future code change that bypasses the finally block), reset it
+    // after 500ms so subsequent clicks are not permanently dropped.
+    if (!el || isTransitioning) {
+      if (isTransitioning) setTimeout(() => { isTransitioning = false; }, 500);
+      return;
+    }
     e.preventDefault();
 
     const screenId = el.dataset.linkTo;
@@ -127,6 +133,8 @@ const LINK_SCRIPT = `
         currentScreen.remove();
         newScreen.classList.remove(inClass);
         newScreen.style.position = '';
+        newScreen.style.left = '';
+        newScreen.style.top = '';
         // Clean up the temporary container styles set for the animation.
         // Leaving position:relative and overflow:hidden on body breaks the
         // preview layout and causes zoom (transform:scale) to mis-clip
