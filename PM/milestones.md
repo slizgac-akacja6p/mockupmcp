@@ -242,3 +242,96 @@
 
 ## PRD Completion
 **All PRD items implemented.** 25 tools, 5 resources, 3 prompts, 6 styles, 35 components, 7 templates.
+
+## M15 — Bulk Creation API
+**Status:** DONE
+**Branch:** `feature/m15-bulk-api` (merged into feature/m16-editor-design)
+**Scope:** Batch creation tools — screen+elements+links in 1 call, full project in 1 call, import/export
+**DoD:**
+- [x] `mockup_create_screen_full` — screen + elements + links in single call (ref system)
+- [x] `mockup_create_project_full` — full project in single call
+- [x] `mockup_import_project` / `mockup_export_project` — JSON import/export
+- [x] ProjectStore: `createScreenFull()`, `createProjectFull()`, `importProject()` methods
+- [x] 30 MCP tools total (26 → 30)
+- [x] 884 tests pass (838 → 884, +46 new)
+
+## M16 — Editor UI Enhancements
+**Status:** DONE
+**Branch:** `feature/m16-editor-design`
+**Scope:** Component palette (right panel), multi-select, add mode, copy-paste, undo integration
+**DoD:**
+- [x] Component palette — 35 components in 6 categories, search, recent tray (right panel)
+- [x] Multi-select — Cmd+Click, box-select drag, bulk delete
+- [x] Add Mode — click palette component → click canvas to place (keyboard shortcuts: B/I/C/T/R)
+- [x] Copy-Paste — Cmd+C/V, +20px offset, deep clone
+- [x] Undo integration — undo after insert + paste
+- [x] Fix: `data-el-id` → `data-element-id` (unblocked drag, selection, delete)
+- [x] 919 tests pass
+
+## M17 — Editor Visual Redesign
+**Status:** DONE
+**Branch:** `feature/m16-editor-design`
+**Scope:** Full dark theme redesign (Linear/Vercel aesthetic), i18n (EN+PL), performance fixes, UX improvements
+**Design doc:** `docs/plans/2026-02-24-editor-redesign.md`
+**DoD:**
+- [x] Design token system — surface-0–4, accent, border, shadow, radius, typography scales
+- [x] Layout — sidebar 240px, right panel 300px, toolbar 48px, proper flex constraints
+- [x] Sidebar collapse — `‹` button, 48px icon-only mode, localStorage persistence
+- [x] Right panel tabs — Properties | Components, auto-switch on element select
+- [x] Property panel redesign — 2-col grid x/y/w/h, toggle switch, color swatch, slim sliders
+- [x] Toolbar redesign — mode toggle pill, floating zoom controls (bottom-right), Język dropdown
+- [x] Sidebar — theme toggle (dark/light) at bottom
+- [x] i18n — `src/preview/i18n/` (index.js + en.json + pl.json), 58 translation keys
+- [x] Performance — rAF throttle on drag/resize, debounce property panel (150ms), hash-based polling diff
+- [x] Fix: add mode coordinates — use `.screen` element as reference with zoom scale
+- [x] Fix: resize handles — `getBoundingClientRect()` for correct position + zoom
+- [x] Fix: resize handles follow element during drag (`updateHandles` via `onDragMove`)
+- [x] Fix: selection skip during add mode (`getAddModeType` guard in selection.js)
+- [x] Fix: `exitAddMode` recursion — removed callback loop between editor.js and palette.js
+- [x] Fix: canvas flex `min-width: 0` — right panel stays visible in viewport
+- [x] 919 tests pass
+
+## M18 — Design System Styles (PLANNED)
+**Status:** PLANNED
+**Branch:** `feature/m18-design-styles` (not started)
+**Scope:** 12 new rendering styles + style inheritance (project default + per-screen override)
+**Design goal:** Enable mockups in any major design language or visual aesthetic
+
+### Style inheritance model
+- Project has `style` field (default for all screens)
+- Screen can override with own `style` field (takes precedence)
+- Editor: project style selector in toolbar; per-screen override in screen properties panel
+
+### New styles — Design Systems
+| ID | Design System | Key Visual |
+|----|--------------|------------|
+| `material3` | Material Design 3 (Google) | Dynamic color tokens, tonal elevation, radius 0–28px scale |
+| `hig` | Apple HIG / Liquid Glass | backdrop-filter blur, rgba whites, inner light shadow, radius 16–24px |
+| `fluent2` | Microsoft Fluent 2 | Acrylic blur, neutral token scale, radius 4/8/16px |
+| `antd` | Ant Design (Alibaba) | #1677FF accent, compact tables, 4px grid, business B2B |
+| `carbon` | IBM Carbon | Grid-heavy, IBM Plex, monochrome, industrial enterprise |
+
+### New styles — Visual Aesthetics
+| ID | Aesthetic | Key Visual |
+|----|-----------|------------|
+| `neubrutalism` | Neobrutalism | 3px solid black border, `box-shadow: 4px 4px 0 #000` (zero blur), neon fills |
+| `glassmorphism` | Glassmorphism | `backdrop-filter: blur(20px)`, rgba(255,255,255,0.15) surfaces, vivid bg |
+| `neumorphic` | Neumorphism / Soft UI | dual outer mono shadows, single mid-tone bg, no borders |
+| `claymorphism` | Claymorphism | inner+outer combined shadows, radius 28–40px, vibrant pastels |
+| `dark-minimal` | Dark Minimal SaaS | #0A0A0B surfaces, rgba(255,255,255,0.08) borders, Inter/Geist (Linear/Vercel style) |
+| `aurora` | Aurora / Mesh Gradient | blurred radial gradient orbs as background layer, neon on dark |
+| `skeuomorphic` | Skeuomorphism | textures, realistic gradients, deep shadows, physical metaphors |
+
+### Update existing styles
+- `flat` — refresh (already exists, needs modernization)
+- `material` → superseded by `material3`
+- `ios` → superseded by `hig`
+
+### DoD (to be detailed in task file)
+- [ ] Style inheritance: `projectStore` + `html-builder` support screen-level style override
+- [ ] 12 new CSS style files in `src/renderer/styles/`
+- [ ] Style registry updated (VALID_STYLES expanded)
+- [ ] Editor: project style dropdown in toolbar
+- [ ] Editor: per-screen style override in properties panel
+- [ ] Tests: 12 styles × 35 components rendering matrix
+- [ ] All existing tests pass
