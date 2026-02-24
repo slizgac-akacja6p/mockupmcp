@@ -638,107 +638,150 @@ function buildEditButton(projectId, screenId) {
 // fixed toolbar. Uses editor- prefix to avoid clashing with mockup content styles.
 // Override SIDEBAR_CSS body rule so sidebar + toolbar + panel all cooperate in
 // the three-column layout (sidebar is already accounted for via margin-left on canvas/toolbar).
+// Design tokens extracted from Edit Mode — Dark mockup (scr_UhQyj7R04a).
 const EDITOR_CSS = `
 <style>
+  :root {
+    --editor-bg: #1A1A1A;
+    --sidebar-bg: #1C1C1E;
+    --toolbar-bg: #252525;
+    --panel-bg: #1C1C1E;
+    --panel-input-bg: #252525;
+    --accent: #6366F1;
+    --accent-hover: #818CF8;
+    --accent-subtle: rgba(99, 102, 241, 0.15);
+    --text-primary: #E5E5E5;
+    --text-secondary: #888888;
+    --text-heading: #555555;
+    --text-muted: #444444;
+    --border: #333333;
+    --border-subtle: #2C2C2E;
+    --surface-hover: #2C2C2E;
+    --danger: #FF453A;
+    --dot-grid: #2D2D2D;
+    --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
   /* Reset the sidebar's body margin — editor layout manages offsets explicitly */
-  body { margin: 0 !important; }
+  body { margin: 0 !important; background: var(--editor-bg); }
+
+  /* Dark sidebar override — editor uses dark sidebar matching the mockup,
+     while preview pages keep the default light sidebar from SIDEBAR_CSS. */
+  #mockup-sidebar {
+    background: var(--sidebar-bg) !important;
+    border-right-color: var(--border) !important;
+    color: var(--text-primary) !important;
+  }
+  #mockup-sidebar-toggle {
+    background: var(--sidebar-bg) !important;
+    border-color: var(--border) !important;
+    color: var(--text-secondary) !important;
+  }
+  #mockup-sidebar-toggle:hover { background: var(--surface-hover) !important; }
+  #mockup-sidebar h3 { color: var(--text-heading) !important; }
+  .mockup-sidebar-project-name { color: var(--text-primary) !important; }
+  .mockup-sidebar-project-name:hover { background: var(--surface-hover) !important; }
+  .mockup-sidebar-folder-name { color: var(--text-secondary) !important; }
+  .mockup-sidebar-folder-name:hover { background: var(--surface-hover) !important; }
+  .mockup-sidebar-screen { color: var(--text-secondary) !important; }
+  .mockup-sidebar-screen:hover { background: var(--surface-hover) !important; }
+  .mockup-sidebar-screen.active {
+    background: var(--accent) !important;
+    color: #FFFFFF !important;
+    font-weight: 500;
+  }
 
   #editor-toolbar {
     position: fixed; top: 0; left: 260px; right: 380px; height: 48px; z-index: 9999;
-    background: #f8f9fa; border-bottom: 1px solid #dee2e6;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    background: var(--toolbar-bg); border-bottom: 1px solid var(--border);
+    box-shadow: none;
     display: flex; align-items: center; padding: 0 16px; gap: 12px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px;
+    font-family: var(--font-ui); font-size: 13px;
   }
   #editor-toolbar .screen-name {
-    font-weight: 600; font-size: 14px; flex: 1; color: #212529;
+    font-weight: 600; font-size: 14px; flex: 1; color: var(--text-secondary);
   }
   #editor-toolbar .edit-mode-badge {
-    font-size: 10px; font-weight: 500; color: #6c757d;
-    background: #e9ecef; border-radius: 3px; padding: 2px 6px;
+    font-size: 10px; font-weight: 500; color: var(--text-secondary);
+    background: var(--panel-input-bg); border-radius: 3px; padding: 2px 6px;
     text-transform: uppercase; letter-spacing: 0.4px;
   }
   #editor-toolbar a.preview-link {
     padding: 6px 14px; font-size: 12px; font-weight: 500;
     border: none; border-radius: 5px;
-    background: #4A90D9; color: #fff; text-decoration: none;
+    background: var(--accent); color: #fff; text-decoration: none;
     transition: background 0.15s;
   }
-  #editor-toolbar a.preview-link:hover { background: #3a7bc8; }
+  #editor-toolbar a.preview-link:hover { background: var(--accent-hover); }
 
   #editor-canvas {
-    position: relative;  /* anchor for absolute-positioned resize handles */
-    /* Do NOT set overflow:hidden — selection outlines and drag handles extend
-       beyond the screen boundary and must not be clipped by the canvas. */
-    /* No margin-left — sidebar offset is on the flex wrapper; canvas fills
-       remaining space after the 220px palette via flex:1. */
+    position: relative;
     flex: 1;
     margin-right: 380px; margin-top: 0;
     min-height: calc(100vh - 48px);
     display: flex; align-items: flex-start; justify-content: center; padding: 20px 24px;
-    background: #e8e8e8;
+    background: var(--editor-bg);
+    /* Dot grid pattern matching mockup — 52px spacing, 3px dots */
+    background-image: radial-gradient(circle, var(--dot-grid) 1px, transparent 1px);
+    background-size: 52px 52px;
   }
-  /* Screen shadow matches preview mode — makes the mockup pop against the canvas.
-     overflow:visible lets selection outlines and resize handles bleed outside. */
-  #editor-canvas .screen { box-shadow: 0 4px 16px rgba(0,0,0,0.18); overflow: visible !important; }
+  #editor-canvas .screen { box-shadow: 0 4px 24px rgba(0,0,0,0.4); overflow: visible !important; }
 
   #editor-property-panel {
     position: fixed; top: 48px; right: 0; bottom: 0; width: 380px;
-    background: #fff; border-left: 1px solid #e0e0e0;
-    box-shadow: -4px 0 12px rgba(0,0,0,0.06);
+    background: var(--panel-bg); border-left: 1px solid var(--border);
+    box-shadow: none;
     z-index: 9998;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px;
+    font-family: var(--font-ui); font-size: 13px;
     overflow-y: auto;
+    color: var(--text-primary);
   }
   #editor-property-panel .panel-header {
-    padding: 16px 24px 12px; border-bottom: 1px solid #dee2e6; margin-bottom: 0;
+    padding: 16px 24px 12px; border-bottom: 1px solid var(--border); margin-bottom: 0;
     font-size: 13px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.5px; color: #495057; background: #f8f9fa;
+    letter-spacing: 0.5px; color: var(--text-heading); background: var(--panel-bg);
     position: sticky; top: 0; z-index: 1;
   }
   #editor-property-panel .panel-body { padding: 16px 24px 24px; }
   #editor-property-panel .panel-placeholder {
-    color: #adb5bd; font-size: 12px; text-align: center; margin-top: 24px; line-height: 1.5;
+    color: var(--text-muted); font-size: 12px; text-align: center; margin-top: 24px; line-height: 1.5;
   }
   .panel-group { margin-bottom: 16px; }
   .panel-group-title {
     font-size: 13px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.3px; color: #343a40;
-    padding: 14px 0 8px; border-top: 1px solid #e9ecef; margin-top: 4px;
+    letter-spacing: 0.3px; color: var(--text-heading);
+    padding: 14px 0 8px; border-top: 1px solid var(--border-subtle); margin-top: 4px;
   }
   .panel-group:first-child .panel-group-title { border-top: none; margin-top: 0; }
   .panel-field { margin-bottom: 10px; }
   .panel-field label {
-    display: block; font-size: 12px; color: #6c757d; margin-bottom: 4px;
+    display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;
     font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;
   }
   .panel-field input[type="number"],
   .panel-field input[type="text"],
   .panel-field input[type="color"],
   .panel-field select {
-    width: 100%; padding: 10px 12px; border: 1px solid #dee2e6; border-radius: 6px;
-    font-size: 14px; box-sizing: border-box; background: #fff;
+    width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 4px;
+    font-size: 14px; box-sizing: border-box; background: var(--panel-input-bg);
+    color: var(--text-primary);
     transition: border-color 0.15s;
   }
   .panel-field input:focus, .panel-field select:focus {
-    border-color: #4A90D9; outline: none; box-shadow: 0 0 0 2px rgba(74,144,217,0.15);
+    border-color: var(--accent); outline: none; box-shadow: 0 0 0 2px var(--accent-subtle);
   }
   .panel-field input:disabled {
-    background: #f8f9fa; color: #868e96;
+    background: var(--border-subtle); color: var(--text-secondary);
   }
-  /* Single-column layout for position fields — 2-column grid overflows the
-     280px panel because each cell must fit a label + slider + number input. */
   .panel-position-grid {
     display: flex; flex-direction: column; gap: 12px;
   }
   .panel-position-grid .panel-field { margin-bottom: 0; }
-  /* Hide default browser number spinners — inputs are large enough to type into */
   .panel-field input[type="number"] { -moz-appearance: textfield; }
   .panel-field input[type="number"]::-webkit-inner-spin-button,
   .panel-field input[type="number"]::-webkit-outer-spin-button {
     -webkit-appearance: none; margin: 0;
   }
-  /* Header row: label on left, number input on right */
   .panel-field-header {
     display: flex; justify-content: space-between; align-items: center;
     margin-bottom: 4px;
@@ -746,41 +789,38 @@ const EDITOR_CSS = `
   .panel-field-header label { margin-bottom: 0; }
   .panel-field-header input[type="number"] {
     width: 80px; text-align: right; padding: 6px 10px;
-    border: 1px solid #dee2e6; border-radius: 6px;
-    font-size: 14px; font-weight: 500; background: #fff;
+    border: 1px solid var(--border); border-radius: 4px;
+    font-size: 14px; font-weight: 500; background: var(--panel-input-bg);
+    color: var(--text-primary);
   }
-  /* Slider below the header — stretches full panel width */
   .panel-range-combo {
     display: flex; flex-direction: column; gap: 4px;
   }
   .panel-range-combo input[type="range"] {
     width: 100%; height: 4px; -webkit-appearance: none; appearance: none;
-    background: #dee2e6; border-radius: 2px; outline: none;
+    background: var(--border); border-radius: 2px; outline: none;
   }
   .panel-range-combo input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none; width: 16px; height: 16px;
-    border-radius: 50%; background: #4A90D9; cursor: pointer;
-    border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+    border-radius: 50%; background: var(--accent); cursor: pointer;
+    border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.4);
   }
-  .element.selected { outline: 2px solid #4A90D9 !important; outline-offset: 1px; }
+  .element.selected { outline: 2px solid var(--accent) !important; outline-offset: 1px; }
 
-  /* Editor toolbar action buttons (undo, redo, grid toggle) */
   .toolbar-separator {
-    width: 1px; height: 24px; background: #dee2e6;
+    width: 1px; height: 24px; background: var(--border);
   }
   .toolbar-btn {
-    width: 32px; height: 32px; border: 1px solid #dee2e6; border-radius: 4px;
-    background: #fff; cursor: pointer; font-size: 16px; color: #495057;
+    width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 4px;
+    background: var(--panel-input-bg); cursor: pointer; font-size: 16px; color: var(--text-secondary);
     display: flex; align-items: center; justify-content: center;
     transition: background 0.15s, border-color 0.15s;
     padding: 0;
   }
-  .toolbar-btn:hover:not(:disabled) { background: #e9ecef; border-color: #adb5bd; }
+  .toolbar-btn:hover:not(:disabled) { background: var(--surface-hover); border-color: var(--text-secondary); }
   .toolbar-btn:disabled { opacity: 0.4; cursor: default; }
-  .toolbar-btn-active { background: #e8f0fa; border-color: #a3c4e6; color: #2a6db5; }
+  .toolbar-btn-active { background: var(--accent-subtle); border-color: var(--accent); color: var(--accent); }
 
-  /* Flex wrapper between sidebar and property panel — houses palette + canvas.
-     margin-left accounts for the fixed sidebar; margin-top for the fixed toolbar. */
   #editor-flex-wrapper {
     display: flex; flex: 1;
     margin-left: 260px; margin-top: 48px;
@@ -788,6 +828,23 @@ const EDITOR_CSS = `
 
   body.sidebar-collapsed #editor-toolbar { left: 40px; }
   body.sidebar-collapsed #editor-flex-wrapper { margin-left: 40px; }
+
+  /* Dark overrides for shared zoom controls inside editor toolbar */
+  #editor-toolbar .zoom-btn {
+    background: var(--panel-input-bg); border-color: var(--border);
+    color: var(--text-secondary);
+  }
+  #editor-toolbar .zoom-btn:hover { background: var(--surface-hover); }
+  #editor-toolbar .zoom-level { color: var(--text-secondary); }
+
+  /* Delete element button at bottom of property panel */
+  .panel-delete-btn {
+    background: transparent; border: 1px solid var(--danger); border-radius: 6px;
+    color: var(--danger); padding: 8px 16px; font-size: 13px; cursor: pointer;
+    width: 100%; margin-top: 16px;
+    transition: background 0.15s;
+  }
+  .panel-delete-btn:hover { background: rgba(255, 69, 58, 0.1); }
 </style>`;
 
 // Build the component metadata blob that the editor's component-meta.js reads
@@ -833,36 +890,37 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
     #editor-palette {
       width: 220px;
       min-width: 220px;
-      background: #1e1e1e;
-      border-right: 1px solid #333;
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--border);
       overflow-y: auto;
       display: flex;
       flex-direction: column;
       padding: 8px 0;
       font-size: 12px;
-      color: #ccc;
+      color: var(--text-secondary);
     }
-    .palette-section-title { padding: 4px 12px; color: #666; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+    .palette-section-title { padding: 4px 12px; color: var(--text-heading); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
     .palette-recent-items { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 8px; }
-    .palette-recent-chip { background: #2a2a2a; border: 1px solid #444; border-radius: 4px; padding: 3px 8px; cursor: pointer; font-size: 11px; }
-    .palette-recent-chip:hover, .palette-recent-chip.active { background: #3b82f6; color: white; border-color: #3b82f6; }
+    .palette-recent-chip { background: var(--surface-hover); border: 1px solid var(--border); border-radius: 4px; padding: 3px 8px; cursor: pointer; font-size: 11px; color: var(--text-primary); }
+    .palette-recent-chip:hover, .palette-recent-chip.active { background: var(--accent); color: white; border-color: var(--accent); }
     .palette-search { padding: 8px; }
-    .palette-search input { width: 100%; background: #2a2a2a; border: 1px solid #444; border-radius: 4px; padding: 4px 8px; color: #ccc; font-size: 11px; box-sizing: border-box; }
+    .palette-search input { width: 100%; background: var(--panel-input-bg); border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; color: var(--text-primary); font-size: 11px; box-sizing: border-box; }
+    .palette-search input:focus { border-color: var(--accent); outline: none; }
     .palette-category { margin-bottom: 4px; }
-    .palette-category-header { padding: 6px 12px 3px; color: #888; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; user-select: none; }
-    .palette-category-header:hover { color: #ccc; }
+    .palette-category-header { padding: 6px 12px 3px; color: var(--text-heading); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; user-select: none; }
+    .palette-category-header:hover { color: var(--text-primary); }
     .palette-items { padding: 0 8px; }
-    .palette-item { padding: 5px 8px; border-radius: 4px; cursor: pointer; color: #bbb; display: flex; align-items: center; gap: 6px; }
-    .palette-item:hover { background: #2a2a2a; color: #fff; }
-    .palette-item.add-mode-active { background: #3b82f6; color: white; }
-    .palette-shortcuts-hint { padding: 8px 12px; color: #555; font-size: 10px; border-top: 1px solid #333; margin-top: auto; }
+    .palette-item { padding: 5px 8px; border-radius: 4px; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
+    .palette-item:hover { background: var(--surface-hover); color: var(--text-primary); }
+    .palette-item.add-mode-active { background: var(--accent); color: white; }
+    .palette-shortcuts-hint { padding: 8px 12px; color: var(--text-muted); font-size: 10px; border-top: 1px solid var(--border); margin-top: auto; }
     #multi-select-toolbar { display: none; gap: 4px; align-items: center; }
-    .toolbar-btn-danger { background: #dc2626 !important; color: white !important; border-color: #dc2626 !important; }
+    .toolbar-btn-danger { background: var(--danger) !important; color: white !important; border-color: var(--danger) !important; }
     .toolbar-badge { padding: 2px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; }
-    .toolbar-badge-add { background: #f59e0b; color: #1a1a1a; }
+    .toolbar-badge-add { background: #F59E0B; color: var(--sidebar-bg); }
     .box-select-overlay { position: absolute; pointer-events: none; }
-    .element-selected-multi { outline: 2px solid #3b82f6 !important; outline-offset: 1px; }
-    .toast { background: #333; color: #fff; padding: 8px 14px; border-radius: 6px; margin-top: 8px; font-size: 12px; animation: fadeInOut 2.5s forwards; }
+    .element-selected-multi { outline: 2px solid var(--accent) !important; outline-offset: 1px; }
+    .toast { background: var(--surface-hover); color: var(--text-primary); padding: 8px 14px; border-radius: 6px; margin-top: 8px; font-size: 12px; animation: fadeInOut 2.5s forwards; border: 1px solid var(--border); }
     @keyframes fadeInOut { 0%{opacity:0;transform:translateY(8px)} 10%{opacity:1;transform:translateY(0)} 80%{opacity:1} 100%{opacity:0} }
   </style>
 </head>
