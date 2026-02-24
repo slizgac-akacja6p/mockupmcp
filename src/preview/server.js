@@ -760,7 +760,8 @@ const EDITOR_CSS = `
     width: 300px; min-width: 300px;
     display: flex; flex-direction: column;
     background: var(--surface-1); border-left: 1px solid var(--border-default);
-    overflow: hidden;
+    overflow-x: hidden; overflow-y: auto;
+    box-sizing: border-box;
   }
   /* Tab navigation for right panel — Properties | Components */
   #editor-panel-tabs {
@@ -848,17 +849,25 @@ const EDITOR_CSS = `
     font-size: 14px; font-weight: 500; background: var(--surface-2);
     color: var(--text-primary);
   }
-  .panel-range-combo {
-    display: flex; flex-direction: column; gap: 4px;
+  /* Ensure all property panel inputs use dark/themed styles */
+  #editor-right-panel input[type="text"],
+  #editor-right-panel input[type="number"],
+  #editor-right-panel select {
+    background: var(--surface-2) !important;
+    border: 1px solid var(--border-default) !important;
+    border-radius: var(--radius-sm) !important;
+    color: var(--text-primary) !important;
+    font-size: var(--text-sm) !important;
+    padding: 5px 8px !important;
+    width: 100%;
+    box-sizing: border-box;
   }
-  .panel-range-combo input[type="range"] {
-    width: 100%; height: 4px; -webkit-appearance: none; appearance: none;
-    background: var(--border-default); border-radius: 2px; outline: none;
-  }
-  .panel-range-combo input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none; width: 16px; height: 16px;
-    border-radius: 50%; background: var(--accent); cursor: pointer;
-    border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  #editor-right-panel input[type="text"]:focus,
+  #editor-right-panel input[type="number"]:focus,
+  #editor-right-panel select:focus {
+    outline: none !important;
+    border-color: var(--accent) !important;
+    box-shadow: var(--accent-glow) !important;
   }
   /* Canvas element styling — shadow + selection outline */
   .element { box-shadow: var(--shadow-sm); }
@@ -1084,7 +1093,8 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
     @keyframes fadeInOut { 0%{opacity:0;transform:translateY(8px)} 10%{opacity:1;transform:translateY(0)} 80%{opacity:1} 100%{opacity:0} }
   </style>
 </head>
-<body>
+<body data-theme="dark">
+  <script>document.body.dataset.theme = localStorage.getItem('editor-theme') || 'dark';</script>
   ${SIDEBAR_HTML.replace('<h3>Projects</h3>', '<button id="editor-sidebar-collapse-btn">&#x203A;</button><h3>Projects</h3>')}
   <div id="editor-toolbar">
     <span class="screen-name">${screenName}</span>

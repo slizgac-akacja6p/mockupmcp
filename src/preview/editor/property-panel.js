@@ -210,10 +210,10 @@ function getGroupTitles() {
  *
  * Layout decisions:
  *  - Position group: x+y on one row, width+height on another (2-column grid)
- *    with compact number inputs + range sliders below each pair.
+ *    with compact number inputs.
  *  - Color fields: native color picker swatch + text input side by side so
  *    the hex value is always visible and editable.
- *  - Boolean fields: toggle switch (checkbox + slider) instead of a select so
+ *  - Boolean fields: toggle switch (checkbox) instead of a select so
  *    state is immediately obvious without reading a dropdown label.
  *
  * @param {ReturnType<typeof buildFieldDefinitions>} fields
@@ -232,23 +232,12 @@ export function renderPanelHtml(fields) {
     grouped[field.group].push(field);
   }
 
-  // Range slider limits for position fields so the slider covers a useful
-  // range without requiring manual typing for extreme values.
-  const RANGE_LIMITS = { x: 1000, y: 1500, width: 1000, height: 1500 };
-
-  function renderNumberWithSlider(f) {
-    const maxVal = RANGE_LIMITS[f.name] || 1000;
-    const minVal = (f.name === 'width' || f.name === 'height') ? 1 : 0;
+  function renderNumberCompact(f) {
     return `<div class="panel-field panel-field--compact">
   <label class="panel-label">${escPanelVal(f.name)}</label>
   <input type="number" class="panel-input panel-input--compact"
          data-field="${escPanelVal(f.name)}"
          data-field-type="number"
-         value="${escPanelVal(f.value)}">
-  <input type="range" class="panel-slider"
-         data-field="${escPanelVal(f.name)}"
-         data-field-type="number"
-         min="${minVal}" max="${maxVal}"
          value="${escPanelVal(f.value)}">
 </div>`;
   }
@@ -311,12 +300,12 @@ export function renderPanelHtml(fields) {
       return `<div class="panel-group" data-group="position">
   <div class="panel-group-title">${escPanelVal(title)}</div>
   <div class="panel-pos-pair">
-    ${renderNumberWithSlider(xF)}
-    ${renderNumberWithSlider(yF)}
+    ${renderNumberCompact(xF)}
+    ${renderNumberCompact(yF)}
   </div>
   <div class="panel-pos-pair">
-    ${renderNumberWithSlider(wF)}
-    ${renderNumberWithSlider(hF)}
+    ${renderNumberCompact(wF)}
+    ${renderNumberCompact(hF)}
   </div>
 </div>`;
     }
@@ -360,17 +349,6 @@ export function initPropertyPanel(panelEl, onSave) {
   // Debounce PATCH calls so rapid slider/input changes batch into one request.
   const debouncedSave = debounce((changes) => onSave(changes), 150);
 
-  // Sync range slider → companion number input in real-time while dragging.
-  panelEl.addEventListener('input', (e) => {
-    const slider = e.target;
-    if (slider.type !== 'range' || !slider.classList.contains('panel-slider')) return;
-    const fieldName = slider.dataset.field;
-    const numberInput = panelEl.querySelector(
-      `input[type="number"][data-field="${fieldName}"]`
-    );
-    if (numberInput) numberInput.value = slider.value;
-  });
-
   panelEl.addEventListener('change', (e) => {
     const input = e.target;
     const fieldName = input.dataset.field;
@@ -383,20 +361,6 @@ export function initPropertyPanel(panelEl, onSave) {
     const rawValue = input.type === 'checkbox' ? input.checked : input.value;
     const parsed = parseFieldValue(rawValue, fieldType);
 
-    // Sync number input → companion range slider.
-    if (input.type === 'number') {
-      const slider = panelEl.querySelector(
-        `input[type="range"][data-field="${fieldName}"]`
-      );
-      if (slider) slider.value = parsed;
-    }
-    // Sync range slider → companion number input (on final commit).
-    if (input.type === 'range') {
-      const numberInput = panelEl.querySelector(
-        `input[type="number"][data-field="${fieldName}"]`
-      );
-      if (numberInput) numberInput.value = parsed;
-    }
     // Keep the color text input in sync when the native color swatch changes.
     if (input.type === 'color') {
       const textInput = panelEl.querySelector(
