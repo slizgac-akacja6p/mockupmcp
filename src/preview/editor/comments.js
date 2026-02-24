@@ -34,7 +34,7 @@ export function renderCommentPins(comments = [], screen) {
     // Find element on canvas to determine pin position.
     // This will be positioned by the editor after elements are rendered.
     html.push(
-      `<div class="comment-pin" data-element-id="${comment.element_id}" data-comment-id="${comment.id}" ` +
+      `<div class="comment-pin" data-element-id="${escapeHtml(comment.element_id)}" data-comment-id="${escapeHtml(comment.id)}" ` +
       `style="position: absolute; width: 20px; height: 20px; border-radius: 50%; ` +
       `background: #FCD34D; color: #111; font-size: 11px; font-weight: 600; ` +
       `display: flex; align-items: center; justify-content: center; cursor: pointer; ` +
@@ -56,13 +56,13 @@ export function renderCommentPanel(comments = [], localize) {
   const html = unresolved.map(c => {
     const author = c.author === 'ai' ? 'AI' : 'User';
     return `
-      <div class="comment-item" data-comment-id="${c.id}">
+      <div class="comment-item" data-comment-id="${escapeHtml(c.id)}">
         <div class="comment-pin-badge">${c.pin_number}</div>
         <div class="comment-content">
           <div class="comment-text">${escapeHtml(c.text)}</div>
           <div class="comment-meta">${author} • ${new Date(c.created_at).toLocaleDateString()}</div>
         </div>
-        <button class="comment-resolve-btn" data-comment-id="${c.id}"
+        <button class="comment-resolve-btn" data-comment-id="${escapeHtml(c.id)}"
           title="${localize('resolveComment', 'Resolve')}">✓</button>
       </div>
     `;
