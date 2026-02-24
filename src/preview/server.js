@@ -11,9 +11,44 @@ import { config } from '../config.js';
 // renders on a neutral canvas without modifying the stored screen data.
 // Dark theme matches the editor so switching between preview and edit feels
 // seamless. Sidebar margin-left comes from SIDEBAR_CSS (260px / 40px collapsed).
+// Theme CSS vars are shared with the editor so the toggle works in both modes.
 const PREVIEW_STYLE = `
 <style>
-  html { background: #1A1A1A; min-height: 100vh; }
+  :root {
+    --surface-0: #0A0A0B;
+    --surface-1: #111113;
+    --surface-2: #1A1A1F;
+    --surface-3: #242429;
+    --surface-4: #2E2E35;
+    --accent: #6366F1;
+    --accent-hover: #818CF8;
+    --border-subtle: rgba(255, 255, 255, 0.04);
+    --border-default: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.16);
+    --text-primary: #E5E5E5;
+    --text-secondary: #888888;
+    --text-muted: #555555;
+    --text-xs: 11px;
+    --text-sm: 12px;
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+    --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  body[data-theme="light"] {
+    --surface-0: #F5F5F5;
+    --surface-1: #FFFFFF;
+    --surface-2: #F5F5F5;
+    --surface-3: #F0F0F0;
+    --surface-4: #E8E8E8;
+    --text-primary: #1A1A1A;
+    --text-secondary: #666666;
+    --text-muted: #999999;
+    --border-subtle: rgba(0, 0, 0, 0.06);
+    --border-default: #E0E0E0;
+    --border-strong: #CCCCCC;
+  }
+  html { background: var(--surface-0); min-height: 100vh; }
   body {
     display: flex; justify-content: center; align-items: flex-start;
     width: auto !important; height: auto !important;
@@ -22,10 +57,118 @@ const PREVIEW_STYLE = `
     min-height: calc(100vh - 68px);
     overflow-x: hidden;
     overflow: visible !important;
-    background: #1A1A1A;
+    background: var(--surface-0);
   }
   body.sidebar-collapsed { margin-left: 40px; }
   .screen { box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+  /* Preview sidebar themed to match editor */
+  #mockup-sidebar {
+    background: var(--surface-1) !important;
+    border-right-color: var(--border-default) !important;
+    color: var(--text-primary) !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  #mockup-sidebar-tree { flex: 1; overflow-y: auto; }
+  #mockup-sidebar-toggle {
+    background: var(--surface-1) !important;
+    border-color: var(--border-default) !important;
+    color: var(--text-secondary) !important;
+  }
+  #mockup-sidebar-toggle:hover { background: var(--surface-3) !important; }
+  #mockup-sidebar h3 { color: var(--text-muted) !important; }
+  .mockup-sidebar-project-name { color: var(--text-primary) !important; }
+  .mockup-sidebar-project-name:hover { background: var(--surface-3) !important; }
+  .mockup-sidebar-folder-name { color: var(--text-secondary) !important; }
+  .mockup-sidebar-folder-name:hover { background: var(--surface-3) !important; }
+  .mockup-sidebar-screen { color: var(--text-secondary) !important; }
+  .mockup-sidebar-screen:hover { background: var(--surface-3) !important; }
+  .mockup-sidebar-screen.active {
+    background: var(--accent) !important;
+    color: #FFFFFF !important;
+  }
+  /* Theme toggle in sidebar bottom */
+  #sidebar-theme-toggle {
+    margin-top: auto;
+    padding: 12px 8px;
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  #sidebar-theme-toggle button {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 16px;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #sidebar-theme-toggle button:hover {
+    background: var(--surface-3);
+    color: var(--text-primary);
+  }
+  /* Preview toolbar themed */
+  #preview-toolbar {
+    background: var(--surface-2) !important;
+    border-bottom-color: var(--border-subtle) !important;
+  }
+  #preview-toolbar .back-btn {
+    border-color: var(--border-default) !important;
+    background: var(--surface-2) !important;
+    color: var(--text-secondary) !important;
+  }
+  #preview-toolbar .back-btn:hover {
+    background: var(--surface-3) !important;
+    border-color: var(--text-secondary) !important;
+    color: var(--text-primary) !important;
+  }
+  #preview-toolbar .screen-name { color: var(--text-primary) !important; }
+  /* Floating zoom controls matching editor */
+  #preview-zoom-controls {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: var(--surface-3);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    padding: 4px 6px;
+    z-index: 10000;
+    box-shadow: var(--shadow-md);
+  }
+  #preview-zoom-controls .zoom-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 16px;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    padding: 0;
+  }
+  #preview-zoom-controls .zoom-btn:hover {
+    background: var(--surface-4);
+  }
+  #preview-zoom-controls .zoom-level {
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    min-width: 36px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
 </style>`;
 
 // CSS keyframe animations for screen-to-screen transitions (push, fade, slide-up).
@@ -366,12 +509,45 @@ const ZOOM_CONTROLS_HTML = `<div class="zoom-controls">
 
 // Preview toolbar replaces the old scattered BACK_BUTTON + buildEditButton overlay.
 // Styled to match the editor toolbar for visual consistency between modes.
+// Floating zoom controls HTML for preview mode — positioned bottom-right,
+// matching the editor's floating zoom controls layout and behavior.
+const PREVIEW_FLOATING_ZOOM_HTML = `
+<div id="preview-zoom-controls">
+  <button class="zoom-btn" data-zoom="out" title="Zoom out">&minus;</button>
+  <span class="zoom-level">100%</span>
+  <button class="zoom-btn" data-zoom="in" title="Zoom in">+</button>
+  <button class="zoom-btn" style="min-width:32px;font-size:11px;" data-zoom="fit" title="Fit to width">Fit</button>
+</div>`;
+
+// Theme toggle JS for preview pages — mirrors the editor's _installThemeToggle()
+// from property-panel.js. Reads/writes localStorage so theme persists and stays
+// in sync when switching between preview and editor.
+const THEME_TOGGLE_JS = `
+<script>
+(function() {
+  var btn = document.getElementById('theme-toggle-btn');
+  if (!btn) return;
+  var icon = btn.querySelector('#theme-icon');
+
+  // Restore persisted theme — shared key with editor so toggle is synchronized.
+  var saved = localStorage.getItem('editor-theme') || 'dark';
+  document.body.dataset.theme = saved;
+  if (icon) icon.textContent = saved === 'light' ? '\\u2600' : '\\u263E';
+
+  btn.addEventListener('click', function() {
+    var next = document.body.dataset.theme === 'light' ? 'dark' : 'light';
+    document.body.dataset.theme = next;
+    if (icon) icon.textContent = next === 'light' ? '\\u2600' : '\\u263E';
+    localStorage.setItem('editor-theme', next);
+  });
+})();
+<\/script>`;
+
 function buildPreviewToolbar(projectId, screenId, screenName) {
   return `
 <div id="preview-toolbar" data-screen-id="${screenId}">
   <button class="back-btn" onclick="history.back()">&#8592; Back</button>
   <span class="screen-name">${screenName}</span>
-  ${ZOOM_CONTROLS_HTML}
   <a class="edit-link" href="/editor/${projectId}/${screenId}">Edit</a>
 </div>`;
 }
@@ -456,6 +632,11 @@ const SIDEBAR_HTML = `
   <button id="mockup-sidebar-toggle" aria-label="Toggle sidebar">&lsaquo;</button>
   <h3>Projects</h3>
   <div id="mockup-sidebar-tree"></div>
+  <div id="sidebar-theme-toggle">
+    <button id="theme-toggle-btn" title="Toggle theme">
+      <span id="theme-icon">&#9790;</span>
+    </button>
+  </div>
 </div>`;
 
 // Sidebar client-side JS: fetches project tree from /api/projects, handles
@@ -1331,11 +1512,17 @@ function injectPreviewAssets(html, projectId, screenId, updatedAt, screenName) {
   // buildScreenHtml returns a full HTML document, so we inject into it
   // rather than nesting docs (which is invalid HTML).
   html = html.replace('</head>', PREVIEW_STYLE + SIDEBAR_CSS + ZOOM_CSS + TRANSITION_CSS + '\n</head>');
+  // Inject data-theme on body so CSS vars apply from the start — the inline
+  // script reads localStorage before first paint to avoid a flash of wrong theme.
+  html = html.replace('<body', '<body data-theme="dark"');
   html = html.replace('</body>',
+    '<script>document.body.dataset.theme = localStorage.getItem("editor-theme") || "dark";</script>' +
     SIDEBAR_HTML +
     buildPreviewToolbar(projectId, screenId, screenName) +
+    PREVIEW_FLOATING_ZOOM_HTML +
     LINK_SCRIPT +
     SIDEBAR_JS +
+    THEME_TOGGLE_JS +
     buildReloadScript(projectId, updatedAt) +
     ZOOM_JS +
     '\n</body>',
@@ -1365,12 +1552,14 @@ function buildLandingPage() {
   ${PREVIEW_STYLE}
   ${SIDEBAR_CSS}
 </head>
-<body>
+<body data-theme="dark">
+  <script>document.body.dataset.theme = localStorage.getItem('editor-theme') || 'dark';</script>
   ${SIDEBAR_HTML}
-  <div style="display:flex;align-items:center;justify-content:center;height:80vh;color:#999;font-family:-apple-system,sans-serif;font-size:18px;">
+  <div style="display:flex;align-items:center;justify-content:center;height:80vh;color:var(--text-muted);font-family:-apple-system,sans-serif;font-size:18px;">
     Select a screen from the sidebar to preview
   </div>
   ${SIDEBAR_JS}
+  ${THEME_TOGGLE_JS}
 </body>
 </html>`;
 }
