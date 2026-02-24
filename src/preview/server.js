@@ -478,23 +478,25 @@ function buildLandingPage(screenItems = []) {
       <p style="font-size: 12px; color: #ccc;">Create a project to get started</p>
     </div>`;
   } else {
-    // Group screens by project
+    // Group by projectId (stable key) — display projName as label.
+    // Using projectId rather than projName avoids key collisions when two
+    // projects share the same display name.
     const grouped = {};
-    for (const item of screenItems) {
-      if (!grouped[item.projectName]) {
-        grouped[item.projectName] = [];
+    for (const screen of screenItems) {
+      if (!grouped[screen.projectId]) {
+        grouped[screen.projectId] = { name: screen.projName, screens: [] };
       }
-      grouped[item.projectName].push(item);
+      grouped[screen.projectId].screens.push(screen);
     }
 
     const listItems = [];
-    for (const [projName, screens] of Object.entries(grouped)) {
-      listItems.push(`<div class="mockup-project-group">${escapeHtml(projName)}</div>`);
+    for (const [, { name, screens }] of Object.entries(grouped)) {
+      listItems.push(`<div class="mockup-project-group">${escapeHtml(name)}</div>`);
       for (const screen of screens) {
         if (screen.elementCount > 0) {
           listItems.push(`
           <li>
-            <a href="/preview/${screen.projectId}/${screen.screenId}">
+            <a href="/preview/${escapeHtml(screen.projectId)}/${escapeHtml(screen.screenId)}">
               <span>${escapeHtml(screen.screenName)}</span>
               <span class="el-count">${screen.elementCount} element${screen.elementCount === 1 ? '' : 's'}</span>
             </a>
@@ -545,6 +547,26 @@ function escapeHtml(text) {
   return String(text).replace(/[&<>"']/g, char => map[char]);
 }
 
+// Recursively flattens the { folders, projects } tree returned by listProjectsTree()
+// into a flat array of screen descriptor objects for landing page and status endpoint.
+function flattenScreens(node) {
+  const result = [];
+  for (const folder of (node.folders || [])) {
+    result.push(...flattenScreens(folder));
+  }
+  for (const proj of (node.projects || [])) {
+    for (const screen of (proj.screens || [])) {
+      result.push({
+        projectId: proj.id,
+        projName: proj.name,
+        screenId: screen.id,
+        screenName: screen.name,
+        elementCount: (screen.elements || []).length,
+      });
+    }
+  }
+  return result;
+}
 
 export function startPreviewServer(port = config.previewPort) {
   const app = express();
@@ -558,42 +580,10 @@ export function startPreviewServer(port = config.previewPort) {
     try {
       await store.init();
       const tree = await store.listProjectsTree();
-      const items = [];
-
-      // Helper to flatten tree into screen list
-      function walkTree(nodes) {
-        for (const node of nodes) {
-          if (node.type === 'project') {
-            for (const screen of (node.screens || [])) {
-              items.push({
-                projectId: node.id,
-                projectName: node.name,
-                screenId: screen.id,
-                screenName: screen.name,
-                elementCount: screen.elements?.length ?? 0,
-              });
-            }
-          } else if (node.children) {
-            walkTree(node.children);
-          }
-        }
-      }
-
-      walkTree(tree.folders || []);
-      for (const proj of (tree.projects || [])) {
-        for (const screen of (proj.screens || [])) {
-          items.push({
-            projectId: proj.id,
-            projectName: proj.name,
-            screenId: screen.id,
-            screenName: screen.name,
-            elementCount: screen.elements?.length ?? 0,
-          });
-        }
-      }
-
+      const items = flattenScreens(tree);
       res.type('html').send(buildLandingPage(items));
     } catch (err) {
+      console.error('[Preview] Landing page error:', err);
       res.type('html').send(buildLandingPage([]));
     }
   });
@@ -658,44 +648,9 @@ export function startPreviewServer(port = config.previewPort) {
   // Returns flat list of screens with element count for landing page status display.
   app.get('/api/status', async (_req, res) => {
     try {
-      const projectStore = new ProjectStore(config.dataDir);
-      await projectStore.init();
-      const tree = await projectStore.listProjectsTree();
-      const items = [];
-
-      // Helper to flatten tree into screen list
-      function walkTree(nodes) {
-        for (const node of nodes) {
-          if (node.type === 'project') {
-            for (const screen of (node.screens || [])) {
-              items.push({
-                projectId: node.id,
-                projectName: node.name,
-                screenId: screen.id,
-                screenName: screen.name,
-                elementCount: screen.elements?.length ?? 0,
-              });
-            }
-          } else if (node.children) {
-            walkTree(node.children);
-          }
-        }
-      }
-
-      walkTree(tree.folders || []);
-      for (const proj of (tree.projects || [])) {
-        for (const screen of (proj.screens || [])) {
-          items.push({
-            projectId: proj.id,
-            projectName: proj.name,
-            screenId: screen.id,
-            screenName: screen.name,
-            elementCount: screen.elements?.length ?? 0,
-          });
-        }
-      }
-
-      res.json(items);
+      await store.init();
+      const tree = await store.listProjectsTree();
+      res.json(flattenScreens(tree));
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
