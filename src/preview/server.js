@@ -93,17 +93,17 @@ const LINK_SCRIPT = `
     isTransitioning = true;
     try {
       const res = await fetch('/api/screen-fragment/' + projectId + '/' + screenId);
-      if (!res.ok) { isTransitioning = false; return; }
+      if (!res.ok) { return; }
       const newHtml = await res.text();
 
       const container = document.querySelector('body');
       const currentScreen = container.querySelector('.screen');
-      if (!currentScreen) { isTransitioning = false; return; }
+      if (!currentScreen) { return; }
 
       const template = document.createElement('template');
       template.innerHTML = newHtml;
       const newScreen = template.content.querySelector('.screen');
-      if (!newScreen) { isTransitioning = false; return; }
+      if (!newScreen) { return; }
 
       if (transition === 'none') {
         currentScreen.replaceWith(newScreen);
@@ -135,6 +135,18 @@ const LINK_SCRIPT = `
         newScreen.parentNode.style.overflow = '';
       }
 
+      // Bug A: update toolbar title to reflect the newly loaded screen.
+      // Screen name comes from the sidebar anchor text for the destination
+      // screen — avoids an extra API call while staying accurate.
+      const toolbarName = document.querySelector('#preview-toolbar .screen-name');
+      if (toolbarName) {
+        const sidebarLink = document.querySelector('.mockup-sidebar-screen[href$="/' + screenId + '"]');
+        if (sidebarLink) toolbarName.textContent = sidebarLink.textContent.trim();
+      }
+      // Keep toolbar data-screen-id in sync so zoom localStorage key is correct.
+      const toolbar = document.getElementById('preview-toolbar');
+      if (toolbar) toolbar.dataset.screenId = screenId;
+
       if (!skipHistory) {
         const newUrl = '/preview/' + projectId + '/' + screenId;
         history.pushState({ projectId, screenId, transition }, '', newUrl);
@@ -147,8 +159,12 @@ const LINK_SCRIPT = `
       }
     } catch (err) {
       console.error('Transition error:', err);
+    } finally {
+      // Bug B: use finally so isTransitioning is always cleared even when an
+      // early return or unexpected exception short-circuits normal control flow.
+      // A stuck true value silently drops all subsequent sidebar clicks.
+      isTransitioning = false;
     }
-    isTransitioning = false;
   }
 
   (function() {
@@ -226,6 +242,13 @@ const ZOOM_JS = `
   function applyZoom(scale) {
     var screen = document.querySelector('.screen');
     if (!screen) return;
+    // Bug C: clear any leftover inline position/overflow that the SPA transition
+    // animation sets on body. If not cleared before applying transform:scale the
+    // body stays in relative/hidden state and the scaled .screen bleeds outside
+    // its container as a white rectangle.
+    document.body.style.position = '';
+    document.body.style.overflow = '';
+    screen.style.overflow = 'hidden';
     screen.style.transform = 'scale(' + scale + ')';
     screen.style.transformOrigin = 'top center';
     var lvlEl = document.querySelector('.zoom-level');
@@ -263,6 +286,11 @@ const ZOOM_JS = `
     var scale = Math.min(availW / screenW, availH / screenH);
     scale = Math.max(0.1, Math.min(scale, 3));
 
+    // Same body cleanup as applyZoom — fitToScreen can also be called right
+    // after a transition that left position/overflow set on body.
+    document.body.style.position = '';
+    document.body.style.overflow = '';
+    screen.style.overflow = 'hidden';
     var lvlEl = document.querySelector('.zoom-level');
     if (lvlEl) lvlEl.textContent = Math.round(scale * 100) + '%';
     screen.style.transform = 'scale(' + scale + ')';
