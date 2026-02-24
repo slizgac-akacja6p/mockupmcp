@@ -1,0 +1,713 @@
+/* Claymorphism — inflated rubber/clay objects. Combined inner highlight + outer shadow
+   creates the 3D "puffy" look. Vivid pastels, extreme rounding, bold type. */
+:root {
+  --clay-red:        #FF6B6B;
+  --clay-teal:       #4ECDC4;
+  --clay-blue:       #45B7D1;
+  --clay-green:      #96CEB4;
+  --clay-yellow:     #FFEAA7;
+  --clay-purple:     #C3A6FF;
+  --clay-pink:       #FF8FB1;
+  --clay-orange:     #FFAB76;
+  --clay-bg:         #F8F0FF;
+  --clay-white:      #FFFFFF;
+  /* Clay shadow formula: inner dark bottom-right + inner light top-left + outer soft drop */
+  --clay-shadow:     inset -3px -6px 0 rgba(0,0,0,0.12), inset 3px 3px 0 rgba(255,255,255,0.45), 0 8px 20px rgba(0,0,0,0.15);
+  --clay-shadow-lg:  inset -4px -8px 0 rgba(0,0,0,0.12), inset 4px 4px 0 rgba(255,255,255,0.45), 0 16px 40px rgba(0,0,0,0.18);
+  --clay-shadow-xl:  inset -5px -10px 0 rgba(0,0,0,0.12), inset 5px 5px 0 rgba(255,255,255,0.45), 0 24px 48px rgba(0,0,0,0.2);
+  --clay-shadow-sm:  inset -2px -4px 0 rgba(0,0,0,0.1), inset 2px 2px 0 rgba(255,255,255,0.4), 0 4px 10px rgba(0,0,0,0.1);
+  --clay-radius:     28px;
+  --clay-radius-lg:  40px;
+  --clay-radius-sm:  16px;
+  --clay-radius-xs:  12px;
+  --clay-text:       #2D2D2D;
+  --clay-text-muted: #5A5A7A;
+  --clay-text-light: rgba(255,255,255,0.9);
+  --color-text-primary:   #2D2D2D;
+  --color-text-secondary: #5A5A7A;
+  --color-text-placeholder: #9999BB;
+  --color-border:    transparent;
+  --color-bg-light:  #F8F0FF;
+  --color-bg-white:  #FFFFFF;
+  --color-primary:   #FF6B6B;
+  --color-disabled:  #D0C8E8;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Nunito', 'Poppins', 'Quicksand', system-ui, sans-serif;
+  color: var(--clay-text);
+  background: var(--clay-bg);
+}
+
+/* ── Screen ─────────────────────────────────────────────────────────────── */
+
+.screen {
+  background: var(--clay-bg);
+  font-family: 'Nunito', 'Poppins', 'Quicksand', system-ui, sans-serif;
+}
+
+/* ── Button ─────────────────────────────────────────────────────────────── */
+
+/* Combined shadow formula is the defining clay trait — skip it and it's just a pill button */
+.mockup-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--clay-radius);
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  background: var(--clay-red);
+  color: var(--clay-white);
+  box-shadow: var(--clay-shadow);
+}
+
+/* sizes */
+.mockup-button--sm  { padding: 8px 20px;  font-size: 12px; border-radius: 20px; }
+.mockup-button--md  { padding: 12px 28px; font-size: 14px; }
+.mockup-button--lg  { padding: 16px 36px; font-size: 16px; border-radius: 32px; }
+
+/* variants — each gets its own pastel clay colour */
+.mockup-button--primary {
+  background: var(--clay-red);
+  color: var(--clay-white);
+  box-shadow: inset -3px -6px 0 rgba(0,0,0,0.12), inset 3px 3px 0 rgba(255,255,255,0.45), 0 8px 20px rgba(255,107,107,0.4);
+}
+
+.mockup-button--secondary {
+  background: var(--clay-teal);
+  color: var(--clay-white);
+  box-shadow: inset -3px -6px 0 rgba(0,0,0,0.12), inset 3px 3px 0 rgba(255,255,255,0.45), 0 8px 20px rgba(78,205,196,0.4);
+}
+
+.mockup-button--outline {
+  background: var(--clay-yellow);
+  color: var(--clay-text);
+  box-shadow: inset -3px -6px 0 rgba(0,0,0,0.1), inset 3px 3px 0 rgba(255,255,255,0.5), 0 8px 20px rgba(255,234,167,0.5);
+}
+
+.mockup-button--ghost {
+  background: rgba(255,255,255,0.6);
+  color: var(--clay-text-muted);
+  box-shadow: var(--clay-shadow-sm);
+}
+
+/* ── Input ──────────────────────────────────────────────────────────────── */
+
+/* Input is white clay — soft and approachable */
+.mockup-input {
+  display: block;
+  width: 100%;
+  padding: 12px 18px;
+  border: none;
+  border-radius: var(--clay-radius-sm);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--clay-text);
+  background: var(--clay-white);
+  box-shadow: var(--clay-shadow-sm);
+}
+
+.mockup-input::placeholder { color: var(--color-text-placeholder); }
+
+.mockup-input-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--clay-text);
+}
+
+/* ── Navbar ─────────────────────────────────────────────────────────────── */
+
+.mockup-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 14px 20px;
+  background: var(--clay-white);
+  border-bottom: none;
+  box-shadow: inset -2px -4px 0 rgba(0,0,0,0.08), inset 2px 2px 0 rgba(255,255,255,0.6), 0 6px 20px rgba(0,0,0,0.12);
+  border-radius: 0 0 var(--clay-radius-sm) var(--clay-radius-sm);
+}
+
+.mockup-navbar__title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--clay-text);
+  flex: 1;
+  text-align: center;
+}
+
+.mockup-navbar__side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 32px;
+  color: var(--clay-text-muted);
+}
+
+/* ── Tab Bar ────────────────────────────────────────────────────────────── */
+
+.mockup-tabbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--clay-white);
+  border-top: none;
+  border-radius: var(--clay-radius-sm) var(--clay-radius-sm) 0 0;
+  box-shadow: 0 -6px 20px rgba(0,0,0,0.1);
+}
+
+.mockup-tabbar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--clay-text-muted);
+  cursor: pointer;
+}
+
+.mockup-tabbar-item--active {
+  color: var(--clay-red);
+  font-weight: 800;
+}
+
+/* ── Card ───────────────────────────────────────────────────────────────── */
+
+/* Each card is a distinct coloured clay block */
+.mockup-card {
+  border: none;
+  border-radius: var(--clay-radius-lg);
+  background: var(--clay-teal);
+  overflow: hidden;
+  box-shadow: var(--clay-shadow-lg);
+}
+
+.mockup-card__body { padding: 22px 26px; }
+.mockup-card__title { font-size: 16px; font-weight: 800; color: var(--clay-white); margin-bottom: 4px; }
+.mockup-card__value { font-size: 34px; font-weight: 900; color: var(--clay-white); margin-bottom: 4px; }
+.mockup-card__subtitle { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.75); margin-bottom: 8px; }
+.mockup-card__actions { display: flex; gap: 10px; padding: 14px 26px 18px; border-top: 1px solid rgba(255,255,255,0.2); }
+
+/* ── List ───────────────────────────────────────────────────────────────── */
+
+.mockup-list { border: none; border-radius: var(--clay-radius); background: var(--clay-white); overflow: hidden; box-shadow: var(--clay-shadow-lg); }
+.mockup-list-item { padding: 14px 20px; border-bottom: 2px solid rgba(0,0,0,0.04); font-size: 14px; font-weight: 600; color: var(--clay-text); display: flex; align-items: center; gap: 12px; }
+.mockup-list-item:last-child { border-bottom: none; }
+.mockup-list-item__avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--clay-purple); flex-shrink: 0; box-shadow: var(--clay-shadow-sm); }
+
+/* ── Image placeholder ──────────────────────────────────────────────────── */
+
+.mockup-image-placeholder { width: 100%; height: 100%; background: var(--clay-blue); border: none; border-radius: var(--clay-radius); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; box-shadow: var(--clay-shadow-lg); }
+
+/* ── Icon ───────────────────────────────────────────────────────────────── */
+
+.mockup-icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+/* ── Badge ──────────────────────────────────────────────────────────────── */
+
+/* Clay badge is a mini inflated pill */
+.mockup-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 800;
+  background: var(--clay-pink);
+  color: var(--clay-white);
+  border: none;
+  box-shadow: var(--clay-shadow-sm);
+}
+
+/* ── Alert ──────────────────────────────────────────────────────────────── */
+
+.mockup-alert {
+  padding: 14px 18px;
+  border: none;
+  border-radius: var(--clay-radius-sm);
+  background: var(--clay-yellow);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--clay-text);
+  box-shadow: var(--clay-shadow);
+}
+
+.mockup-alert--info    { background: var(--clay-blue); color: var(--clay-white); }
+.mockup-alert--success { background: var(--clay-green); color: var(--clay-text); }
+.mockup-alert--warning { background: var(--clay-yellow); color: var(--clay-text); }
+.mockup-alert--error   { background: var(--clay-red); color: var(--clay-white); }
+
+/* ── Textarea ──────────────────────────────────────────────────────────── */
+
+.mockup-textarea { font-family: inherit; font-weight: 600; line-height: 1.5; }
+
+/* ── Checkbox ──────────────────────────────────────────────────────────── */
+
+.mockup-checkbox { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; font-weight: 600; }
+
+.mockup-checkbox__box {
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--clay-white);
+  background: var(--clay-teal);
+  box-shadow: var(--clay-shadow-sm);
+  flex-shrink: 0;
+}
+
+.mockup-checkbox__label { color: var(--clay-text); font-weight: 600; }
+
+/* ── Radio ─────────────────────────────────────────────────────────────── */
+
+.mockup-radio { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; font-weight: 600; }
+
+.mockup-radio__circle {
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--clay-white);
+  box-shadow: var(--clay-shadow-sm);
+  flex-shrink: 0;
+}
+
+.mockup-radio__dot { width: 10px; height: 10px; border-radius: 50%; background: var(--clay-red); }
+.mockup-radio__label { color: var(--clay-text); font-weight: 600; }
+
+/* ── Toggle ────────────────────────────────────────────────────────────── */
+
+.mockup-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; font-weight: 600; }
+
+.mockup-toggle__track {
+  width: 50px;
+  height: 28px;
+  border-radius: 14px;
+  background: rgba(0,0,0,0.1);
+  border: none;
+  position: relative;
+  flex-shrink: 0;
+  box-shadow: inset 2px 2px 4px rgba(0,0,0,0.1);
+}
+
+/* ON: teal clay track */
+.mockup-toggle--on .mockup-toggle__track {
+  background: var(--clay-teal);
+  box-shadow: inset -2px -4px 0 rgba(0,0,0,0.1), inset 2px 2px 0 rgba(255,255,255,0.4);
+}
+
+.mockup-toggle__thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--clay-white);
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  transition: left 0.15s;
+  box-shadow: var(--clay-shadow-sm);
+}
+
+.mockup-toggle--on .mockup-toggle__thumb { left: 25px; }
+.mockup-toggle__label { color: var(--clay-text); font-weight: 600; }
+
+/* ── Select ────────────────────────────────────────────────────────────── */
+
+.mockup-select { width: 100%; }
+
+.mockup-select__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  border: none;
+  border-radius: var(--clay-radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--clay-text);
+  background: var(--clay-white);
+  cursor: pointer;
+  box-shadow: var(--clay-shadow);
+}
+
+.mockup-select__arrow { font-size: 12px; color: var(--clay-text-muted); }
+
+/* ── Slider ────────────────────────────────────────────────────────────── */
+
+.mockup-slider { width: 100%; padding: 8px 0; }
+
+.mockup-slider__track {
+  width: 100%;
+  height: 8px;
+  background: rgba(0,0,0,0.08);
+  border-radius: 4px;
+  position: relative;
+  box-shadow: inset 1px 1px 3px rgba(0,0,0,0.1);
+}
+
+.mockup-slider__fill { height: 100%; background: var(--clay-teal); border-radius: 4px; box-shadow: inset -1px -2px 0 rgba(0,0,0,0.1), inset 1px 1px 0 rgba(255,255,255,0.4); }
+
+.mockup-slider__thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--clay-white);
+  border: none;
+  position: absolute;
+  top: -6px;
+  transform: translateX(-50%);
+  box-shadow: var(--clay-shadow-sm);
+}
+
+/* ── Sidebar ───────────────────────────────────────────────────────────── */
+
+.mockup-sidebar {
+  width: 100%;
+  height: 100%;
+  background: var(--clay-white);
+  border-right: none;
+  padding: 12px 10px;
+  box-shadow: inset -4px 0 0 rgba(0,0,0,0.06), 4px 0 20px rgba(0,0,0,0.1);
+  border-radius: 0 var(--clay-radius-xs) var(--clay-radius-xs) 0;
+}
+
+.mockup-sidebar__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--clay-text-muted);
+  cursor: pointer;
+  border-radius: var(--clay-radius-xs);
+  margin-bottom: 4px;
+}
+
+/* Active item is its own clay block popping forward */
+.mockup-sidebar__item--active {
+  color: var(--clay-white);
+  font-weight: 800;
+  background: var(--clay-red);
+  box-shadow: var(--clay-shadow-sm);
+}
+
+/* ── Breadcrumb ────────────────────────────────────────────────────────── */
+
+.mockup-breadcrumb { display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; }
+.mockup-breadcrumb__item { color: var(--clay-red); cursor: pointer; }
+.mockup-breadcrumb__item--current { color: var(--clay-text); font-weight: 700; cursor: default; }
+.mockup-breadcrumb__sep { color: var(--clay-text-muted); margin: 0 2px; }
+
+/* ── Table ─────────────────────────────────────────────────────────────── */
+
+.mockup-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px; border-radius: var(--clay-radius); overflow: hidden; box-shadow: var(--clay-shadow-lg); }
+
+.mockup-table__th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 800;
+  color: var(--clay-white);
+  background: var(--clay-purple);
+  border-bottom: none;
+}
+
+.mockup-table__td { padding: 12px 16px; border-bottom: 2px solid rgba(0,0,0,0.04); color: var(--clay-text); font-weight: 600; background: var(--clay-white); }
+.mockup-table__row--striped .mockup-table__td { background: rgba(255,234,167,0.25); }
+
+/* ── Avatar ────────────────────────────────────────────────────────────── */
+
+.mockup-avatar { flex-shrink: 0; box-shadow: var(--clay-shadow-sm); }
+
+/* ── Chip ──────────────────────────────────────────────────────────────── */
+
+.mockup-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  background: var(--clay-yellow);
+  color: var(--clay-text);
+  border: none;
+  box-shadow: var(--clay-shadow-sm);
+}
+
+.mockup-chip--selected {
+  background: var(--clay-teal);
+  color: var(--clay-white);
+}
+
+.mockup-chip__remove { font-size: 14px; cursor: pointer; color: inherit; line-height: 1; opacity: 0.7; }
+
+/* ── Modal ─────────────────────────────────────────────────────────────── */
+
+.mockup-modal__backdrop {
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.mockup-modal {
+  background: var(--clay-white);
+  border-radius: var(--clay-radius-lg);
+  border: none;
+  width: 100%;
+  max-width: 440px;
+  overflow: hidden;
+  box-shadow: var(--clay-shadow-xl);
+}
+
+/* Header band is a different clay colour — immediately readable without a divider line */
+.mockup-modal__header {
+  padding: 20px 26px;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--clay-white);
+  border-bottom: none;
+  background: var(--clay-purple);
+  box-shadow: inset -3px -6px 0 rgba(0,0,0,0.1), inset 3px 3px 0 rgba(255,255,255,0.35);
+}
+
+.mockup-modal__body { padding: 20px 26px; font-size: 14px; font-weight: 600; color: var(--clay-text-muted); }
+.mockup-modal__footer { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 26px; border-top: 2px solid rgba(0,0,0,0.04); }
+
+/* ── Skeleton ──────────────────────────────────────────────────────────── */
+
+.mockup-skeleton {
+  background: var(--clay-yellow);
+  border-radius: var(--clay-radius-sm);
+  width: 100%;
+  height: 100%;
+  box-shadow: var(--clay-shadow-sm);
+  animation: clay-pulse 1.8s ease-in-out infinite;
+}
+
+.mockup-skeleton--circle { border-radius: 50%; }
+.mockup-skeleton--text { height: 18px; border-radius: 9px; }
+
+@keyframes clay-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* ── Progress ──────────────────────────────────────────────────────────── */
+
+.mockup-progress {
+  width: 100%;
+  height: 14px;
+  background: rgba(0,0,0,0.08);
+  border-radius: 7px;
+  overflow: hidden;
+  box-shadow: inset 1px 1px 3px rgba(0,0,0,0.1);
+}
+
+.mockup-progress__bar {
+  height: 100%;
+  background: var(--clay-teal);
+  border-radius: 7px;
+  box-shadow: inset -2px -4px 0 rgba(0,0,0,0.1), inset 2px 2px 0 rgba(255,255,255,0.4);
+}
+
+/* ── Tooltip ───────────────────────────────────────────────────────────── */
+
+.mockup-tooltip { position: relative; display: inline-block; }
+
+.mockup-tooltip__content {
+  background: var(--clay-text);
+  color: var(--clay-yellow);
+  padding: 8px 14px;
+  border-radius: var(--clay-radius-xs);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: var(--clay-shadow-sm);
+}
+
+/* ── Search Bar ────────────────────────────────────────────────────────── */
+
+.mockup-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border: none;
+  border-radius: var(--clay-radius);
+  background: var(--clay-white);
+  box-shadow: var(--clay-shadow);
+  width: 100%;
+}
+
+.mockup-search-bar__icon { display: flex; flex-shrink: 0; color: var(--clay-text-muted); }
+.mockup-search-bar__input { font-size: 14px; font-weight: 600; color: var(--color-text-placeholder); }
+
+/* ── Login Form ────────────────────────────────────────────────────────── */
+
+.mockup-login { display: flex; flex-direction: column; gap: 18px; padding: 32px; width: 100%; background: var(--clay-white); border: none; border-radius: var(--clay-radius-lg); box-shadow: var(--clay-shadow-xl); }
+
+.mockup-login__title {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--clay-text);
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.mockup-login__field { width: 100%; }
+.mockup-login__forgot { font-size: 13px; font-weight: 700; color: var(--clay-red); text-align: right; }
+.mockup-login__action { margin-top: 8px; }
+.mockup-login__action .mockup-button { width: 100%; }
+
+/* ── Header ────────────────────────────────────────────────────────────── */
+
+.mockup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: var(--clay-white);
+  border-bottom: none;
+  box-shadow: inset -2px -4px 0 rgba(0,0,0,0.08), inset 2px 2px 0 rgba(255,255,255,0.6), 0 8px 24px rgba(0,0,0,0.1);
+  width: 100%;
+}
+
+.mockup-header__logo { font-size: 20px; font-weight: 900; color: var(--clay-red); }
+.mockup-header__nav { display: flex; gap: 20px; }
+.mockup-header__nav-item { font-size: 14px; font-weight: 700; color: var(--clay-text-muted); cursor: pointer; }
+.mockup-header__right { display: flex; align-items: center; }
+
+/* ── Footer ────────────────────────────────────────────────────────────── */
+
+.mockup-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px;
+  background: var(--clay-teal);
+  box-shadow: var(--clay-shadow-lg);
+  border-radius: var(--clay-radius-sm) var(--clay-radius-sm) 0 0;
+  width: 100%;
+}
+
+.mockup-footer__links { display: flex; gap: 20px; }
+.mockup-footer__link { font-size: 13px; font-weight: 700; color: var(--clay-white); cursor: pointer; }
+.mockup-footer__text { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7); }
+
+/* ── Data Table ────────────────────────────────────────────────────────── */
+
+.mockup-data-table {
+  width: 100%;
+  border: none;
+  border-radius: var(--clay-radius);
+  overflow: hidden;
+  box-shadow: var(--clay-shadow-lg);
+  background: var(--clay-white);
+}
+
+.mockup-data-table__toolbar { padding: 12px 18px; border-bottom: 2px solid rgba(0,0,0,0.04); background: var(--clay-yellow); }
+
+.mockup-data-table__search {
+  padding: 8px 14px;
+  border: none;
+  border-radius: var(--clay-radius-xs);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--clay-text);
+  background: var(--clay-white);
+  box-shadow: var(--clay-shadow-sm);
+}
+
+.mockup-data-table__th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--clay-white);
+  background: var(--clay-purple);
+  border-bottom: none;
+}
+
+.mockup-data-table__sort { font-size: 10px; margin-left: 4px; color: rgba(255,255,255,0.7); }
+.mockup-data-table__td { padding: 12px 16px; border-bottom: 2px solid rgba(0,0,0,0.04); font-size: 14px; font-weight: 600; color: var(--clay-text); }
+.mockup-data-table__row:last-child .mockup-data-table__td { border-bottom: none; }
+
+.mockup-data-table__pagination {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--clay-text-muted);
+  border-top: 2px solid rgba(0,0,0,0.04);
+}
+
+.mockup-data-table__page-btn { cursor: pointer; padding: 6px 12px; color: var(--clay-white); background: var(--clay-blue); border: none; border-radius: var(--clay-radius-xs); font-weight: 700; box-shadow: var(--clay-shadow-sm); }
+
+/* ── Chart Placeholder ─────────────────────────────────────────────────── */
+
+.mockup-chart {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border: none;
+  border-radius: var(--clay-radius-lg);
+  background: var(--clay-white);
+  overflow: hidden;
+  box-shadow: var(--clay-shadow-xl);
+}
+
+.mockup-chart__title {
+  padding: 16px 20px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--clay-white);
+  background: var(--clay-blue);
+  box-shadow: inset -3px -6px 0 rgba(0,0,0,0.1), inset 3px 3px 0 rgba(255,255,255,0.35);
+}
+
+.mockup-chart__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+}
+
+.mockup-chart__label { font-size: 12px; font-weight: 600; color: var(--clay-text-muted); text-transform: capitalize; }

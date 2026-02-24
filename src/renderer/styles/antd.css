@@ -1,0 +1,686 @@
+/* Ant Design 5 — functional, dense, blue-primary enterprise UI */
+:root {
+  /* Ant Design primary palette (blue-6 as primary) */
+  --ant-primary:           #1677FF;
+  --ant-primary-hover:     #4096FF;
+  --ant-primary-active:    #0958D9;
+  --ant-primary-bg:        #E6F4FF;
+  --ant-primary-border:    #91CAFF;
+
+  /* Semantic colors */
+  --ant-success:           #52C41A;
+  --ant-success-bg:        #F6FFED;
+  --ant-success-border:    #B7EB8F;
+  --ant-warning:           #FAAD14;
+  --ant-warning-bg:        #FFFBE6;
+  --ant-warning-border:    #FFE58F;
+  --ant-error:             #FF4D4F;
+  --ant-error-bg:          #FFF2F0;
+  --ant-error-border:      #FFCCC7;
+  --ant-info:              #1677FF;
+  --ant-info-bg:           #E6F4FF;
+  --ant-info-border:       #91CAFF;
+  --ant-purple:            #722ED1;
+  --ant-magenta:           #EB2F96;
+  --ant-cyan:              #13C2C2;
+  --ant-orange:            #FA8C16;
+
+  /* Text */
+  --ant-text-primary:      rgba(0, 0, 0, 0.88);
+  --ant-text-secondary:    rgba(0, 0, 0, 0.65);
+  --ant-text-tertiary:     rgba(0, 0, 0, 0.45);
+  --ant-text-disabled:     rgba(0, 0, 0, 0.25);
+  --ant-text-heading:      rgba(0, 0, 0, 0.88);
+
+  /* Background */
+  --ant-bg-base:           #FFFFFF;
+  --ant-bg-layout:         #F5F5F5;
+  --ant-bg-container:      #FFFFFF;
+  --ant-bg-elevated:       #FFFFFF;
+  --ant-bg-spotlight:      rgba(0, 0, 0, 0.85);
+  --ant-bg-mask:           rgba(0, 0, 0, 0.45);
+
+  /* Border */
+  --ant-border-base:       #D9D9D9;
+  --ant-border-secondary:  #F0F0F0;
+
+  /* Radius */
+  --ant-radius:            6px;
+  --ant-radius-sm:         4px;
+  --ant-radius-lg:         8px;
+  --ant-radius-outer:      8px;
+
+  /* Shadow */
+  --ant-shadow-1: 0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02);
+  --ant-shadow-2: 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 9px 28px 8px rgba(0, 0, 0, 0.05);
+  --ant-shadow-3: 0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  color: var(--ant-text-primary);
+  background: var(--ant-bg-layout);
+  font-size: 14px;
+  line-height: 1.5714;
+}
+
+/* ── Button ─────────────────────────────────────────────────────────────── */
+
+/* Ant Design buttons — compact sizing, solid or outlined */
+.mockup-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--ant-radius);
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-weight: 400;
+  font-size: 14px;
+  cursor: pointer;
+  line-height: 1.5714;
+  white-space: nowrap;
+  transition: background 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.mockup-button--sm  { padding: 0 7px;  font-size: 14px; height: 24px; }
+.mockup-button--md  { padding: 4px 15px; font-size: 14px; height: 32px; }
+.mockup-button--lg  { padding: 6px 18px; font-size: 16px; height: 40px; }
+
+/* Default primary */
+.mockup-button--primary {
+  background: var(--ant-primary);
+  color:      #FFFFFF;
+  border-color: var(--ant-primary);
+  box-shadow: 0 2px 0 rgba(5, 145, 255, 0.1);
+}
+
+/* Default secondary */
+.mockup-button--secondary {
+  background: var(--ant-bg-base);
+  color:      var(--ant-text-primary);
+  border-color: var(--ant-border-base);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.02);
+}
+
+/* Dashed — outline with dashed border (Ant Design pattern) */
+.mockup-button--outline {
+  background: transparent;
+  color:      var(--ant-primary);
+  border-color: var(--ant-primary);
+  border-style: dashed;
+}
+
+/* Text/link — no border, no background */
+.mockup-button--ghost {
+  background:   transparent;
+  color:        var(--ant-primary);
+  border-color: transparent;
+}
+
+/* ── Input ──────────────────────────────────────────────────────────────── */
+
+.mockup-input {
+  display: block;
+  width: 100%;
+  padding: 4px 11px;
+  border: 1px solid var(--ant-border-base);
+  border-radius: var(--ant-radius);
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--ant-text-primary);
+  background: var(--ant-bg-base);
+  transition: border-color 0.2s;
+}
+
+.mockup-input-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--ant-text-primary);
+}
+
+/* ── Navbar ─────────────────────────────────────────────────────────────── */
+
+/* Ant Design Layout Header — dark by default in antd, but light here for readability */
+.mockup-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 16px;
+  height: 64px;
+  background: var(--ant-bg-base);
+  border-bottom: 1px solid var(--ant-border-secondary);
+  box-shadow: var(--ant-shadow-1);
+}
+
+.mockup-navbar__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ant-text-heading);
+  flex: 1;
+  text-align: center;
+}
+
+.mockup-navbar__side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 36px;
+  color: var(--ant-text-secondary);
+}
+
+/* ── Tab Bar ────────────────────────────────────────────────────────────── */
+
+.mockup-tabbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  width: 100%;
+  padding: 8px 0 4px;
+  border-top: 1px solid var(--ant-border-secondary);
+  background: var(--ant-bg-base);
+}
+
+.mockup-tabbar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  font-size: 12px;
+  color: var(--ant-text-secondary);
+  cursor: pointer;
+}
+
+/* Ant tabs use underline indicator on active */
+.mockup-tabbar-item--active {
+  color: var(--ant-primary);
+  font-weight: 500;
+  border-top: 2px solid var(--ant-primary);
+  padding-top: 2px;
+}
+
+/* ── Card ───────────────────────────────────────────────────────────────── */
+
+.mockup-card {
+  border: 1px solid var(--ant-border-secondary);
+  border-radius: var(--ant-radius-outer);
+  background: var(--ant-bg-container);
+  box-shadow: var(--ant-shadow-1);
+  overflow: hidden;
+}
+
+.mockup-card__body     { padding: 20px 24px; }
+.mockup-card__title    { font-size: 16px; font-weight: 600; color: var(--ant-text-heading); margin-bottom: 4px; }
+.mockup-card__value    { font-size: 30px; font-weight: 600; color: var(--ant-text-heading); margin-bottom: 4px; }
+.mockup-card__subtitle { font-size: 14px; color: var(--ant-text-secondary); margin-bottom: 8px; }
+.mockup-card__actions  { display: flex; gap: 12px; padding: 12px 24px; border-top: 1px solid var(--ant-border-secondary); }
+
+/* ── List ───────────────────────────────────────────────────────────────── */
+
+.mockup-list       { border: 1px solid var(--ant-border-secondary); border-radius: var(--ant-radius); background: var(--ant-bg-base); overflow: hidden; }
+.mockup-list-item  { padding: 12px 16px; border-bottom: 1px solid var(--ant-border-secondary); font-size: 14px; color: var(--ant-text-primary); display: flex; align-items: center; gap: 12px; }
+.mockup-list-item:last-child { border-bottom: none; }
+.mockup-list-item__avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--ant-bg-layout); flex-shrink: 0; }
+
+/* ── Image placeholder ──────────────────────────────────────────────────── */
+
+.mockup-image-placeholder { width: 100%; height: 100%; background: var(--ant-bg-layout); border: 1px solid var(--ant-border-base); border-radius: var(--ant-radius); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+
+/* ── Icon ───────────────────────────────────────────────────────────────── */
+
+.mockup-icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--ant-text-secondary); }
+
+/* ── Badge ──────────────────────────────────────────────────────────────── */
+
+/* Ant Design badge — bold red dot */
+.mockup-badge {
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: normal;
+  height: 20px;
+  line-height: 20px;
+  background: var(--ant-error);
+  color: #FFFFFF;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* ── Alert ──────────────────────────────────────────────────────────────── */
+
+.mockup-alert {
+  padding: 8px 12px;
+  border-radius: var(--ant-radius);
+  border: 1px solid var(--ant-info-border);
+  background: var(--ant-info-bg);
+  font-size: 14px;
+  color: var(--ant-text-primary);
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.mockup-alert--info    { border-color: var(--ant-info-border);    background: var(--ant-info-bg); }
+.mockup-alert--success { border-color: var(--ant-success-border); background: var(--ant-success-bg); }
+.mockup-alert--warning { border-color: var(--ant-warning-border); background: var(--ant-warning-bg); }
+.mockup-alert--error   { border-color: var(--ant-error-border);   background: var(--ant-error-bg); }
+
+/* ── Textarea ──────────────────────────────────────────────────────────── */
+
+.mockup-textarea { font-family: inherit; line-height: 1.5714; }
+
+/* ── Checkbox ──────────────────────────────────────────────────────────── */
+
+.mockup-checkbox { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; color: var(--ant-text-primary); }
+
+.mockup-checkbox__box {
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--ant-border-base);
+  border-radius: var(--ant-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #FFFFFF;
+  background: var(--ant-primary);
+  flex-shrink: 0;
+}
+
+.mockup-checkbox__label { color: var(--ant-text-primary); }
+
+/* ── Radio ─────────────────────────────────────────────────────────────── */
+
+.mockup-radio { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; }
+
+.mockup-radio__circle {
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--ant-primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ant-bg-base);
+  flex-shrink: 0;
+}
+
+.mockup-radio__dot   { width: 8px; height: 8px; border-radius: 50%; background: var(--ant-primary); }
+.mockup-radio__label { color: var(--ant-text-primary); }
+
+/* ── Toggle ────────────────────────────────────────────────────────────── */
+
+.mockup-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; }
+
+.mockup-toggle__track {
+  width: 44px;
+  height: 22px;
+  border-radius: 11px;
+  background: rgba(0, 0, 0, 0.25);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.mockup-toggle--on .mockup-toggle__track { background: var(--ant-primary); }
+
+.mockup-toggle__thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: left 0.2s cubic-bezier(0.34, 0.69, 0.1, 1);
+  box-shadow: 0 2px 4px rgba(0, 35, 11, 0.2);
+}
+
+.mockup-toggle--on .mockup-toggle__thumb { left: 24px; }
+.mockup-toggle__label { color: var(--ant-text-primary); }
+
+/* ── Select ────────────────────────────────────────────────────────────── */
+
+.mockup-select { width: 100%; }
+
+.mockup-select__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 11px;
+  border: 1px solid var(--ant-border-base);
+  border-radius: var(--ant-radius);
+  font-size: 14px;
+  color: var(--ant-text-primary);
+  background: var(--ant-bg-base);
+  cursor: pointer;
+  min-height: 32px;
+}
+
+.mockup-select__arrow { font-size: 10px; color: var(--ant-text-tertiary); }
+
+/* ── Slider ────────────────────────────────────────────────────────────── */
+
+.mockup-slider { width: 100%; padding: 8px 0; }
+
+.mockup-slider__track {
+  width: 100%;
+  height: 4px;
+  background: var(--ant-border-secondary);
+  border-radius: 2px;
+  position: relative;
+}
+
+.mockup-slider__fill  { height: 100%; background: var(--ant-primary); border-radius: 2px; }
+
+.mockup-slider__thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--ant-bg-base);
+  border: 2px solid var(--ant-primary);
+  position: absolute;
+  top: -5px;
+  transform: translateX(-50%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+}
+
+/* ── Sidebar ───────────────────────────────────────────────────────────── */
+
+/* Ant Design Sider — white sidebar with bottom border highlight on active */
+.mockup-sidebar {
+  width: 100%;
+  height: 100%;
+  background: var(--ant-bg-base);
+  border-right: 1px solid var(--ant-border-secondary);
+  padding: 8px 0;
+}
+
+.mockup-sidebar__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 24px;
+  height: 40px;
+  font-size: 14px;
+  color: var(--ant-text-primary);
+  cursor: pointer;
+}
+
+/* Active item — brand background with primary text (Ant inline menu) */
+.mockup-sidebar__item--active {
+  color: var(--ant-primary);
+  background: var(--ant-primary-bg);
+  font-weight: 500;
+  border-right: 2px solid var(--ant-primary);
+}
+
+/* ── Breadcrumb ────────────────────────────────────────────────────────── */
+
+.mockup-breadcrumb       { display: flex; align-items: center; gap: 4px; font-size: 14px; }
+.mockup-breadcrumb__item { color: var(--ant-text-secondary); cursor: pointer; }
+.mockup-breadcrumb__item--current { color: var(--ant-text-primary); font-weight: 400; cursor: default; }
+.mockup-breadcrumb__sep  { color: var(--ant-text-tertiary); margin: 0 4px; }
+
+/* ── Table ─────────────────────────────────────────────────────────────── */
+
+.mockup-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px; }
+
+.mockup-table__th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 500;
+  color: var(--ant-text-secondary);
+  background: var(--ant-bg-layout);
+  border-bottom: 1px solid var(--ant-border-secondary);
+}
+
+.mockup-table__td           { padding: 12px 16px; border-bottom: 1px solid var(--ant-border-secondary); color: var(--ant-text-primary); }
+.mockup-table__row--striped { background: var(--ant-bg-layout); }
+
+/* ── Avatar ────────────────────────────────────────────────────────────── */
+
+.mockup-avatar { flex-shrink: 0; }
+
+/* ── Chip / Tag ────────────────────────────────────────────────────────── */
+
+/* Ant Design Tag component */
+.mockup-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 7px;
+  border-radius: var(--ant-radius-sm);
+  font-size: 12px;
+  height: 22px;
+  line-height: 22px;
+  background: var(--ant-bg-layout);
+  color: var(--ant-text-primary);
+  border: 1px solid var(--ant-border-base);
+}
+
+.mockup-chip--selected {
+  background: var(--ant-primary-bg);
+  color: var(--ant-primary);
+  border-color: var(--ant-primary-border);
+}
+
+.mockup-chip__remove { font-size: 12px; cursor: pointer; color: var(--ant-text-tertiary); line-height: 1; margin-left: 2px; }
+
+/* ── Modal ─────────────────────────────────────────────────────────────── */
+
+.mockup-modal__backdrop {
+  width: 100%;
+  height: 100%;
+  background: var(--ant-bg-mask);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.mockup-modal {
+  background: var(--ant-bg-container);
+  border-radius: var(--ant-radius-outer);
+  border: none;
+  width: 100%;
+  max-width: 416px;
+  overflow: hidden;
+  box-shadow: var(--ant-shadow-3);
+}
+
+.mockup-modal__header { padding: 16px 24px 12px; font-size: 16px; font-weight: 600; color: var(--ant-text-heading); border-bottom: 1px solid var(--ant-border-secondary); }
+.mockup-modal__body   { padding: 12px 24px 20px; font-size: 14px; color: var(--ant-text-secondary); line-height: 1.5714; }
+.mockup-modal__footer { display: flex; justify-content: flex-end; gap: 8px; padding: 0 24px 20px; }
+
+/* ── Skeleton ──────────────────────────────────────────────────────────── */
+
+.mockup-skeleton { background: var(--ant-bg-layout); border-radius: var(--ant-radius); width: 100%; height: 100%; animation: antd-pulse 1.5s ease-in-out infinite; }
+.mockup-skeleton--circle { border-radius: 50%; }
+.mockup-skeleton--text   { height: 14px; }
+
+@keyframes antd-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* ── Progress ──────────────────────────────────────────────────────────── */
+
+.mockup-progress {
+  width: 100%;
+  height: 8px;
+  background: var(--ant-bg-layout);
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.mockup-progress__bar { height: 100%; background: var(--ant-primary); border-radius: 100px; }
+
+/* ── Tooltip ───────────────────────────────────────────────────────────── */
+
+.mockup-tooltip { position: relative; display: inline-block; }
+
+.mockup-tooltip__content {
+  background: var(--ant-bg-spotlight);
+  color: #FFFFFF;
+  padding: 6px 8px;
+  border-radius: var(--ant-radius);
+  font-size: 13px;
+  line-height: 1.5714;
+  white-space: nowrap;
+  box-shadow: var(--ant-shadow-2);
+}
+
+/* ── Search Bar ────────────────────────────────────────────────────────── */
+
+.mockup-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 11px;
+  border: 1px solid var(--ant-border-base);
+  border-radius: var(--ant-radius);
+  background: var(--ant-bg-base);
+  width: 100%;
+  height: 32px;
+}
+
+.mockup-search-bar__icon  { display: flex; flex-shrink: 0; color: var(--ant-text-tertiary); }
+.mockup-search-bar__input { font-size: 14px; color: var(--ant-text-tertiary); flex: 1; }
+
+/* ── Login Form ────────────────────────────────────────────────────────── */
+
+.mockup-login         { display: flex; flex-direction: column; gap: 16px; padding: 24px; width: 100%; }
+.mockup-login__title  { font-size: 24px; font-weight: 600; color: var(--ant-text-heading); text-align: center; margin-bottom: 8px; }
+.mockup-login__field  { width: 100%; }
+.mockup-login__forgot { font-size: 14px; color: var(--ant-primary); text-align: right; }
+.mockup-login__action { margin-top: 8px; }
+.mockup-login__action .mockup-button { width: 100%; justify-content: center; }
+
+/* ── Header ────────────────────────────────────────────────────────────── */
+
+.mockup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 64px;
+  background: var(--ant-bg-base);
+  border-bottom: 1px solid var(--ant-border-secondary);
+  box-shadow: var(--ant-shadow-1);
+  width: 100%;
+}
+
+.mockup-header__logo     { font-size: 18px; font-weight: 600; color: var(--ant-primary); }
+.mockup-header__nav      { display: flex; gap: 0; }
+.mockup-header__nav-item { font-size: 14px; color: var(--ant-text-primary); cursor: pointer; padding: 0 16px; height: 64px; line-height: 64px; }
+.mockup-header__right    { display: flex; align-items: center; gap: 8px; }
+
+/* ── Footer ────────────────────────────────────────────────────────────── */
+
+.mockup-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 16px;
+  background: var(--ant-bg-layout);
+  border-top: 1px solid var(--ant-border-secondary);
+  width: 100%;
+}
+
+.mockup-footer__links { display: flex; gap: 16px; }
+.mockup-footer__link  { font-size: 14px; color: var(--ant-text-secondary); cursor: pointer; }
+.mockup-footer__text  { font-size: 12px; color: var(--ant-text-tertiary); }
+
+/* ── Data Table ────────────────────────────────────────────────────────── */
+
+.mockup-data-table {
+  width: 100%;
+  border: 1px solid var(--ant-border-secondary);
+  border-radius: var(--ant-radius);
+  overflow: hidden;
+  background: var(--ant-bg-base);
+}
+
+.mockup-data-table__toolbar { padding: 12px 16px 8px; border-bottom: 1px solid var(--ant-border-secondary); }
+
+.mockup-data-table__search {
+  padding: 4px 11px;
+  border: 1px solid var(--ant-border-base);
+  border-radius: var(--ant-radius);
+  font-size: 14px;
+  color: var(--ant-text-primary);
+  height: 32px;
+  background: var(--ant-bg-base);
+}
+
+.mockup-data-table__th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--ant-text-secondary);
+  background: var(--ant-bg-layout);
+  border-bottom: 1px solid var(--ant-border-secondary);
+}
+
+.mockup-data-table__sort     { font-size: 8px; margin-left: 4px; color: var(--ant-text-tertiary); }
+.mockup-data-table__td       { padding: 12px 16px; border-bottom: 1px solid var(--ant-border-secondary); font-size: 14px; color: var(--ant-text-primary); }
+.mockup-data-table__row:last-child .mockup-data-table__td { border-bottom: none; }
+
+.mockup-data-table__pagination {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  color: var(--ant-text-primary);
+  border-top: 1px solid var(--ant-border-secondary);
+}
+
+.mockup-data-table__page-btn { cursor: pointer; padding: 0 6px; height: 32px; min-width: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--ant-radius); border: 1px solid var(--ant-border-base); color: var(--ant-text-primary); background: var(--ant-bg-base); }
+
+/* ── Chart Placeholder ─────────────────────────────────────────────────── */
+
+.mockup-chart {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--ant-border-secondary);
+  border-radius: var(--ant-radius-outer);
+  background: var(--ant-bg-base);
+  overflow: hidden;
+  box-shadow: var(--ant-shadow-1);
+}
+
+.mockup-chart__title {
+  padding: 16px 20px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ant-text-heading);
+  border-bottom: 1px solid var(--ant-border-secondary);
+}
+
+.mockup-chart__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+}
+
+.mockup-chart__label { font-size: 14px; color: var(--ant-text-tertiary); text-transform: capitalize; }

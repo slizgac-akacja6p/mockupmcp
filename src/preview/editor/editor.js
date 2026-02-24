@@ -6,7 +6,7 @@
 // initEditor() is the single DOM-aware entry point and is only called at runtime.
 
 import { createSelectionState, findElementId, findElementInScreen, initSelection, initBoxSelect } from './selection.js';
-import { buildFieldDefinitions, buildUpdatePayload, renderPanelHtml, initPropertyPanel } from './property-panel.js';
+import { buildFieldDefinitions, buildUpdatePayload, renderPanelHtml, renderScreenStyleHtml, initPropertyPanel } from './property-panel.js';
 import { loadComponentMeta } from './component-meta.js';
 import { initDrag } from './drag.js';
 import { initResize } from './resize.js';
@@ -245,7 +245,33 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
   }
 
   function onDeselect() {
-    panel.innerHTML = '<p class="panel-placeholder">' + _t('panel.selectElement', 'Select an element to edit its properties') + '</p>';
+    // Show screen properties (including style override) when nothing is selected.
+    // renderScreenStyleHtml produces controlled markup, not user input — safe for innerHTML.
+    const screenStyleHtml = renderScreenStyleHtml(
+      window.__SCREEN_STYLE__ || null,
+      window.__STYLE_OPTIONS__ || [],
+    );
+    // eslint-disable-next-line no-unsanitized/property
+    panel.innerHTML = screenStyleHtml;
+
+    // Wire up the screen style dropdown change handler
+    const screenStyleSelect = panel.querySelector('#screen-style-select');
+    if (screenStyleSelect) {
+      screenStyleSelect.addEventListener('change', async (e) => {
+        const val = e.target.value;
+        const newStyle = val === '' ? null : val;
+        try {
+          await api.updateScreen(projectId, screenId, { style: newStyle });
+          // Update local state so re-deselect shows the correct value
+          window.__SCREEN_STYLE__ = newStyle;
+          // Full page reload to re-render with new style CSS
+          window.location.reload();
+        } catch (err) {
+          console.error('[editor] update screen style failed', err);
+        }
+      });
+    }
+
     if (resizeHandles) resizeHandles.hideHandles();
     guideRenderer.hideGuides();
   }
@@ -652,6 +678,21 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
       exitAddMode();
     }
   });
+
+  // --- project style selector ---
+  const styleSelect = document.getElementById('style-select');
+  if (styleSelect) {
+    styleSelect.addEventListener('change', async (e) => {
+      const newStyle = e.target.value;
+      try {
+        await api.updateProject(projectId, { style: newStyle });
+        // Full page reload to re-render with the new style CSS
+        window.location.reload();
+      } catch (err) {
+        console.error('[editor] update project style failed', err);
+      }
+    });
+  }
 
   // --- language switcher ---
   const langSelect = document.getElementById('lang-select');

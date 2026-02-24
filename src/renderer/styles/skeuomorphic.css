@@ -1,0 +1,875 @@
+/* Skeuomorphic — realistic materials: aluminum, leather, paper, glass, chrome */
+:root {
+  /* Aluminum / silver palette */
+  --skeu-silver-light:   #F0F0F0;
+  --skeu-silver-mid:     #D0D0D0;
+  --skeu-silver-dark:    #A8A8A8;
+  --skeu-chrome:         linear-gradient(180deg, #E8E8E8 0%, #C8C8C8 50%, #D8D8D8 100%);
+
+  /* Paper / white surface */
+  --skeu-paper:          #FAFAF7;
+  --skeu-paper-shadow:   rgba(0, 0, 0, 0.15);
+
+  /* Leather (warm brown) */
+  --skeu-leather:        linear-gradient(180deg, #8B4513 0%, #6B3410 100%);
+  --skeu-leather-stitch: repeating-linear-gradient(45deg, rgba(139,90,43,0.12) 0px, rgba(139,90,43,0.12) 2px, transparent 2px, transparent 6px);
+
+  /* Screen background — brushed aluminum */
+  --skeu-screen-bg:      linear-gradient(180deg, #C8D6DF 0%, #A8B9C4 100%);
+
+  /* Deep shadows and insets */
+  --skeu-shadow-deep:    0 10px 30px rgba(0,0,0,0.5), 0 4px 10px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.3);
+  --skeu-shadow-raised:  0 6px 16px rgba(0,0,0,0.35), 0 2px 6px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.4);
+  --skeu-shadow-inset:   inset 0 3px 6px rgba(0,0,0,0.4), inset 0 1px 2px rgba(0,0,0,0.3), inset 0 -1px 2px rgba(255,255,255,0.2);
+  --skeu-highlight-top:  inset 0 1px 0 rgba(255,255,255,0.5);
+
+  /* Gloss overlay (used as a pseudo-element gradient) */
+  --skeu-gloss:          linear-gradient(180deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.12) 50%, transparent 50%);
+
+  /* Text shadows for embossed / debossed text */
+  --skeu-text-emboss:    0 1px 0 rgba(255,255,255,0.35), 0 -1px 0 rgba(0,0,0,0.25);
+  --skeu-text-deboss:    0 1px 1px rgba(255,255,255,0.2), 0 -1px 0 rgba(0,0,0,0.35);
+
+  /* Type scale */
+  --skeu-text-primary:   #2A1F1A;
+  --skeu-text-secondary: #5A4A44;
+  --skeu-text-muted:     #8A7A74;
+  --skeu-text-light:     #FFFFFF;
+  --skeu-border-main:    #A8A0A0;
+  --skeu-border-light:   rgba(255,255,255,0.5);
+
+  /* Radius — rounded but not pill-shaped, mimicking real device corners */
+  --skeu-radius-sm:   6px;
+  --skeu-radius-md:   10px;
+  --skeu-radius-lg:   14px;
+  --skeu-font:        Georgia, "Times New Roman", serif;
+  --skeu-font-ui:     "Lucida Grande", "Trebuchet MS", system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--skeu-font-ui);
+  color: var(--skeu-text-primary);
+  background: #B0BEC5;
+}
+
+/* Screen uses brushed aluminum as the base surface */
+.screen {
+  background: var(--skeu-screen-bg) !important;
+  color: var(--skeu-text-primary);
+  font-family: var(--skeu-font-ui);
+}
+
+/* ── Base element — raised panel on paper ───────────────────────────────── */
+
+/* Default element looks like paper lifted off a surface */
+.element {
+  background: var(--skeu-paper);
+  border: 1px solid var(--skeu-border-main);
+  border-radius: var(--skeu-radius-md);
+  box-shadow: var(--skeu-shadow-raised);
+  color: var(--skeu-text-primary);
+  font-family: var(--skeu-font-ui);
+}
+
+/* ── Button ─────────────────────────────────────────────────────────────── */
+
+/* Metallic gradient + gloss highlight + deep shadow = classic skeuomorphic button */
+.mockup-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--skeu-radius-md);
+  border: 1px solid #888;
+  font-family: var(--skeu-font-ui);
+  cursor: pointer;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+  text-shadow: var(--skeu-text-emboss);
+}
+
+.mockup-button::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.08) 100%);
+  pointer-events: none;
+  border-radius: var(--skeu-radius-md) var(--skeu-radius-md) 0 0;
+}
+
+.mockup-button--sm  { padding: 7px 14px;  font-size: 12px; }
+.mockup-button--md  { padding: 10px 22px; font-size: 14px; }
+.mockup-button--lg  { padding: 13px 28px; font-size: 16px; }
+
+/* Primary: blue metallic */
+.mockup-button--primary {
+  background: linear-gradient(180deg, #5B9BD5 0%, #2D7DD2 45%, #1A6BBF 50%, #2576CA 100%);
+  color: #FFFFFF;
+  border-color: #1A5FA0;
+  box-shadow: 0 8px 20px rgba(29,90,160,0.5), 0 2px 4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.35);
+}
+
+/* Secondary: silver chrome */
+.mockup-button--secondary {
+  background: var(--skeu-chrome);
+  color: var(--skeu-text-primary);
+  border-color: #999;
+  box-shadow: var(--skeu-shadow-raised);
+}
+
+/* Outline: paper with etched border */
+.mockup-button--outline {
+  background: linear-gradient(180deg, #FAFAFA 0%, #EBEBEB 100%);
+  color: #2D7DD2;
+  border: 2px solid #2D7DD2;
+  box-shadow: var(--skeu-shadow-raised);
+}
+
+/* Ghost: minimal — just embossed text */
+.mockup-button--ghost {
+  background: transparent;
+  color: #2D7DD2;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+/* ── Input ──────────────────────────────────────────────────────────────── */
+
+/* Inset well — classic skeuomorphic text field is recessed into the surface */
+.mockup-input {
+  display: block;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid #9A9A9A;
+  border-radius: var(--skeu-radius-sm);
+  font-family: var(--skeu-font-ui);
+  font-size: 14px;
+  color: var(--skeu-text-secondary);
+  background: linear-gradient(180deg, #E8E8E8 0%, #F8F8F8 6px, #FAFAF7 100%);
+  box-shadow: var(--skeu-shadow-inset);
+}
+
+.mockup-input-label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--skeu-text-primary);
+  text-shadow: 0 1px 0 rgba(255,255,255,0.7);
+}
+
+/* ── Navbar ─────────────────────────────────────────────────────────────── */
+
+/* Brushed aluminum bar — the canonical Mac OS X toolbar */
+.mockup-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 12px 16px;
+  background: linear-gradient(180deg, #E8E8E8 0%, #C8C8C8 100%);
+  border-bottom: 1px solid #A0A0A0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.7);
+}
+
+.mockup-navbar__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--skeu-text-primary);
+  flex: 1;
+  text-align: center;
+  text-shadow: var(--skeu-text-emboss);
+}
+
+.mockup-navbar__side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 32px;
+  color: var(--skeu-text-secondary);
+}
+
+/* ── Tab Bar ────────────────────────────────────────────────────────────── */
+
+.mockup-tabbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  width: 100%;
+  padding: 8px 0;
+  background: linear-gradient(180deg, #DCDCDC 0%, #C4C4C4 100%);
+  border-top: 1px solid #A8A8A8;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 -2px 4px rgba(0,0,0,0.1);
+}
+
+.mockup-tabbar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  font-size: 11px;
+  color: var(--skeu-text-secondary);
+  cursor: pointer;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+}
+
+.mockup-tabbar-item--active {
+  color: #1A6BBF;
+  font-weight: 700;
+  text-shadow: 0 1px 1px rgba(255,255,255,0.6);
+}
+
+/* ── Card ───────────────────────────────────────────────────────────────── */
+
+/* Paper card with shadow stack gives convincing depth layering */
+.mockup-card {
+  border: 1px solid #C8C0B8;
+  border-radius: var(--skeu-radius-md);
+  background: var(--skeu-paper);
+  overflow: hidden;
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.08),
+    0 4px 10px rgba(0,0,0,0.15),
+    0 12px 24px rgba(0,0,0,0.1),
+    inset 0 1px 0 rgba(255,255,255,0.9);
+}
+
+.mockup-card__body { padding: 14px 18px; }
+.mockup-card__title { font-size: 15px; font-weight: 700; color: var(--skeu-text-primary); margin-bottom: 4px; text-shadow: var(--skeu-text-emboss); }
+.mockup-card__value { font-size: 28px; font-weight: 700; color: #1A6BBF; margin-bottom: 4px; text-shadow: 0 1px 0 rgba(255,255,255,0.5); }
+.mockup-card__subtitle { font-size: 13px; color: var(--skeu-text-secondary); margin-bottom: 10px; }
+.mockup-card__actions { display: flex; gap: 8px; padding: 10px 18px 14px; border-top: 1px solid #DDD; background: linear-gradient(180deg, #F0F0F0 0%, #E4E4E4 100%); }
+
+/* ── List ───────────────────────────────────────────────────────────────── */
+
+.mockup-list { border: 1px solid #C8C0B8; border-radius: var(--skeu-radius-md); background: var(--skeu-paper); overflow: hidden; box-shadow: var(--skeu-shadow-raised); }
+.mockup-list-item { padding: 12px 18px; border-bottom: 1px solid #E0D8D4; font-size: 14px; color: var(--skeu-text-primary); display: flex; align-items: center; gap: 12px; background: linear-gradient(180deg, #FAFAFA 0%, #F4F4F4 100%); }
+.mockup-list-item:nth-child(even) { background: linear-gradient(180deg, #F4F4F4 0%, #EEEEEE 100%); }
+.mockup-list-item:last-child { border-bottom: none; }
+.mockup-list-item__avatar { width: 36px; height: 36px; border-radius: 50%; border: 1px solid #C0C0C0; background: linear-gradient(135deg, #E8E8E8, #C8C8C8); flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+
+/* ── Image placeholder ──────────────────────────────────────────────────── */
+
+.mockup-image-placeholder { width: 100%; height: 100%; background: linear-gradient(135deg, #D8D8D8 0%, #C0C0C0 100%); border: 1px solid #B0B0B0; border-radius: var(--skeu-radius-sm); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; box-shadow: var(--skeu-shadow-inset); }
+
+/* ── Icon ───────────────────────────────────────────────────────────────── */
+
+.mockup-icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--skeu-text-secondary); filter: drop-shadow(0 1px 0 rgba(255,255,255,0.5)); }
+
+/* ── Badge ──────────────────────────────────────────────────────────────── */
+
+/* Glossy pill badge — red notification dot is the canonical skeuomorphic badge */
+.mockup-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  background: linear-gradient(180deg, #F96060 0%, #D42020 50%, #B41010 100%);
+  color: #FFFFFF;
+  border: 1px solid #8B0000;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.35);
+  text-shadow: 0 -1px 0 rgba(0,0,0,0.4);
+}
+
+/* ── Alert ──────────────────────────────────────────────────────────────── */
+
+.mockup-alert {
+  padding: 12px 16px;
+  border: 1px solid #C8C0B8;
+  border-left: 5px solid #2D7DD2;
+  border-radius: var(--skeu-radius-sm);
+  background: linear-gradient(180deg, #F8F8F6 0%, #EFEFEB 100%);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.8);
+  font-size: 14px;
+  color: var(--skeu-text-primary);
+}
+
+.mockup-alert--info    { border-left-color: #2D7DD2; }
+.mockup-alert--success { border-left-color: #2E8B57; }
+.mockup-alert--warning { border-left-color: #D4700A; }
+.mockup-alert--error   { border-left-color: #B41010; }
+
+/* ── Textarea ──────────────────────────────────────────────────────────── */
+
+.mockup-textarea {
+  font-family: var(--skeu-font-ui);
+  line-height: 1.5;
+  background: linear-gradient(180deg, #E8E8E8 0%, #F5F5F2 8px, #FAFAF7 100%);
+  border: 1px solid #9A9A9A;
+  border-radius: var(--skeu-radius-sm);
+  color: var(--skeu-text-secondary);
+  box-shadow: var(--skeu-shadow-inset);
+}
+
+/* ── Checkbox ──────────────────────────────────────────────────────────── */
+
+.mockup-checkbox { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; color: var(--skeu-text-primary); }
+
+.mockup-checkbox__box {
+  width: 20px;
+  height: 20px;
+  border: 1px solid #9A9A9A;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #1A6BBF;
+  background: linear-gradient(180deg, #E0E0E0 0%, #F4F4F4 40%, #FAFAFA 100%);
+  box-shadow: var(--skeu-shadow-inset);
+  flex-shrink: 0;
+}
+
+.mockup-checkbox__label { color: var(--skeu-text-primary); text-shadow: 0 1px 0 rgba(255,255,255,0.6); }
+
+/* ── Radio ─────────────────────────────────────────────────────────────── */
+
+.mockup-radio { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; color: var(--skeu-text-primary); }
+
+.mockup-radio__circle {
+  width: 20px;
+  height: 20px;
+  border: 1px solid #9A9A9A;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #E0E0E0 0%, #F4F4F4 40%, #FAFAFA 100%);
+  box-shadow: var(--skeu-shadow-inset);
+  flex-shrink: 0;
+}
+
+.mockup-radio__dot { width: 9px; height: 9px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #3A8FE8, #1A5FA0); box-shadow: 0 1px 3px rgba(0,0,0,0.4); }
+.mockup-radio__label { color: var(--skeu-text-primary); text-shadow: 0 1px 0 rgba(255,255,255,0.6); }
+
+/* ── Toggle ────────────────────────────────────────────────────────────── */
+
+.mockup-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; color: var(--skeu-text-primary); }
+
+.mockup-toggle__track {
+  width: 46px;
+  height: 26px;
+  border-radius: 13px;
+  background: linear-gradient(180deg, #A0A0A0 0%, #C0C0C0 100%);
+  border: 1px solid #888;
+  position: relative;
+  flex-shrink: 0;
+  box-shadow: var(--skeu-shadow-inset);
+}
+
+/* Green ON state — glossy with inset shadow for depth illusion */
+.mockup-toggle--on .mockup-toggle__track {
+  background: linear-gradient(180deg, #2E8B57 0%, #3DAA6B 50%, #2E8B57 100%);
+  border-color: #1A6B40;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.35), inset 0 -1px 2px rgba(255,255,255,0.15);
+}
+
+.mockup-toggle__thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #FFFFFF 0%, #D8D8D8 60%, #C0C0C0 100%);
+  border: 1px solid #A0A0A0;
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  transition: left 0.18s ease;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.7);
+}
+
+.mockup-toggle--on .mockup-toggle__thumb { left: 21px; }
+.mockup-toggle__label { color: var(--skeu-text-primary); text-shadow: 0 1px 0 rgba(255,255,255,0.6); }
+
+/* ── Select ────────────────────────────────────────────────────────────── */
+
+.mockup-select { width: 100%; }
+
+.mockup-select__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  border: 1px solid #9A9A9A;
+  border-radius: var(--skeu-radius-sm);
+  font-size: 14px;
+  color: var(--skeu-text-secondary);
+  background: linear-gradient(180deg, #EEEEEE 0%, #F8F8F6 100%);
+  box-shadow: var(--skeu-shadow-raised);
+  cursor: pointer;
+}
+
+.mockup-select__arrow { font-size: 10px; color: var(--skeu-text-secondary); }
+
+/* ── Slider ────────────────────────────────────────────────────────────── */
+
+.mockup-slider { width: 100%; padding: 10px 0; }
+
+.mockup-slider__track {
+  width: 100%;
+  height: 6px;
+  background: linear-gradient(180deg, #A8A8A8 0%, #C8C8C8 100%);
+  border-radius: 3px;
+  position: relative;
+  box-shadow: inset 0 2px 3px rgba(0,0,0,0.3), inset 0 -1px 2px rgba(255,255,255,0.4);
+}
+
+.mockup-slider__fill { height: 100%; background: linear-gradient(180deg, #3A8FE8 0%, #1A6BBF 100%); border-radius: 3px; box-shadow: 0 0 4px rgba(29,90,160,0.4); }
+
+/* Chrome ball thumb */
+.mockup-slider__thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #FFFFFF 0%, #D8D8D8 60%, #B8B8B8 100%);
+  border: 1px solid #909090;
+  position: absolute;
+  top: -7px;
+  transform: translateX(-50%);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.7);
+}
+
+/* ── Sidebar ───────────────────────────────────────────────────────────── */
+
+/* Leather sidebar — the iOS bookshelf metaphor */
+.mockup-sidebar {
+  width: 100%;
+  height: 100%;
+  background-image: var(--skeu-leather-stitch), var(--skeu-leather);
+  border-right: 2px solid #4A2A0A;
+  padding: 8px 0;
+  box-shadow: inset -4px 0 8px rgba(0,0,0,0.3), 4px 0 8px rgba(0,0,0,0.2);
+}
+
+.mockup-sidebar__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 18px;
+  font-size: 14px;
+  color: rgba(255,240,220,0.8);
+  cursor: pointer;
+  border-bottom: 1px solid rgba(0,0,0,0.2);
+  text-shadow: 0 -1px 0 rgba(0,0,0,0.4);
+}
+
+.mockup-sidebar__item--active {
+  color: #FFEEDD;
+  font-weight: 700;
+  background: rgba(0,0,0,0.25);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.5), inset 0 -1px 1px rgba(255,255,255,0.05);
+}
+
+/* ── Breadcrumb ────────────────────────────────────────────────────────── */
+
+.mockup-breadcrumb { display: flex; align-items: center; gap: 4px; font-size: 13px; }
+.mockup-breadcrumb__item { color: #2D7DD2; cursor: pointer; text-shadow: 0 1px 0 rgba(255,255,255,0.5); }
+.mockup-breadcrumb__item--current { color: var(--skeu-text-primary); font-weight: 600; cursor: default; text-shadow: var(--skeu-text-emboss); }
+.mockup-breadcrumb__sep { color: var(--skeu-text-muted); margin: 0 3px; }
+
+/* ── Table ─────────────────────────────────────────────────────────────── */
+
+.mockup-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+
+.mockup-table__th {
+  padding: 9px 14px;
+  text-align: left;
+  font-weight: 700;
+  color: var(--skeu-text-primary);
+  border-bottom: 2px solid #A0A0A0;
+  background: linear-gradient(180deg, #DEDEDE 0%, #C8C8C8 100%);
+  text-shadow: var(--skeu-text-emboss);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+}
+
+.mockup-table__td { padding: 9px 14px; border-bottom: 1px solid #DDD; color: var(--skeu-text-primary); }
+.mockup-table__row--striped { background: #F4F4F0; }
+
+/* ── Avatar ────────────────────────────────────────────────────────────── */
+
+.mockup-avatar { flex-shrink: 0; box-shadow: 0 2px 6px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.4); }
+
+/* ── Chip ──────────────────────────────────────────────────────────────── */
+
+.mockup-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 14px;
+  border-radius: 14px;
+  font-size: 13px;
+  background: linear-gradient(180deg, #EEEEEE 0%, #DCDCDC 100%);
+  color: var(--skeu-text-primary);
+  border: 1px solid #B0B0B0;
+  box-shadow: var(--skeu-shadow-raised);
+  text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+}
+
+.mockup-chip--selected {
+  background: linear-gradient(180deg, #5B9BD5 0%, #1A6BBF 100%);
+  color: #FFFFFF;
+  border-color: #1350A0;
+  box-shadow: 0 4px 10px rgba(29,80,160,0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+  text-shadow: 0 -1px 0 rgba(0,0,0,0.3);
+}
+
+.mockup-chip__remove { font-size: 14px; cursor: pointer; color: var(--skeu-text-muted); line-height: 1; }
+
+/* ── Modal ─────────────────────────────────────────────────────────────── */
+
+.mockup-modal__backdrop {
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.mockup-modal {
+  background: var(--skeu-paper);
+  border: 1px solid #B0B0B0;
+  border-radius: var(--skeu-radius-lg);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.6), 0 8px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.9);
+  width: 100%;
+  max-width: 420px;
+  overflow: hidden;
+}
+
+/* Header: aluminum titlebar to match system modal chrome */
+.mockup-modal__header {
+  padding: 14px 20px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--skeu-text-primary);
+  background: linear-gradient(180deg, #E8E8E8 0%, #D0D0D0 100%);
+  border-bottom: 1px solid #B0B0B0;
+  text-shadow: var(--skeu-text-emboss);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+}
+
+.mockup-modal__body { padding: 18px 22px; font-size: 14px; color: var(--skeu-text-secondary); }
+.mockup-modal__footer { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 22px; border-top: 1px solid #DDD; background: linear-gradient(180deg, #F0F0F0 0%, #E4E4E4 100%); }
+
+/* ── Skeleton ──────────────────────────────────────────────────────────── */
+
+.mockup-skeleton {
+  background: linear-gradient(90deg, #E0E0E0 25%, #D0D0D0 50%, #E0E0E0 75%);
+  background-size: 200% 100%;
+  border-radius: var(--skeu-radius-sm);
+  width: 100%;
+  height: 100%;
+  animation: mockup-skeu-shimmer 1.5s infinite;
+  box-shadow: var(--skeu-shadow-inset);
+}
+
+.mockup-skeleton--circle { border-radius: 50%; }
+.mockup-skeleton--text { height: 16px; }
+
+@keyframes mockup-skeu-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Progress ──────────────────────────────────────────────────────────── */
+
+.mockup-progress {
+  width: 100%;
+  height: 12px;
+  background: linear-gradient(180deg, #AAAAAA 0%, #CCCCCC 100%);
+  border-radius: 6px;
+  border: 1px solid #999;
+  overflow: hidden;
+  box-shadow: var(--skeu-shadow-inset);
+}
+
+/* Glossy fill bar — blue chrome with gloss stripe */
+.mockup-progress__bar {
+  height: 100%;
+  background: linear-gradient(180deg, #5B9BD5 0%, #2D7DD2 45%, #1A6BBF 50%, #2576CA 100%);
+  border-radius: 6px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
+  position: relative;
+}
+
+/* ── Tooltip ───────────────────────────────────────────────────────────── */
+
+.mockup-tooltip { position: relative; display: inline-block; }
+
+.mockup-tooltip__content {
+  background: linear-gradient(180deg, #505050 0%, #2A2A2A 100%);
+  color: #FFFFFF;
+  padding: 6px 12px;
+  border-radius: var(--skeu-radius-sm);
+  font-size: 12px;
+  white-space: nowrap;
+  border: 1px solid #1A1A1A;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.15);
+  text-shadow: 0 -1px 0 rgba(0,0,0,0.5);
+}
+
+/* ── Search Bar ────────────────────────────────────────────────────────── */
+
+.mockup-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 1px solid #9A9A9A;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #E0E0E0 0%, #F0F0EE 100%);
+  box-shadow: var(--skeu-shadow-inset);
+  width: 100%;
+}
+
+.mockup-search-bar__icon { display: flex; flex-shrink: 0; color: var(--skeu-text-muted); }
+.mockup-search-bar__input { font-size: 14px; color: var(--skeu-text-muted); }
+
+/* ── Login Form ────────────────────────────────────────────────────────── */
+
+.mockup-login { display: flex; flex-direction: column; gap: 16px; padding: 28px; width: 100%; }
+
+.mockup-login__title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--skeu-text-primary);
+  text-align: center;
+  margin-bottom: 8px;
+  text-shadow: var(--skeu-text-emboss);
+}
+
+.mockup-login__field { width: 100%; }
+.mockup-login__forgot { font-size: 13px; color: #2D7DD2; text-align: right; }
+.mockup-login__action { margin-top: 8px; }
+.mockup-login__action .mockup-button { width: 100%; }
+
+/* ── Header ────────────────────────────────────────────────────────────── */
+
+.mockup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  background: linear-gradient(180deg, #E8E8E8 0%, #C8C8C8 100%);
+  border-bottom: 1px solid #A0A0A0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.7);
+  width: 100%;
+}
+
+.mockup-header__logo { font-size: 18px; font-weight: 700; color: var(--skeu-text-primary); text-shadow: var(--skeu-text-emboss); }
+.mockup-header__nav { display: flex; gap: 18px; }
+.mockup-header__nav-item { font-size: 14px; color: var(--skeu-text-secondary); cursor: pointer; text-shadow: 0 1px 0 rgba(255,255,255,0.5); }
+.mockup-header__right { display: flex; align-items: center; }
+
+/* ── Footer ────────────────────────────────────────────────────────────── */
+
+.mockup-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 20px;
+  background: linear-gradient(180deg, #D0D0D0 0%, #B8B8B8 100%);
+  border-top: 1px solid #A0A0A0;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.5);
+  width: 100%;
+}
+
+.mockup-footer__links { display: flex; gap: 18px; }
+.mockup-footer__link { font-size: 13px; color: #2D7DD2; cursor: pointer; text-shadow: 0 1px 0 rgba(255,255,255,0.5); }
+.mockup-footer__text { font-size: 12px; color: var(--skeu-text-muted); text-shadow: 0 1px 0 rgba(255,255,255,0.4); }
+
+/* ── Data Table ────────────────────────────────────────────────────────── */
+
+.mockup-data-table {
+  width: 100%;
+  border: 1px solid #C0C0C0;
+  border-radius: var(--skeu-radius-md);
+  overflow: hidden;
+  box-shadow: var(--skeu-shadow-raised);
+}
+
+.mockup-data-table__toolbar { padding: 9px 14px; border-bottom: 1px solid #CCCCCC; background: linear-gradient(180deg, #F0F0F0 0%, #E4E4E4 100%); }
+
+.mockup-data-table__search {
+  padding: 6px 10px;
+  border: 1px solid #9A9A9A;
+  border-radius: var(--skeu-radius-sm);
+  font-size: 13px;
+  color: var(--skeu-text-muted);
+  background: linear-gradient(180deg, #E0E0E0 0%, #F4F4F2 100%);
+  box-shadow: var(--skeu-shadow-inset);
+}
+
+.mockup-data-table__th {
+  padding: 9px 14px;
+  text-align: left;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--skeu-text-primary);
+  background: linear-gradient(180deg, #DCDCDC 0%, #C4C4C4 100%);
+  border-bottom: 2px solid #A8A8A8;
+  text-shadow: var(--skeu-text-emboss);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+}
+
+.mockup-data-table__sort { font-size: 8px; margin-left: 4px; color: var(--skeu-text-muted); }
+.mockup-data-table__td { padding: 9px 14px; border-bottom: 1px solid #E0E0E0; font-size: 14px; background: var(--skeu-paper); }
+.mockup-data-table__row:last-child .mockup-data-table__td { border-bottom: none; }
+.mockup-data-table__row:nth-child(even) .mockup-data-table__td { background: #F4F4F0; }
+
+.mockup-data-table__pagination {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  font-size: 13px;
+  color: var(--skeu-text-secondary);
+  background: linear-gradient(180deg, #F0F0F0 0%, #E4E4E4 100%);
+  border-top: 1px solid #CCCCCC;
+}
+
+.mockup-data-table__page-btn { cursor: pointer; padding: 3px 8px; color: #2D7DD2; border: 1px solid #B0B0B0; border-radius: 4px; background: linear-gradient(180deg, #EEEEEE 0%, #DCDCDC 100%); box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+
+/* ── Chart Placeholder ─────────────────────────────────────────────────── */
+
+.mockup-chart {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #C0C0C0;
+  border-radius: var(--skeu-radius-md);
+  background: var(--skeu-paper);
+  overflow: hidden;
+  box-shadow: var(--skeu-shadow-raised);
+}
+
+.mockup-chart__title {
+  padding: 12px 18px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--skeu-text-primary);
+  border-bottom: 1px solid #DDDDDD;
+  background: linear-gradient(180deg, #F0F0F0 0%, #E4E4E4 100%);
+  text-shadow: var(--skeu-text-emboss);
+}
+
+.mockup-chart__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+}
+
+.mockup-chart__label { font-size: 12px; color: var(--skeu-text-muted); text-transform: capitalize; text-shadow: 0 1px 0 rgba(255,255,255,0.6); }
+
+/* ── Form ──────────────────────────────────────────────────────────────── */
+
+.mockup-form { display: flex; flex-direction: column; gap: 16px; padding: 22px; background: var(--skeu-paper); border: 1px solid #C0C0C0; border-radius: var(--skeu-radius-md); box-shadow: var(--skeu-shadow-raised); }
+
+/* ── Hero ──────────────────────────────────────────────────────────────── */
+
+.mockup-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 32px;
+  width: 100%;
+  text-align: center;
+  background: linear-gradient(180deg, #D8E4EA 0%, #C0D0D9 100%);
+  border-bottom: 1px solid #A8B8C4;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.6);
+}
+
+.mockup-hero__title { font-size: 34px; font-weight: 700; color: var(--skeu-text-primary); margin-bottom: 14px; line-height: 1.2; text-shadow: var(--skeu-text-emboss); }
+.mockup-hero__subtitle { font-size: 16px; color: var(--skeu-text-secondary); margin-bottom: 24px; max-width: 500px; text-shadow: 0 1px 0 rgba(255,255,255,0.5); }
+
+/* ── Video placeholder ─────────────────────────────────────────────────── */
+
+.mockup-video { width: 100%; height: 100%; background: linear-gradient(135deg, #2A2A2A, #3A3A3A); border: 2px solid #1A1A1A; border-radius: var(--skeu-radius-md); display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.7); overflow: hidden; box-shadow: var(--skeu-shadow-deep); }
+
+/* ── Audio ─────────────────────────────────────────────────────────────── */
+
+.mockup-audio { width: 100%; padding: 12px 18px; background: linear-gradient(180deg, #E8E8E8 0%, #D4D4D4 100%); border: 1px solid #A8A8A8; border-radius: var(--skeu-radius-md); box-shadow: var(--skeu-shadow-raised); display: flex; align-items: center; gap: 12px; color: var(--skeu-text-secondary); }
+
+/* ── Map placeholder ───────────────────────────────────────────────────── */
+
+.mockup-map { width: 100%; height: 100%; background: linear-gradient(135deg, #C8D8C0 0%, #B8C8B0 100%); border: 1px solid #A0B0A0; border-radius: var(--skeu-radius-md); display: flex; align-items: center; justify-content: center; color: #4A6A4A; overflow: hidden; box-shadow: var(--skeu-shadow-raised); }
+
+/* ── Timeline ──────────────────────────────────────────────────────────── */
+
+.mockup-timeline { display: flex; flex-direction: column; gap: 0; padding: 8px 0; }
+.mockup-timeline__item { display: flex; gap: 14px; padding: 8px 0; }
+
+.mockup-timeline__dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #5B9BD5, #1A6BBF);
+  border: 2px solid #DDDDDD;
+  flex-shrink: 0;
+  margin-top: 3px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.4);
+}
+
+.mockup-timeline__line { width: 1px; background: #CCCCCC; flex-shrink: 0; }
+.mockup-timeline__content { flex: 1; }
+.mockup-timeline__title { font-size: 14px; font-weight: 600; color: var(--skeu-text-primary); text-shadow: var(--skeu-text-emboss); }
+.mockup-timeline__time { font-size: 12px; color: var(--skeu-text-muted); margin-top: 2px; text-shadow: 0 1px 0 rgba(255,255,255,0.5); }
+
+/* ── Calendar ──────────────────────────────────────────────────────────── */
+
+.mockup-calendar { border: 1px solid #C0C0C0; border-radius: var(--skeu-radius-md); background: var(--skeu-paper); overflow: hidden; box-shadow: var(--skeu-shadow-raised); }
+.mockup-calendar__header { display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; border-bottom: 1px solid #CCCCCC; background: linear-gradient(180deg, #E8E8E8 0%, #D0D0D0 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.7); }
+.mockup-calendar__month { font-size: 15px; font-weight: 700; color: var(--skeu-text-primary); text-shadow: var(--skeu-text-emboss); }
+.mockup-calendar__nav { font-size: 14px; cursor: pointer; color: #2D7DD2; }
+.mockup-calendar__grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; padding: 12px; }
+.mockup-calendar__day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--skeu-text-secondary); border-radius: 50%; cursor: pointer; }
+.mockup-calendar__day--today { background: radial-gradient(circle at 40% 30%, #5B9BD5, #1A6BBF); color: #FFFFFF; box-shadow: 0 3px 8px rgba(29,90,160,0.5); }
+.mockup-calendar__day--selected { background: linear-gradient(180deg, #E8F0F8 0%, #D8E8F4 100%); color: #2D7DD2; border: 1px solid #B0C8E0; }
+.mockup-calendar__day--other-month { color: #C0C0C0; }
+
+/* ── Divider ───────────────────────────────────────────────────────────── */
+
+/* Double-line divider — engraved look mimicking CNC-machined aluminum */
+.mockup-divider { width: 100%; height: 2px; background: linear-gradient(180deg, #B0B0B0 0%, #F0F0F0 100%); }
+.mockup-divider--vertical { width: 2px; height: 100%; background: linear-gradient(90deg, #B0B0B0 0%, #F0F0F0 100%); }
+
+/* ── Pagination ────────────────────────────────────────────────────────── */
+
+.mockup-pagination { display: flex; align-items: center; gap: 4px; }
+.mockup-pagination__item { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 13px; border-radius: var(--skeu-radius-sm); color: var(--skeu-text-secondary); border: 1px solid #B0B0B0; background: linear-gradient(180deg, #EEEEEE 0%, #DCDCDC 100%); cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.6); text-shadow: 0 1px 0 rgba(255,255,255,0.5); }
+.mockup-pagination__item--active { background: linear-gradient(180deg, #5B9BD5 0%, #1A6BBF 100%); color: #FFFFFF; border-color: #1350A0; box-shadow: 0 3px 8px rgba(29,90,160,0.4), inset 0 1px 0 rgba(255,255,255,0.3); text-shadow: 0 -1px 0 rgba(0,0,0,0.3); }
+
+/* ── Tabs ──────────────────────────────────────────────────────────────── */
+
+.mockup-tabs { display: flex; flex-direction: column; }
+.mockup-tabs__list { display: flex; background: linear-gradient(180deg, #DCDCDC 0%, #C8C8C8 100%); border-bottom: 2px solid #A0A0A0; }
+.mockup-tabs__tab { padding: 10px 22px; font-size: 14px; color: var(--skeu-text-secondary); cursor: pointer; border-right: 1px solid #C0C0C0; text-shadow: 0 1px 0 rgba(255,255,255,0.5); box-shadow: inset 0 1px 0 rgba(255,255,255,0.4); }
+.mockup-tabs__tab--active { color: var(--skeu-text-primary); font-weight: 700; background: var(--skeu-paper); border-bottom: 2px solid var(--skeu-paper); margin-bottom: -2px; text-shadow: var(--skeu-text-emboss); box-shadow: 0 -1px 4px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.9); }
+.mockup-tabs__panel { padding: 16px 0; }
+
+/* ── Dropdown ──────────────────────────────────────────────────────────── */
+
+.mockup-dropdown { position: relative; display: inline-block; }
+.mockup-dropdown__menu { background: var(--skeu-paper); border: 1px solid #B0B0B0; border-radius: var(--skeu-radius-md); overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.8); }
+.mockup-dropdown__item { padding: 10px 18px; font-size: 14px; color: var(--skeu-text-primary); cursor: pointer; border-bottom: 1px solid #E8E8E8; text-shadow: 0 1px 0 rgba(255,255,255,0.6); }
+.mockup-dropdown__item:last-child { border-bottom: none; }
+.mockup-dropdown__item--active { background: linear-gradient(180deg, #5B9BD5 0%, #2D7DD2 100%); color: #FFFFFF; text-shadow: 0 -1px 0 rgba(0,0,0,0.3); border-bottom-color: #1A6BBF; }

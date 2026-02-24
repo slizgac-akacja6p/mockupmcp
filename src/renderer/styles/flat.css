@@ -1,24 +1,43 @@
-/* Flat/Metro palette — vibrant colors do the heavy lifting; zero shadows, zero gradients */
+/* Flat/Metro — updated to Material You / Tailwind-aligned palette (2024+).
+   Color only; zero shadows, zero gradients remain the core constraint. */
 :root {
-  --color-primary:              #2196F3;
-  --color-primary-light:        #E3F2FD;
-  --color-primary-dark:         #1565C0;
-  --color-success:              #4CAF50;
-  --color-success-light:        #E8F5E9;
-  --color-warning:              #FF9800;
-  --color-warning-light:        #FFF3E0;
-  --color-error:                #F44336;
-  --color-error-light:          #FFEBEE;
-  --color-accent:               #9C27B0;
-  --color-text-primary:         #212121;
-  --color-text-secondary:       #757575;
-  --color-text-placeholder:     #9E9E9E;
-  --color-border:               #E0E0E0;
-  --color-bg-light:             #F5F5F5;
+  /* Primary: Tailwind Blue-500 replaces old Material Blue — higher contrast, more neutral */
+  --color-primary:              #3B82F6;
+  --color-primary-light:        #EFF6FF;
+  --color-primary-dark:         #1D4ED8;
+
+  /* Secondary: Emerald-500 — distinct hue family from primary */
+  --color-secondary:            #10B981;
+  --color-secondary-light:      #ECFDF5;
+
+  /* Accent: Violet-500 */
+  --color-accent:               #8B5CF6;
+  --color-accent-light:         #F5F3FF;
+
+  /* Semantic */
+  --color-success:              #22C55E;
+  --color-success-light:        #F0FDF4;
+  --color-warning:              #F59E0B;
+  --color-warning-light:        #FFFBEB;
+  --color-error:                #EF4444;
+  --color-error-light:          #FEF2F2;
+
+  /* Neutrals: Slate scale — warmer than pure grays */
+  --color-text-primary:         #0F172A;
+  --color-text-secondary:       #475569;
+  --color-text-placeholder:     #94A3B8;
+  --color-border:               #E2E8F0;
+  --color-border-strong:        #CBD5E1;
+  --color-bg-light:             #F8FAFC;
   --color-bg-white:             #FFFFFF;
-  --color-btn-primary-bg:       #2196F3;
+
+  /* Button aliases kept for backward compat */
+  --color-btn-primary-bg:       #3B82F6;
   --color-btn-primary-fg:       #FFFFFF;
-  --color-disabled:             #BDBDBD;
+  --color-disabled:             #CBD5E1;
+
+  /* Transition — global for hover consistency */
+  --flat-transition:            0.15s ease;
 }
 
 * {
@@ -28,7 +47,7 @@
 }
 
 body {
-  font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+  font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
   color: var(--color-text-primary);
   background: var(--color-bg-white);
 }
@@ -39,13 +58,14 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
+  border-radius: 6px;
   border: 1px solid transparent;
   font-family: inherit;
   cursor: pointer;
   font-weight: 500;
   line-height: 1;
   white-space: nowrap;
+  transition: background var(--flat-transition), color var(--flat-transition), border-color var(--flat-transition);
 }
 
 /* sizes */
@@ -61,12 +81,12 @@ body {
 }
 
 .mockup-button--secondary {
-  background: var(--color-primary-light);
-  color:      var(--color-primary);
-  border-color: var(--color-primary-light);
+  background: var(--color-secondary);
+  color:      #FFFFFF;
+  border-color: var(--color-secondary);
 }
 
-/* Outline uses primary blue — flat design relies on color, not depth */
+/* Outline uses primary — flat design relies on color, not depth */
 .mockup-button--outline {
   background: transparent;
   color:      var(--color-primary);
@@ -85,12 +105,13 @@ body {
   display: block;
   width: 100%;
   padding: 8px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 6px;
   font-family: inherit;
   font-size: 14px;
   color: var(--color-text-placeholder);
   background: var(--color-bg-white);
+  transition: border-color var(--flat-transition);
 }
 
 .mockup-input-label {
@@ -109,7 +130,7 @@ body {
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 12px 16px;
+  padding: 12px 20px;
   border-bottom: none;
   background: var(--color-primary);
 }
@@ -165,7 +186,7 @@ body {
 .mockup-card {
   border: 1px solid var(--color-border);
   border-top: 3px solid var(--color-primary);
-  border-radius: 4px;
+  border-radius: 8px;
   background: var(--color-bg-white);
   overflow: hidden;
 }
@@ -381,6 +402,7 @@ body {
   color: var(--color-primary);
   font-weight: 600;
   background: var(--color-primary-light);
+  border-right: 3px solid var(--color-primary);
 }
 
 /* ── Breadcrumb ────────────────────────────────────────────────────────── */
@@ -659,3 +681,97 @@ body {
 }
 
 .mockup-chart__label { font-size: 12px; color: var(--color-text-placeholder); text-transform: capitalize; }
+
+/* ── Form ──────────────────────────────────────────────────────────────── */
+
+.mockup-form { display: flex; flex-direction: column; gap: 16px; padding: 20px; background: var(--color-bg-white); border: 1px solid var(--color-border); border-radius: 8px; }
+
+/* ── Hero ──────────────────────────────────────────────────────────────── */
+
+/* Hero background uses accent color block — flat, zero gradient */
+.mockup-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 32px;
+  width: 100%;
+  text-align: center;
+  background: var(--color-primary);
+  border-bottom: none;
+}
+
+.mockup-hero__title { font-size: 34px; font-weight: 700; color: #FFFFFF; margin-bottom: 14px; line-height: 1.2; }
+.mockup-hero__subtitle { font-size: 16px; color: rgba(255,255,255,0.82); margin-bottom: 24px; max-width: 500px; }
+
+/* ── Video placeholder ─────────────────────────────────────────────────── */
+
+.mockup-video { width: 100%; height: 100%; background: var(--color-bg-light); border: 1px solid var(--color-border); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: var(--color-text-secondary); overflow: hidden; }
+
+/* ── Audio ─────────────────────────────────────────────────────────────── */
+
+.mockup-audio { width: 100%; padding: 12px 16px; background: var(--color-bg-light); border: 1px solid var(--color-border); border-radius: 6px; display: flex; align-items: center; gap: 12px; color: var(--color-text-secondary); }
+
+/* ── Map placeholder ───────────────────────────────────────────────────── */
+
+.mockup-map { width: 100%; height: 100%; background: var(--color-bg-light); border: 1px solid var(--color-border); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: var(--color-text-placeholder); overflow: hidden; }
+
+/* ── Timeline ──────────────────────────────────────────────────────────── */
+
+.mockup-timeline { display: flex; flex-direction: column; gap: 0; padding: 8px 0; }
+.mockup-timeline__item { display: flex; gap: 14px; padding: 8px 0; }
+
+/* Primary dot carries the timeline semantic color — no shadows */
+.mockup-timeline__dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.mockup-timeline__line { width: 2px; background: var(--color-border); flex-shrink: 0; }
+.mockup-timeline__content { flex: 1; }
+.mockup-timeline__title { font-size: 14px; font-weight: 500; color: var(--color-text-primary); }
+.mockup-timeline__time { font-size: 12px; color: var(--color-text-placeholder); margin-top: 2px; }
+
+/* ── Calendar ──────────────────────────────────────────────────────────── */
+
+.mockup-calendar { border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-bg-white); overflow: hidden; }
+.mockup-calendar__header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--color-border); background: var(--color-primary); }
+.mockup-calendar__month { font-size: 15px; font-weight: 600; color: #FFFFFF; }
+.mockup-calendar__nav { font-size: 14px; cursor: pointer; color: rgba(255,255,255,0.85); }
+.mockup-calendar__grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; padding: 12px; }
+.mockup-calendar__day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--color-text-secondary); border-radius: 4px; cursor: pointer; }
+.mockup-calendar__day--today { background: var(--color-primary); color: #FFFFFF; }
+.mockup-calendar__day--selected { background: var(--color-primary-light); color: var(--color-primary); font-weight: 600; }
+.mockup-calendar__day--other-month { color: var(--color-text-placeholder); }
+
+/* ── Divider ───────────────────────────────────────────────────────────── */
+
+.mockup-divider { width: 100%; height: 1px; background: var(--color-border); }
+.mockup-divider--vertical { width: 1px; height: 100%; }
+
+/* ── Pagination ────────────────────────────────────────────────────────── */
+
+.mockup-pagination { display: flex; align-items: center; gap: 4px; }
+.mockup-pagination__item { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 13px; border-radius: 4px; color: var(--color-text-secondary); border: 1px solid var(--color-border); background: var(--color-bg-white); cursor: pointer; transition: background var(--flat-transition), color var(--flat-transition); }
+.mockup-pagination__item--active { background: var(--color-primary); color: #FFFFFF; border-color: var(--color-primary); }
+
+/* ── Tabs ──────────────────────────────────────────────────────────────── */
+
+.mockup-tabs { display: flex; flex-direction: column; }
+.mockup-tabs__list { display: flex; border-bottom: 2px solid var(--color-border); }
+.mockup-tabs__tab { padding: 10px 20px; font-size: 14px; color: var(--color-text-secondary); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: color var(--flat-transition), border-color var(--flat-transition); }
+/* Active tab: primary border + color; no underline styling beyond the border */
+.mockup-tabs__tab--active { color: var(--color-primary); border-bottom-color: var(--color-primary); font-weight: 600; }
+.mockup-tabs__panel { padding: 16px 0; }
+
+/* ── Dropdown ──────────────────────────────────────────────────────────── */
+
+.mockup-dropdown { position: relative; display: inline-block; }
+.mockup-dropdown__menu { background: var(--color-bg-white); border: 1px solid var(--color-border); border-radius: 6px; overflow: hidden; }
+.mockup-dropdown__item { padding: 10px 16px; font-size: 14px; color: var(--color-text-primary); cursor: pointer; border-bottom: 1px solid var(--color-border); transition: background var(--flat-transition); }
+.mockup-dropdown__item:last-child { border-bottom: none; }
+.mockup-dropdown__item--active { background: var(--color-primary-light); color: var(--color-primary); font-weight: 500; }

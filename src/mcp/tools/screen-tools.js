@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { getAvailableStyles } from '../../renderer/styles/index.js';
 
 export async function registerScreenTools(server, store) {
   server.tool(
@@ -15,7 +16,7 @@ export async function registerScreenTools(server, store) {
         .default('#FFFFFF')
         .describe('Background color (hex), defaults to #FFFFFF'),
       style: z
-        .enum(['wireframe', 'material', 'ios'])
+        .enum(getAvailableStyles())
         .optional()
         .describe('Style override for this screen (defaults to project style)'),
     },
@@ -112,7 +113,7 @@ export async function registerScreenTools(server, store) {
       description: z.string().describe('Natural language screen description, e.g. "login screen with email and password fields"'),
       name: z.string().optional().describe('Screen name (auto-derived from description if omitted)'),
       style: z
-        .enum(['wireframe', 'material', 'ios'])
+        .enum(getAvailableStyles())
         .optional()
         .describe('Style override (defaults to project style)'),
     },
