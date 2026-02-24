@@ -114,17 +114,23 @@ const LINK_SCRIPT = `
       if (transition === 'none') {
         currentScreen.replaceWith(newScreen);
       } else {
-        newScreen.style.position = 'absolute';
-        newScreen.style.top = '0';
-        newScreen.style.left = currentScreen.offsetLeft + 'px';
-        currentScreen.parentNode.style.position = 'relative';
-        currentScreen.parentNode.style.overflow = 'hidden';
-
         const suffix = isBack ? '-back' : '';
         const outClass = transition === 'fade' ? 'trans-fade-out' : ('trans-' + transition + suffix + '-out');
         const inClass = transition === 'fade' ? 'trans-fade-in' : ('trans-' + transition + suffix + '-in');
 
-        currentScreen.parentNode.appendChild(newScreen);
+        // Wrapper div replaces body-as-container to avoid PREVIEW_STYLE
+        // overflow:visible !important overriding JS-set overflow:hidden,
+        // and to eliminate the body padding offset bug in Safari.
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'width:' + currentScreen.offsetWidth + 'px;height:' + currentScreen.offsetHeight + 'px;position:relative;overflow:hidden;flex-shrink:0;';
+        currentScreen.parentNode.insertBefore(wrapper, currentScreen);
+        wrapper.appendChild(currentScreen);
+
+        newScreen.style.position = 'absolute';
+        newScreen.style.top = '0';
+        newScreen.style.left = '0';
+        wrapper.appendChild(newScreen);
+
         currentScreen.classList.add(outClass);
         newScreen.classList.add(inClass);
 
@@ -132,15 +138,14 @@ const LINK_SCRIPT = `
 
         currentScreen.remove();
         newScreen.classList.remove(inClass);
+
+        // Move newScreen back into normal flex flow where wrapper was.
+        wrapper.parentNode.insertBefore(newScreen, wrapper);
+        wrapper.remove();
+
         newScreen.style.position = '';
         newScreen.style.left = '';
         newScreen.style.top = '';
-        // Clean up the temporary container styles set for the animation.
-        // Leaving position:relative and overflow:hidden on body breaks the
-        // preview layout and causes zoom (transform:scale) to mis-clip
-        // absolute-positioned elements inside the screen.
-        newScreen.parentNode.style.position = '';
-        newScreen.parentNode.style.overflow = '';
       }
 
       // Bug A: update toolbar title to reflect the newly loaded screen.
