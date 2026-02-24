@@ -57,6 +57,7 @@ src/
   codegen/              # Code generation: html, react, swiftui, flutter, flow
   preview/
     server.js           # Express preview server (port 3100)
+    editor/             # 6 client-side editor modules (canvas, palette, inspector, sync, toolbar, orchestrator)
     templates/
       preview-page.html
 tests/

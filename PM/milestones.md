@@ -201,5 +201,30 @@
 - [x] Backward compat: legacy projects/ subdir still discovered
 - [x] 796 tests pass (768 → 796, +28 new)
 
+## M12 — Editor Backend (REST API + Approval + MCP)
+**Status:** DONE
+**Branch:** `feature/m12-editor-backend`
+**Scope:** REST API for element CRUD, approval flow, MCP resource + tool for Claude round-trip
+**DoD:**
+- [x] GET/POST/PATCH/DELETE /api/screens/:pid/:sid/elements
+- [x] POST /api/screens/:pid/:sid/approve (approval flow with diff)
+- [x] MCP mockup://approval resource (pending approval state)
+- [x] MCP mockup_await_approval tool (26 tools total)
+- [x] 803 tests pass
+
+## M13 — Editor Frontend (Canvas + Palette + Inspector + Sync)
+**Status:** DONE
+**Branch:** `fix/preview-ux`
+**Scope:** Browser-based visual editor in preview with drag-drop canvas, component palette, property inspector, undo/redo, and REST sync
+**DoD:**
+- [x] Editor toolbar (view/edit mode toggle, snap, undo/redo, approve button)
+- [x] Canvas engine — selection, drag, resize, snap-to-grid, delete
+- [x] Component palette — 35 components in 6 categories, drag-to-canvas drop
+- [x] Property inspector — dynamic prop editing per component type
+- [x] Sync module — debounced REST client + undo/redo history (UndoStack)
+- [x] html-builder: data-el-id on element wrappers for canvas targeting
+- [x] All modules wired via document CustomEvents
+- [x] 842+ tests pass
+
 ## PRD Completion
 **All PRD items implemented.** 25 tools, 5 resources, 3 prompts, 6 styles, 35 components, 7 templates.

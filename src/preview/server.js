@@ -1,17 +1,30 @@
 import express from 'express';
+import { fileURLToPath } from 'url';
+import { dirname as pathDirname, join as pathJoin } from 'path';
 import { ProjectStore } from '../storage/project-store.js';
 import { buildScreenHtml } from '../renderer/html-builder.js';
+import { loadStyle } from '../renderer/styles/index.js';
+import { getAvailableTypes, getComponent } from '../renderer/components/index.js';
 import { config } from '../config.js';
-import { registerElementsApi } from './routes/elements-api.js';
-import { registerApprovalApi } from './routes/approval-api.js';
 
 // Centered background styling injected into every preview page so the mockup
 // renders on a neutral canvas without modifying the stored screen data.
+// Layout mirrors the editor canvas: gray background, centered screen with shadow.
+// Sidebar margin-left comes from SIDEBAR_CSS (260px / 40px collapsed).
 const PREVIEW_STYLE = `
 <style>
-  html { background: #E0E0E0; min-height: 100vh; display: flex; justify-content: center; padding: 20px; }
-  body { display: flex; justify-content: center; }
-  .screen { box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+  html { background: #e8e8e8; min-height: 100vh; }
+  body {
+    display: flex; justify-content: center; align-items: flex-start;
+    width: auto !important; height: auto !important;
+    margin-left: 260px; margin-right: 24px;
+    padding: 68px 24px 20px;
+    min-height: calc(100vh - 68px);
+    overflow-x: hidden;
+    overflow: visible !important;
+  }
+  body.sidebar-collapsed { margin-left: 40px; }
+  .screen { box-shadow: 0 4px 16px rgba(0,0,0,0.18); }
 </style>`;
 
 // CSS keyframe animations for screen-to-screen transitions (push, fade, slide-up).
@@ -140,13 +153,174 @@ const LINK_SCRIPT = `
   })();
 <\/script>`;
 
-// Fixed back button lets designers navigate the flow history without browser chrome.
-const BACK_BUTTON = `
-<div style="position:fixed;top:10px;left:10px;z-index:9999;">
-  <button onclick="history.back()" style="padding:4px 12px;font-size:12px;border:1px solid #999;border-radius:4px;background:#fff;cursor:pointer;opacity:0.8;">
-    Back
-  </button>
+// Shared zoom CSS injected into both preview and editor pages.
+// Zoom is applied via transform:scale so the mockup layout is unaffected.
+const ZOOM_CSS = `
+<style>
+  .zoom-controls {
+    display: flex; align-items: center; gap: 2px;
+  }
+  .zoom-btn {
+    width: 26px; height: 26px; border: 1px solid #dee2e6; border-radius: 4px;
+    background: #fff; cursor: pointer; font-size: 14px; font-weight: 600;
+    color: #495057; display: flex; align-items: center; justify-content: center;
+    transition: background 0.1s; padding: 0; line-height: 1;
+  }
+  .zoom-btn:hover { background: #e9ecef; }
+  .zoom-level {
+    min-width: 38px; text-align: center; font-size: 12px; font-weight: 500;
+    color: #495057; padding: 0 2px;
+  }
+  /* Preview toolbar — matches editor toolbar style */
+  #preview-toolbar {
+    position: fixed; top: 0; left: 260px; right: 0; height: 48px; z-index: 9999;
+    background: #f8f9fa; border-bottom: 1px solid #dee2e6;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    display: flex; align-items: center; padding: 0 16px; gap: 12px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px;
+    transition: left 0.3s;
+  }
+  #preview-toolbar .back-btn {
+    padding: 5px 10px; font-size: 12px; font-weight: 500;
+    border: 1px solid #dee2e6; border-radius: 5px;
+    background: #fff; color: #495057; cursor: pointer;
+    text-decoration: none; display: flex; align-items: center; gap: 4px;
+    transition: background 0.1s;
+  }
+  #preview-toolbar .back-btn:hover { background: #e9ecef; }
+  #preview-toolbar .screen-name {
+    font-weight: 600; font-size: 14px; flex: 1; color: #212529;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  #preview-toolbar a.edit-link {
+    padding: 6px 14px; font-size: 12px; font-weight: 500;
+    border: none; border-radius: 5px;
+    background: #4A90D9; color: #fff; text-decoration: none;
+    transition: background 0.15s; white-space: nowrap;
+  }
+  #preview-toolbar a.edit-link:hover { background: #3a7bc8; }
+  body.sidebar-collapsed #preview-toolbar { left: 40px; }
+  @media (max-width: 768px) { #preview-toolbar { left: 0; } }
+</style>`;
+
+// Shared zoom JS injected into both preview and editor pages.
+// Reads screen id from data-screen-id on the toolbar or canvas element and
+// persists the chosen zoom level in localStorage so it survives page reloads.
+const ZOOM_JS = `
+<script>
+(function() {
+  var ZOOM_LEVELS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2];
+  var currentZoomIndex = 3; // default 100%
+
+  function getScreenId() {
+    var el = document.getElementById('preview-toolbar') || document.getElementById('editor-canvas');
+    return el ? (el.dataset.screenId || '') : '';
+  }
+
+  function applyZoom(scale) {
+    var screen = document.querySelector('.screen');
+    if (!screen) return;
+    screen.style.transform = 'scale(' + scale + ')';
+    screen.style.transformOrigin = 'top center';
+    var lvlEl = document.querySelector('.zoom-level');
+    if (lvlEl) lvlEl.textContent = Math.round(scale * 100) + '%';
+    var sid = getScreenId();
+    if (sid) localStorage.setItem('mockup-zoom-' + sid, String(scale));
+  }
+
+  function fitToScreen() {
+    var screen = document.querySelector('.screen');
+    if (!screen) return;
+
+    // Determine available canvas dimensions based on active layout mode.
+    // Both editor and preview reserve 320px right margin for consistent layout.
+    // Editor shows the property panel there; preview keeps the space empty.
+    var sidebar = document.getElementById('mockup-sidebar');
+    var sidebarW = (sidebar && sidebar.classList.contains('collapsed')) ? 40 : 260;
+    var toolbarH = 48;
+    var panelEl = document.getElementById("property-panel") || document.querySelector(".property-panel"); var panelW = panelEl ? panelEl.offsetWidth : 0;
+    var padW = 48;  // horizontal padding inside the canvas area
+    var padH = 40;  // vertical padding below toolbar
+
+    // On mobile the sidebar is off-screen, so don't subtract its width.
+    if (window.innerWidth <= 768) sidebarW = 0;
+
+    var availW = window.innerWidth - sidebarW - panelW - padW;
+    var availH = window.innerHeight - toolbarH - padH;
+
+    // Read the screen's intrinsic (un-scaled) dimensions from inline style so
+    // the calculation is independent of the current transform value.
+    var screenW = parseInt(screen.style.width, 10) || screen.offsetWidth || 390;
+    var screenH = parseInt(screen.style.height, 10) || screen.offsetHeight || 844;
+
+    // Fit both axes — use the more constraining dimension.
+    var scale = Math.min(availW / screenW, availH / screenH);
+    scale = Math.max(0.1, Math.min(scale, 3));
+
+    var lvlEl = document.querySelector('.zoom-level');
+    if (lvlEl) lvlEl.textContent = Math.round(scale * 100) + '%';
+    screen.style.transform = 'scale(' + scale + ')';
+    screen.style.transformOrigin = 'top center';
+    var sid = getScreenId();
+    if (sid) localStorage.setItem('mockup-zoom-' + sid, String(scale));
+  }
+
+  function init() {
+    var sid = getScreenId();
+    var saved = sid ? localStorage.getItem('mockup-zoom-' + sid) : null;
+    if (saved) {
+      var savedScale = parseFloat(saved);
+      if (!isNaN(savedScale)) {
+        var idx = ZOOM_LEVELS.indexOf(savedScale);
+        if (idx !== -1) currentZoomIndex = idx;
+        applyZoom(savedScale);
+      }
+    }
+
+    document.addEventListener('click', function(e) {
+      var btn = e.target.closest('.zoom-btn');
+      if (!btn) return;
+      var action = btn.dataset.zoom;
+      if (action === 'in') {
+        currentZoomIndex = Math.min(currentZoomIndex + 1, ZOOM_LEVELS.length - 1);
+        applyZoom(ZOOM_LEVELS[currentZoomIndex]);
+      } else if (action === 'out') {
+        currentZoomIndex = Math.max(currentZoomIndex - 1, 0);
+        applyZoom(ZOOM_LEVELS[currentZoomIndex]);
+      } else if (action === 'fit') {
+        fitToScreen();
+      }
+    });
+  }
+
+  // Run after DOM is ready — may already be ready if deferred.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+<\/script>`;
+
+// Zoom controls HTML snippet — embedded in both preview and editor toolbars.
+const ZOOM_CONTROLS_HTML = `<div class="zoom-controls">
+    <button class="zoom-btn" data-zoom="out" title="Zoom out">&minus;</button>
+    <span class="zoom-level">100%</span>
+    <button class="zoom-btn" data-zoom="in" title="Zoom in">+</button>
+    <button class="zoom-btn" style="min-width:32px;font-size:11px;" data-zoom="fit" title="Fit to width">Fit</button>
+  </div>`;
+
+// Preview toolbar replaces the old scattered BACK_BUTTON + buildEditButton overlay.
+// Styled to match the editor toolbar for visual consistency between modes.
+function buildPreviewToolbar(projectId, screenId, screenName) {
+  return `
+<div id="preview-toolbar" data-screen-id="${screenId}">
+  <button class="back-btn" onclick="history.back()">&#8592; Back</button>
+  <span class="screen-name">${screenName}</span>
+  ${ZOOM_CONTROLS_HTML}
+  <a class="edit-link" href="/editor/${projectId}/${screenId}">Edit</a>
 </div>`;
+}
 
 function buildReloadScript(projectId, updatedAt) {
   // Polling rather than WebSockets keeps the server stateless and avoids
@@ -172,7 +346,7 @@ const SIDEBAR_CSS = `
 <style>
   #mockup-sidebar {
     position: fixed; top: 0; left: 0; bottom: 0; width: 260px;
-    background: #f5f5f5; border-right: 1px solid #ddd; z-index: 10000;
+    background: #f5f5f5; border-right: 1px solid #ddd; z-index: 9990;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: 13px; color: #333; overflow-y: auto;
     transition: transform 0.3s ease;
@@ -210,7 +384,7 @@ const SIDEBAR_CSS = `
     display: block; color: #555; border-radius: 4px; margin: 1px 8px;
   }
   .mockup-sidebar-screen:hover { background: #e0e0e0; }
-  .mockup-sidebar-screen.active { background: #d0d0ff; color: #333; font-weight: 500; }
+  .mockup-sidebar-screen.active { background: #d0e3f5; color: #1a5a9e; font-weight: 500; }
   body { margin-left: 260px; transition: margin-left 0.3s; }
   body.sidebar-collapsed { margin-left: 40px; }
   @media (max-width: 768px) {
@@ -239,6 +413,10 @@ const SIDEBAR_JS = `
   var toggle = document.getElementById('mockup-sidebar-toggle');
   var tree = document.getElementById('mockup-sidebar-tree');
   if (!sidebar) return;
+
+  // In editor mode screen links must stay within the editor — /editor/:pid/:sid.
+  // In all other contexts (preview, landing) use /preview/:pid/:sid.
+  var pathPrefix = window.location.pathname.startsWith('/editor') ? '/editor/' : '/preview/';
 
   // expandedNodes tracks both folder paths and project IDs so collapse/expand
   // state survives the periodic 3s re-render without losing user choices.
@@ -315,7 +493,7 @@ const SIDEBAR_JS = `
         for (var k = 0; k < proj.screens.length; k++) {
           var scr = proj.screens[k];
           var cls = scr.id === active.screenId ? ' active' : '';
-          items.push('<a class="mockup-sidebar-screen' + cls + '" href="\\/preview\\/' + proj.id + '\\/' + scr.id + '" style="padding-left:' + screenPad + 'px">' + escName(scr.name) + '<\\/a>');
+          items.push('<a class="mockup-sidebar-screen' + cls + '" href="' + pathPrefix + proj.id + '\\/' + scr.id + '" style="padding-left:' + screenPad + 'px">' + escName(scr.name) + '<\\/a>');
         }
       }
       items.push('<\\/div>');
@@ -393,11 +571,255 @@ const SIDEBAR_JS = `
 })();
 <\/script>`;
 
-function injectPreviewAssets(html, projectId, updatedAt) {
+// Returns an "Edit" button overlay injected into preview pages so designers
+// can jump directly from preview to the editor for the same screen.
+function buildEditButton(projectId, screenId) {
+  return `
+<div style="position:fixed;top:10px;right:10px;z-index:9999;">
+  <a href="/editor/${projectId}/${screenId}" style="padding:4px 12px;font-size:12px;border:1px solid #999;border-radius:4px;background:#fff;cursor:pointer;opacity:0.8;text-decoration:none;color:#333;">
+    Edit
+  </a>
+</div>`;
+}
+
+// Editor CSS: three-column layout (sidebar | canvas | property panel) with a
+// fixed toolbar. Uses editor- prefix to avoid clashing with mockup content styles.
+// Override SIDEBAR_CSS body rule so sidebar + toolbar + panel all cooperate in
+// the three-column layout (sidebar is already accounted for via margin-left on canvas/toolbar).
+const EDITOR_CSS = `
+<style>
+  /* Reset the sidebar's body margin — editor layout manages offsets explicitly */
+  body { margin: 0 !important; }
+
+  #editor-toolbar {
+    position: fixed; top: 0; left: 260px; right: 380px; height: 48px; z-index: 9999;
+    background: #f8f9fa; border-bottom: 1px solid #dee2e6;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    display: flex; align-items: center; padding: 0 16px; gap: 12px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px;
+  }
+  #editor-toolbar .screen-name {
+    font-weight: 600; font-size: 14px; flex: 1; color: #212529;
+  }
+  #editor-toolbar .edit-mode-badge {
+    font-size: 10px; font-weight: 500; color: #6c757d;
+    background: #e9ecef; border-radius: 3px; padding: 2px 6px;
+    text-transform: uppercase; letter-spacing: 0.4px;
+  }
+  #editor-toolbar a.preview-link {
+    padding: 6px 14px; font-size: 12px; font-weight: 500;
+    border: none; border-radius: 5px;
+    background: #4A90D9; color: #fff; text-decoration: none;
+    transition: background 0.15s;
+  }
+  #editor-toolbar a.preview-link:hover { background: #3a7bc8; }
+
+  #editor-canvas {
+    position: relative;  /* anchor for absolute-positioned resize handles */
+    /* Do NOT set overflow:hidden — selection outlines and drag handles extend
+       beyond the screen boundary and must not be clipped by the canvas. */
+    /* Offset for sidebar (260px) and property panel (280px) */
+    margin-left: 260px; margin-right: 380px; margin-top: 48px;
+    min-height: calc(100vh - 48px);
+    display: flex; align-items: flex-start; justify-content: center; padding: 20px 24px;
+    background: #e8e8e8;
+  }
+  /* Screen shadow matches preview mode — makes the mockup pop against the canvas.
+     overflow:visible lets selection outlines and resize handles bleed outside. */
+  #editor-canvas .screen { box-shadow: 0 4px 16px rgba(0,0,0,0.18); overflow: visible !important; }
+
+  #editor-property-panel {
+    position: fixed; top: 48px; right: 0; bottom: 0; width: 380px;
+    background: #fff; border-left: 1px solid #e0e0e0;
+    box-shadow: -4px 0 12px rgba(0,0,0,0.06);
+    z-index: 9998;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px;
+    overflow-y: auto;
+  }
+  #editor-property-panel .panel-header {
+    padding: 16px 24px 12px; border-bottom: 1px solid #dee2e6; margin-bottom: 0;
+    font-size: 13px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.5px; color: #495057; background: #f8f9fa;
+    position: sticky; top: 0; z-index: 1;
+  }
+  #editor-property-panel .panel-body { padding: 16px 24px 24px; }
+  #editor-property-panel .panel-placeholder {
+    color: #adb5bd; font-size: 12px; text-align: center; margin-top: 24px; line-height: 1.5;
+  }
+  .panel-group { margin-bottom: 16px; }
+  .panel-group-title {
+    font-size: 13px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.3px; color: #343a40;
+    padding: 14px 0 8px; border-top: 1px solid #e9ecef; margin-top: 4px;
+  }
+  .panel-group:first-child .panel-group-title { border-top: none; margin-top: 0; }
+  .panel-field { margin-bottom: 10px; }
+  .panel-field label {
+    display: block; font-size: 12px; color: #6c757d; margin-bottom: 4px;
+    font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;
+  }
+  .panel-field input[type="number"],
+  .panel-field input[type="text"],
+  .panel-field input[type="color"],
+  .panel-field select {
+    width: 100%; padding: 10px 12px; border: 1px solid #dee2e6; border-radius: 6px;
+    font-size: 14px; box-sizing: border-box; background: #fff;
+    transition: border-color 0.15s;
+  }
+  .panel-field input:focus, .panel-field select:focus {
+    border-color: #4A90D9; outline: none; box-shadow: 0 0 0 2px rgba(74,144,217,0.15);
+  }
+  .panel-field input:disabled {
+    background: #f8f9fa; color: #868e96;
+  }
+  /* Single-column layout for position fields — 2-column grid overflows the
+     280px panel because each cell must fit a label + slider + number input. */
+  .panel-position-grid {
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .panel-position-grid .panel-field { margin-bottom: 0; }
+  /* Hide default browser number spinners — inputs are large enough to type into */
+  .panel-field input[type="number"] { -moz-appearance: textfield; }
+  .panel-field input[type="number"]::-webkit-inner-spin-button,
+  .panel-field input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none; margin: 0;
+  }
+  /* Header row: label on left, number input on right */
+  .panel-field-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 4px;
+  }
+  .panel-field-header label { margin-bottom: 0; }
+  .panel-field-header input[type="number"] {
+    width: 80px; text-align: right; padding: 6px 10px;
+    border: 1px solid #dee2e6; border-radius: 6px;
+    font-size: 14px; font-weight: 500; background: #fff;
+  }
+  /* Slider below the header — stretches full panel width */
+  .panel-range-combo {
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .panel-range-combo input[type="range"] {
+    width: 100%; height: 4px; -webkit-appearance: none; appearance: none;
+    background: #dee2e6; border-radius: 2px; outline: none;
+  }
+  .panel-range-combo input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px;
+    border-radius: 50%; background: #4A90D9; cursor: pointer;
+    border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+  }
+  .element.selected { outline: 2px solid #4A90D9 !important; outline-offset: 1px; }
+
+  /* Editor toolbar action buttons (undo, redo, grid toggle) */
+  .toolbar-separator {
+    width: 1px; height: 24px; background: #dee2e6;
+  }
+  .toolbar-btn {
+    width: 32px; height: 32px; border: 1px solid #dee2e6; border-radius: 4px;
+    background: #fff; cursor: pointer; font-size: 16px; color: #495057;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, border-color 0.15s;
+    padding: 0;
+  }
+  .toolbar-btn:hover:not(:disabled) { background: #e9ecef; border-color: #adb5bd; }
+  .toolbar-btn:disabled { opacity: 0.4; cursor: default; }
+  .toolbar-btn-active { background: #e8f0fa; border-color: #a3c4e6; color: #2a6db5; }
+
+  body.sidebar-collapsed #editor-toolbar { left: 40px; }
+  body.sidebar-collapsed #editor-canvas { margin-left: 40px; }
+</style>`;
+
+// Build the component metadata blob that the editor's component-meta.js reads
+// from window.__COMPONENT_META__. Pre-computing this avoids a browser-side
+// import of server-only renderer modules (which would 404 in the browser).
+function buildComponentMetaJson() {
+  const types = getAvailableTypes();
+  const defaults = {};
+  for (const t of types) {
+    const comp = getComponent(t);
+    if (comp && typeof comp.defaults === 'function') {
+      defaults[t] = comp.defaults();
+    }
+  }
+  return JSON.stringify({ types, defaults });
+}
+
+// Full editor page layout: sidebar | canvas (with rendered screen) | property panel.
+// screenHtml is the raw fragment content (from buildScreenFragment) — not a full doc.
+// style param injects component-specific CSS so element styles (borders, etc.) render
+// correctly inside the editor canvas, matching what preview/screenshot produce.
+function buildEditorPage(screenHtml, projectId, screenId, projectName, screenName, style = 'wireframe') {
+  const componentMetaJson = buildComponentMetaJson();
+  // Component styles must come before EDITOR_CSS so editor rules can override them.
+  const componentStyle = `<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  .element > *:first-child { width: 100% !important; height: 100% !important; box-sizing: border-box; }
+  ${loadStyle(style)}
+</style>`;
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${screenName} — Editor</title>
+  ${SIDEBAR_CSS}
+  ${componentStyle}
+  ${EDITOR_CSS}
+  ${ZOOM_CSS}
+</head>
+<body>
+  ${SIDEBAR_HTML}
+  <div id="editor-toolbar">
+    <span class="screen-name">${screenName}</span>
+    <span class="edit-mode-badge">Edit mode</span>
+    <div class="toolbar-separator"></div>
+    <button id="btn-undo" class="toolbar-btn" title="Undo (Cmd+Z)" disabled>&#8630;</button>
+    <button id="btn-redo" class="toolbar-btn" title="Redo (Cmd+Shift+Z)" disabled>&#8631;</button>
+    <div class="toolbar-separator"></div>
+    <button id="btn-grid" class="toolbar-btn toolbar-btn-active" title="Snap to grid (8px)">&#8862;</button>
+    ${ZOOM_CONTROLS_HTML}
+    <a class="preview-link" href="/preview/${projectId}/${screenId}">Preview</a>
+  </div>
+  <div id="editor-canvas" data-project-id="${projectId}" data-screen-id="${screenId}">
+    ${screenHtml}
+  </div>
+  <div id="editor-property-panel">
+    <div class="panel-header">Properties</div>
+    <div class="panel-body">
+      <p class="panel-placeholder">Click an element to edit its properties</p>
+    </div>
+  </div>
+  ${SIDEBAR_JS}
+  ${ZOOM_JS}
+  <script>window.__COMPONENT_META__ = ${componentMetaJson};</script>
+  <script type="module">
+    import { initEditor } from '/editor/js/editor.js';
+    const canvas = document.getElementById('editor-canvas');
+    const panel = document.getElementById('editor-property-panel');
+    initEditor({
+      projectId: canvas.dataset.projectId,
+      screenId: canvas.dataset.screenId,
+      canvas,
+      panel,
+    });
+  </script>
+</body>
+</html>`;
+}
+
+function injectPreviewAssets(html, projectId, screenId, updatedAt, screenName) {
   // buildScreenHtml returns a full HTML document, so we inject into it
   // rather than nesting docs (which is invalid HTML).
-  html = html.replace('</head>', PREVIEW_STYLE + SIDEBAR_CSS + TRANSITION_CSS + '\n</head>');
-  html = html.replace('</body>', SIDEBAR_HTML + BACK_BUTTON + LINK_SCRIPT + SIDEBAR_JS + buildReloadScript(projectId, updatedAt) + '\n</body>');
+  html = html.replace('</head>', PREVIEW_STYLE + SIDEBAR_CSS + ZOOM_CSS + TRANSITION_CSS + '\n</head>');
+  html = html.replace('</body>',
+    SIDEBAR_HTML +
+    buildPreviewToolbar(projectId, screenId, screenName) +
+    LINK_SCRIPT +
+    SIDEBAR_JS +
+    buildReloadScript(projectId, updatedAt) +
+    ZOOM_JS +
+    '\n</body>',
+  );
   return html;
 }
 
@@ -411,110 +833,9 @@ function buildScreenFragment(screen, style) {
   return bodyMatch[1].trim();
 }
 
-// Landing page CSS and content for screen list display with build status.
-const LANDING_PAGE_CSS = `
-<style>
-  .mockup-landing-container {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    min-height: 80vh; color: #333; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  }
-  .mockup-landing-header {
-    text-align: center; margin-bottom: 24px;
-  }
-  .mockup-landing-header h1 {
-    margin: 0 0 4px 0; font-size: 24px; color: #333;
-  }
-  .mockup-landing-header p {
-    margin: 0; font-size: 14px; color: #999;
-  }
-  .mockup-screen-list {
-    list-style: none; padding: 0; margin: 0; max-width: 480px; width: 100%;
-  }
-  .mockup-screen-list li {
-    padding: 10px 16px; margin: 4px 0; border-radius: 6px;
-    font-size: 14px; border: 1px solid transparent;
-  }
-  .mockup-screen-list a {
-    color: #6366F1; text-decoration: none; display: flex;
-    justify-content: space-between; align-items: center; gap: 8px;
-  }
-  .mockup-screen-list a:hover {
-    background: rgba(99, 102, 241, 0.08); border-radius: 6px;
-  }
-  .mockup-screen-list .building {
-    color: #999; font-style: italic; display: flex;
-    justify-content: space-between; align-items: center; gap: 8px;
-  }
-  .mockup-screen-list .el-count {
-    color: #aaa; font-size: 12px; white-space: nowrap;
-  }
-  .mockup-screen-status {
-    display: inline-block; padding: 2px 8px; border-radius: 3px;
-    font-size: 11px; font-weight: 500; background: #f0f0f0; color: #999;
-  }
-  .mockup-project-group {
-    color: #666; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
-    padding: 16px 16px 4px 16px; font-weight: 600; margin-top: 8px;
-  }
-  .mockup-project-group:first-of-type {
-    margin-top: 0;
-  }
-  .mockup-no-projects {
-    text-align: center; color: #999;
-  }
-  .mockup-no-projects p {
-    margin: 12px 0;
-  }
-</style>`;
-
-// Standalone landing page shown at /preview — shows screen list with build status.
-function buildLandingPage(screenItems = []) {
-  let screenListHtml = '';
-
-  if (screenItems.length === 0) {
-    screenListHtml = `
-    <div class="mockup-no-projects">
-      <p>No projects yet</p>
-      <p style="font-size: 12px; color: #ccc;">Create a project to get started</p>
-    </div>`;
-  } else {
-    // Group by projectId (stable key) — display projName as label.
-    // Using projectId rather than projName avoids key collisions when two
-    // projects share the same display name.
-    const grouped = {};
-    for (const screen of screenItems) {
-      if (!grouped[screen.projectId]) {
-        grouped[screen.projectId] = { name: screen.projName, screens: [] };
-      }
-      grouped[screen.projectId].screens.push(screen);
-    }
-
-    const listItems = [];
-    for (const [, { name, screens }] of Object.entries(grouped)) {
-      listItems.push(`<div class="mockup-project-group">${escapeHtml(name)}</div>`);
-      for (const screen of screens) {
-        if (screen.elementCount > 0) {
-          listItems.push(`
-          <li>
-            <a href="/preview/${escapeHtml(screen.projectId)}/${escapeHtml(screen.screenId)}">
-              <span>${escapeHtml(screen.screenName)}</span>
-              <span class="el-count">${screen.elementCount} element${screen.elementCount === 1 ? '' : 's'}</span>
-            </a>
-          </li>`);
-        } else {
-          listItems.push(`
-          <li>
-            <div class="building">
-              <span>${escapeHtml(screen.screenName)}</span>
-              <span class="mockup-screen-status">building...</span>
-            </div>
-          </li>`);
-        }
-      }
-    }
-    screenListHtml = listItems.join('');
-  }
-
+// Standalone landing page shown at /preview — gives users an entry point
+// with the sidebar already rendered so they can pick a screen to view.
+function buildLandingPage() {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -523,69 +844,37 @@ function buildLandingPage(screenItems = []) {
   <title>MockupMCP Preview</title>
   ${PREVIEW_STYLE}
   ${SIDEBAR_CSS}
-  ${LANDING_PAGE_CSS}
 </head>
 <body>
   ${SIDEBAR_HTML}
-  <div class="mockup-landing-container">
-    <div class="mockup-landing-header">
-      <h1>Mockups</h1>
-      <p>Select a screen to preview</p>
-    </div>
-    <ul class="mockup-screen-list">
-      ${screenListHtml}
-    </ul>
+  <div style="display:flex;align-items:center;justify-content:center;height:80vh;color:#999;font-family:-apple-system,sans-serif;font-size:18px;">
+    Select a screen from the sidebar to preview
   </div>
   ${SIDEBAR_JS}
 </body>
 </html>`;
 }
 
-// HTML escape for user-provided content to prevent XSS.
-function escapeHtml(text) {
-  const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-  return String(text).replace(/[&<>"']/g, char => map[char]);
-}
-
-// Recursively flattens the { folders, projects } tree returned by listProjectsTree()
-// into a flat array of screen descriptor objects for landing page and status endpoint.
-function flattenScreens(node) {
-  const result = [];
-  for (const folder of (node.folders || [])) {
-    result.push(...flattenScreens(folder));
-  }
-  for (const proj of (node.projects || [])) {
-    for (const screen of (proj.screens || [])) {
-      result.push({
-        projectId: proj.id,
-        projName: proj.name,
-        screenId: screen.id,
-        screenName: screen.name,
-        elementCount: (screen.elements || []).length,
-      });
-    }
-  }
-  return result;
-}
 
 export function startPreviewServer(port = config.previewPort) {
   const app = express();
   const store = new ProjectStore(config.dataDir);
 
+  // Parse JSON bodies for PATCH/POST mutation endpoints.
+  app.use(express.json());
+
+  // Static JS modules for the editor — registered BEFORE /editor/:pid/:sid so
+  // Express doesn't interpret the literal segment 'js' as a projectId.
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = pathDirname(__filename);
+  app.use('/editor/js', express.static(pathJoin(__dirname, 'editor')));
+
   // Root redirect and landing page must be registered before the parameterized
   // /preview/:projectId/:screenId route so Express doesn't treat "preview" as a projectId.
   app.get('/', (_req, res) => res.redirect('/preview'));
 
-  app.get('/preview', async (_req, res) => {
-    try {
-      await store.init();
-      const tree = await store.listProjectsTree();
-      const items = flattenScreens(tree);
-      res.type('html').send(buildLandingPage(items));
-    } catch (err) {
-      console.error('[Preview] Landing page error:', err);
-      res.type('html').send(buildLandingPage([]));
-    }
+  app.get('/preview', (_req, res) => {
+    res.type('html').send(buildLandingPage());
   });
 
   app.get('/preview/:projectId/:screenId', async (req, res) => {
@@ -599,8 +888,25 @@ export function startPreviewServer(port = config.previewPort) {
       const html = injectPreviewAssets(
         buildScreenHtml(screen, style),
         project.id,
+        screen.id,
         project.updated_at,
+        screen.name,
       );
+      res.type('html').send(html);
+    } catch (err) {
+      res.status(500).send('Error: ' + err.message);
+    }
+  });
+
+  app.get('/editor/:projectId/:screenId', async (req, res) => {
+    try {
+      const project = await store.getProject(req.params.projectId);
+      const screen = project.screens.find(s => s.id === req.params.screenId);
+      if (!screen) return res.status(404).send('Screen not found');
+
+      const style = screen.style || project.style || 'wireframe';
+      const fragment = buildScreenFragment(screen, style);
+      const html = buildEditorPage(fragment, project.id, screen.id, project.name, screen.name, style);
       res.type('html').send(html);
     } catch (err) {
       res.status(500).send('Error: ' + err.message);
@@ -632,32 +938,113 @@ export function startPreviewServer(port = config.previewPort) {
     }
   });
 
-  // Read config.dataDir at request time so tests can swap data directories
-  // between requests without restarting the server.
   app.get('/api/projects', async (_req, res) => {
     try {
-      const projectStore = new ProjectStore(config.dataDir);
-      await projectStore.init();
-      const tree = await projectStore.listProjectsTree();
+      // Rebuild index on each listing request so the sidebar reflects files
+      // added or moved outside the store since the server started.
+      await store.init();
+      const tree = await store.listProjectsTree();
       res.json(tree);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
   });
 
-  // Returns flat list of screens with element count for landing page status display.
-  app.get('/api/status', async (_req, res) => {
+  // Editor data endpoints — parameterized routes registered after the bare
+  // /api/projects route so Express does not interpret "projects" as a projectId.
+  app.get('/api/projects/:projectId', async (req, res) => {
     try {
-      await store.init();
-      const tree = await store.listProjectsTree();
-      res.json(flattenScreens(tree));
+      const project = await store.getProject(req.params.projectId);
+      res.json(project);
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      res.status(404).json({ error: err.message });
     }
   });
 
-  registerElementsApi(app);
-  registerApprovalApi(app);
+  app.get('/api/projects/:projectId/screens/:screenId', async (req, res) => {
+    try {
+      const project = await store.getProject(req.params.projectId);
+      const screen = project.screens.find(s => s.id === req.params.screenId);
+      if (!screen) return res.status(404).json({ error: 'Screen not found' });
+      res.json(screen);
+    } catch (err) {
+      res.status(404).json({ error: err.message });
+    }
+  });
+
+  // PATCH /api/projects/:projectId/screens/:screenId
+  // Updates allowed screen fields (name, background, width, height, style).
+  app.patch('/api/projects/:projectId/screens/:screenId', async (req, res) => {
+    try {
+      const project = await store.getProject(req.params.projectId);
+      const screen = project.screens.find(s => s.id === req.params.screenId);
+      if (!screen) return res.status(404).json({ error: 'Screen not found' });
+
+      const { name, background, width, height, style } = req.body;
+      if (name !== undefined) screen.name = name;
+      if (background !== undefined) screen.background = background;
+      if (width !== undefined) screen.width = width;
+      if (height !== undefined) screen.height = height;
+      if (style !== undefined) screen.style = style;
+
+      await store._save(project);
+      res.json(screen);
+    } catch (err) {
+      res.status(404).json({ error: err.message });
+    }
+  });
+
+  // PATCH /api/projects/:projectId/screens/:screenId/elements/:elementId
+  // Applies positional update (moveElement) and/or properties update (updateElement).
+  app.patch('/api/projects/:projectId/screens/:screenId/elements/:elementId', async (req, res) => {
+    const { projectId, screenId, elementId } = req.params;
+    const { x, y, width, height, z_index, properties } = req.body;
+    try {
+      const hasPositional = [x, y, width, height, z_index].some(v => v !== undefined);
+      if (hasPositional) {
+        await store.moveElement(projectId, screenId, elementId, x, y, width, height, z_index);
+      }
+      if (properties !== undefined) {
+        await store.updateElement(projectId, screenId, elementId, properties);
+      }
+
+      // Return the current element state after all mutations.
+      const elements = await store.listElements(projectId, screenId);
+      const element = elements.find(e => e.id === elementId);
+      if (!element) return res.status(404).json({ error: 'Element not found' });
+      res.json(element);
+    } catch (err) {
+      res.status(404).json({ error: err.message });
+    }
+  });
+
+  // POST /api/projects/:projectId/screens/:screenId/elements
+  // Creates a new element; `type` is required, all positional fields default to 0.
+  app.post('/api/projects/:projectId/screens/:screenId/elements', async (req, res) => {
+    const { projectId, screenId } = req.params;
+    const { type, x = 0, y = 0, width = 100, height = 40, properties = {}, z_index = 0 } = req.body;
+
+    if (!type) return res.status(400).json({ error: 'type is required' });
+
+    try {
+      const element = await store.addElement(projectId, screenId, type, x, y, width, height, properties, z_index);
+      res.status(201).json(element);
+    } catch (err) {
+      res.status(404).json({ error: err.message });
+    }
+  });
+
+  // DELETE /api/projects/:projectId/screens/:screenId/elements/:elementId
+  // Removes element; returns 204 on success, 404 if not found.
+  app.delete('/api/projects/:projectId/screens/:screenId/elements/:elementId', async (req, res) => {
+    const { projectId, screenId, elementId } = req.params;
+    try {
+      await store.deleteElement(projectId, screenId, elementId);
+      res.status(204).end();
+    } catch (err) {
+      res.status(404).json({ error: err.message });
+    }
+  });
 
   const server = app.listen(port, () => {
     console.error('[MockupMCP] Preview server: http://localhost:' + port);
