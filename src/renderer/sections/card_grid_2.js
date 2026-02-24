@@ -11,6 +11,8 @@ export function defaults() {
 
 export function generate(screenWidth, sectionY, props) {
   const p = { ...defaults(), ...props };
+  // Defensive check: ensure array props are actually arrays
+  if (!Array.isArray(p.cards)) p.cards = defaults().cards;
   const padding = 40;
   const contentWidth = screenWidth - padding * 2;
   const cardWidth = Math.floor((contentWidth - 10) / 2); // 10px gap between cards

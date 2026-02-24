@@ -13,6 +13,8 @@ export function defaults() {
 
 export function generate(screenWidth, sectionY, props) {
   const p = { ...defaults(), ...props };
+  // Defensive check: ensure array props are actually arrays
+  if (!Array.isArray(p.fields)) p.fields = defaults().fields;
   const padding = 40;
   const contentWidth = screenWidth - padding * 2;
   const fieldHeight = 60;

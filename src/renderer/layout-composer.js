@@ -10,9 +10,9 @@ import { getSection } from './sections/index.js';
  * @param {Array<{type: string, props?: object}>} sections - Array of section descriptors
  * @param {import('../storage/project-store.js').ProjectStore} store - Project store (for future access)
  * @param {number} [screenWidth=1280] - Screen width in pixels
- * @returns {Promise<{elements: Array, totalHeight: number}>} - Generated elements and total height
+ * @returns {{elements: Array, totalHeight: number}} - Generated elements and total height
  */
-export async function composeLayout(projectId, sections, store, screenWidth = 1280) {
+export function composeLayout(projectId, sections, store, screenWidth = 1280) {
   let currentY = 0;
   const allElements = [];
 
