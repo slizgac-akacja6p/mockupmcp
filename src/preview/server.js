@@ -729,7 +729,19 @@ const SIDEBAR_JS = `
         for (var k = 0; k < proj.screens.length; k++) {
           var scr = proj.screens[k];
           var cls = scr.id === active.screenId ? ' active' : '';
-          items.push('<a class="mockup-sidebar-screen' + cls + '" href="' + pathPrefix + proj.id + '\\/' + scr.id + '" style="padding-left:' + screenPad + 'px">' + escName(scr.name) + '<\\/a>');
+          // Skip rendering draft screens as clickable links (no thumbnail).
+          var isDraft = scr.status === 'draft';
+          var screenHtml = isDraft ? '<div' : '<a';
+          var screenAttrs = isDraft ? ' class="mockup-sidebar-screen' + cls + '" style="padding-left:' + screenPad + 'px">' : ' class="mockup-sidebar-screen' + cls + '" href="' + pathPrefix + proj.id + '\\/' + scr.id + '" style="padding-left:' + screenPad + 'px">';
+          var screenEnd = isDraft ? '<\\/div>' : '<\\/a>';
+          var versionBadge = scr.version ? ' <span style="font-size:11px;opacity:0.7;margin-left:4px">v' + scr.version + '<\\/span>' : '';
+          var statusDot = '';
+          if (scr.status === 'approved') {
+            statusDot = ' <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#10b981;margin-left:4px;vertical-align:middle"><\\/span>';
+          } else if (scr.status === 'rejected') {
+            statusDot = ' <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#ef4444;margin-left:4px;vertical-align:middle"><\\/span>';
+          }
+          items.push(screenHtml + screenAttrs + escName(scr.name) + versionBadge + statusDot + screenEnd);
         }
       }
       items.push('<\\/div>');
@@ -1790,12 +1802,18 @@ export function startPreviewServer(port = config.previewPort) {
       const screen = project.screens.find(s => s.id === req.params.screenId);
       if (!screen) return res.status(404).json({ error: 'Screen not found' });
 
-      const { name, background, width, height, style } = req.body;
+      const { name, background, width, height, style, status } = req.body;
       if (name !== undefined) screen.name = name;
       if (background !== undefined) screen.background = background;
       if (width !== undefined) screen.width = width;
       if (height !== undefined) screen.height = height;
       if (style !== undefined) screen.style = style;
+      if (status !== undefined) {
+        if (!['draft', 'approved', 'rejected'].includes(status)) {
+          return res.status(400).json({ error: 'Invalid status. Must be: draft, approved, or rejected' });
+        }
+        screen.status = status;
+      }
 
       await store._save(project);
       res.json(screen);
