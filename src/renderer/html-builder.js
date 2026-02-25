@@ -29,9 +29,15 @@ export function buildScreenHtml(screen, style = 'wireframe') {
         inlineStyle += 'cursor:pointer;';
       }
 
-      return `<div class="element" style="${inlineStyle}"${linkAttrs}>${innerHtml}</div>`;
+      return `<div class="element" data-element-id="${el.id}" style="${inlineStyle}"${linkAttrs}>${innerHtml}</div>`;
     })
     .join('\n    ');
+
+  // Build color scheme attribute if present (used by styles like slate for dark/light support)
+  // Use allowlist to prevent XSS via unsanitized color_scheme values
+  const ALLOWED_COLOR_SCHEMES = new Set(['dark', 'light']);
+  const safeColorScheme = ALLOWED_COLOR_SCHEMES.has(screen.color_scheme) ? screen.color_scheme : null;
+  const colorSchemeAttr = safeColorScheme ? ` data-color-scheme="${safeColorScheme}"` : '';
 
   return `<!DOCTYPE html>
 <html>
@@ -46,7 +52,7 @@ export function buildScreenHtml(screen, style = 'wireframe') {
   </style>
 </head>
 <body>
-  <div class="screen" style="position:relative;width:${screen.width}px;height:${screen.height}px;background:${screen.background || '#FFFFFF'};overflow:hidden;">
+  <div class="screen"${colorSchemeAttr} style="position:relative;width:${screen.width}px;height:${screen.height}px;background:${screen.background || '#FFFFFF'};overflow:hidden;">
     ${elementsHtml}
   </div>
 </body>

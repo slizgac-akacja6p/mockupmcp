@@ -1,0 +1,693 @@
+/* Neumorphism / Soft UI — dual shadows push/pull elements from a uniform surface.
+   No borders, no gradients. Only shadow direction creates depth. */
+:root {
+  --nm-bg:          #e0e5ec;
+  --nm-shadow-dark: #b8bec7;
+  --nm-shadow-light:#ffffff;
+  --nm-shadow-out:  6px 6px 12px #b8bec7, -6px -6px 12px #ffffff;
+  --nm-shadow-out-lg: 10px 10px 20px #b8bec7, -10px -10px 20px #ffffff;
+  --nm-shadow-out-sm: 3px 3px 6px #b8bec7, -3px -3px 6px #ffffff;
+  /* Inset shadow simulates a pressed/concave surface */
+  --nm-shadow-in:   inset 4px 4px 8px #b8bec7, inset -4px -4px 8px #ffffff;
+  --nm-shadow-in-lg: inset 6px 6px 14px #b8bec7, inset -6px -6px 14px #ffffff;
+  --nm-text:        #31456A;
+  --nm-text-muted:  #6B7A99;
+  --nm-text-placeholder: #9BA8C0;
+  --nm-accent:      #6B73FF;
+  --nm-accent-alt:  #8B5CF6;
+  --nm-success:     #00C9A7;
+  --nm-warning:     #FFB347;
+  --nm-error:       #FF6B6B;
+  --color-text-primary:   #31456A;
+  --color-text-secondary: #6B7A99;
+  --color-text-placeholder: #9BA8C0;
+  --color-border:   transparent;
+  --color-bg-light: #e0e5ec;
+  --color-bg-white: #e0e5ec;
+  --color-primary:  #6B73FF;
+  --color-disabled: #c8cdd6;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Nunito', 'Poppins', 'Segoe UI', system-ui, sans-serif;
+  color: var(--nm-text);
+  background: var(--nm-bg);
+}
+
+/* ── Screen ─────────────────────────────────────────────────────────────── */
+
+/* Uniform surface colour is essential — all shadow effects break on a non-matching background */
+.screen {
+  background: var(--nm-bg);
+  font-family: 'Nunito', 'Poppins', 'Segoe UI', system-ui, sans-serif;
+}
+
+/* ── Button ─────────────────────────────────────────────────────────────── */
+
+/* Raised button: dual outward shadows = floating above the surface */
+.mockup-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  background: var(--nm-bg);
+  box-shadow: var(--nm-shadow-out);
+  color: var(--nm-text);
+}
+
+/* sizes */
+.mockup-button--sm  { padding: 8px 16px;  font-size: 12px; }
+.mockup-button--md  { padding: 12px 24px; font-size: 14px; }
+.mockup-button--lg  { padding: 16px 32px; font-size: 16px; }
+
+/* variants */
+.mockup-button--primary {
+  background: var(--nm-bg);
+  color: var(--nm-accent);
+  font-weight: 700;
+}
+
+.mockup-button--secondary {
+  background: var(--nm-bg);
+  color: var(--nm-text-muted);
+}
+
+/* Outline and ghost both use inset shadow — visually recessed vs raised primary */
+.mockup-button--outline {
+  background: var(--nm-bg);
+  color: var(--nm-accent);
+  box-shadow: var(--nm-shadow-in);
+}
+
+.mockup-button--ghost {
+  background: transparent;
+  color: var(--nm-text-muted);
+  box-shadow: none;
+  border: none;
+}
+
+/* ── Input ──────────────────────────────────────────────────────────────── */
+
+/* Inset shadow means "this is a cavity you type into" — no drawn border needed */
+.mockup-input {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--nm-text);
+  background: var(--nm-bg);
+  box-shadow: var(--nm-shadow-in);
+}
+
+.mockup-input::placeholder { color: var(--nm-text-placeholder); }
+
+.mockup-input-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--nm-text);
+}
+
+/* ── Navbar ─────────────────────────────────────────────────────────────── */
+
+.mockup-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 14px 20px;
+  background: var(--nm-bg);
+  border-bottom: none;
+  box-shadow: 0 4px 12px #b8bec7, 0 -1px 0 #ffffff;
+}
+
+.mockup-navbar__title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--nm-text);
+  flex: 1;
+  text-align: center;
+}
+
+.mockup-navbar__side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 32px;
+  color: var(--nm-text-muted);
+}
+
+/* ── Tab Bar ────────────────────────────────────────────────────────────── */
+
+.mockup-tabbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  width: 100%;
+  padding: 12px 0;
+  background: var(--nm-bg);
+  box-shadow: 0 -4px 12px #b8bec7, 0 1px 0 #ffffff;
+  border-top: none;
+}
+
+.mockup-tabbar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  font-size: 11px;
+  color: var(--nm-text-muted);
+  cursor: pointer;
+}
+
+.mockup-tabbar-item--active {
+  color: var(--nm-accent);
+  font-weight: 700;
+}
+
+/* ── Card ───────────────────────────────────────────────────────────────── */
+
+/* Raised card: extrudes from the surface via strong outward shadow */
+.mockup-card {
+  border: none;
+  border-radius: 20px;
+  background: var(--nm-bg);
+  overflow: hidden;
+  box-shadow: var(--nm-shadow-out-lg);
+}
+
+.mockup-card__body { padding: 20px 24px; }
+.mockup-card__title { font-size: 15px; font-weight: 700; color: var(--nm-text); margin-bottom: 4px; }
+.mockup-card__value { font-size: 30px; font-weight: 800; color: var(--nm-accent); margin-bottom: 4px; }
+.mockup-card__subtitle { font-size: 13px; color: var(--nm-text-muted); margin-bottom: 8px; }
+.mockup-card__actions { display: flex; gap: 8px; padding: 12px 24px 16px; border-top: 1px solid rgba(184,190,199,0.3); }
+
+/* ── List ───────────────────────────────────────────────────────────────── */
+
+.mockup-list { border: none; border-radius: 16px; background: var(--nm-bg); overflow: hidden; box-shadow: var(--nm-shadow-out); }
+.mockup-list-item { padding: 14px 18px; border-bottom: 1px solid rgba(184,190,199,0.3); font-size: 14px; color: var(--nm-text); display: flex; align-items: center; gap: 12px; }
+.mockup-list-item:last-child { border-bottom: none; }
+.mockup-list-item__avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--nm-bg); flex-shrink: 0; box-shadow: var(--nm-shadow-out-sm); }
+
+/* ── Image placeholder ──────────────────────────────────────────────────── */
+
+.mockup-image-placeholder { width: 100%; height: 100%; background: var(--nm-bg); border: none; border-radius: 16px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; box-shadow: var(--nm-shadow-in); }
+
+/* ── Icon ───────────────────────────────────────────────────────────────── */
+
+.mockup-icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--nm-text-muted); }
+
+/* ── Badge ──────────────────────────────────────────────────────────────── */
+
+/* Badge floats above its parent via outward shadow */
+.mockup-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--nm-bg);
+  color: var(--nm-accent);
+  border: none;
+  box-shadow: var(--nm-shadow-out-sm);
+}
+
+/* ── Alert ──────────────────────────────────────────────────────────────── */
+
+.mockup-alert {
+  padding: 14px 18px;
+  border: none;
+  border-radius: 14px;
+  background: var(--nm-bg);
+  font-size: 14px;
+  color: var(--nm-text);
+  box-shadow: var(--nm-shadow-out);
+}
+
+/* Colour accent via left-side shadow tint — keeps the monochrome surface rule */
+.mockup-alert--info    { color: var(--nm-accent); box-shadow: var(--nm-shadow-out), -3px 0 0 var(--nm-accent); }
+.mockup-alert--success { color: var(--nm-success); box-shadow: var(--nm-shadow-out), -3px 0 0 var(--nm-success); }
+.mockup-alert--warning { color: var(--nm-warning); box-shadow: var(--nm-shadow-out), -3px 0 0 var(--nm-warning); }
+.mockup-alert--error   { color: var(--nm-error);   box-shadow: var(--nm-shadow-out), -3px 0 0 var(--nm-error); }
+
+/* ── Textarea ──────────────────────────────────────────────────────────── */
+
+.mockup-textarea { font-family: inherit; line-height: 1.5; color: var(--nm-text); background: var(--nm-bg); }
+
+/* ── Checkbox ──────────────────────────────────────────────────────────── */
+
+.mockup-checkbox { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; }
+
+.mockup-checkbox__box {
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--nm-accent);
+  background: var(--nm-bg);
+  box-shadow: var(--nm-shadow-in);
+  flex-shrink: 0;
+}
+
+.mockup-checkbox__label { color: var(--nm-text); }
+
+/* ── Radio ─────────────────────────────────────────────────────────────── */
+
+.mockup-radio { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; }
+
+.mockup-radio__circle {
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--nm-bg);
+  box-shadow: var(--nm-shadow-in);
+  flex-shrink: 0;
+}
+
+.mockup-radio__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--nm-accent); }
+.mockup-radio__label { color: var(--nm-text); }
+
+/* ── Toggle ────────────────────────────────────────────────────────────── */
+
+.mockup-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; }
+
+.mockup-toggle__track {
+  width: 46px;
+  height: 26px;
+  border-radius: 13px;
+  background: var(--nm-bg);
+  border: none;
+  position: relative;
+  flex-shrink: 0;
+  /* Inset: the track is a groove pressed into the surface */
+  box-shadow: var(--nm-shadow-in);
+}
+
+.mockup-toggle--on .mockup-toggle__track { background: var(--nm-bg); }
+
+/* Thumb floats above the groove via outward shadow */
+.mockup-toggle__thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--nm-bg);
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  transition: left 0.15s;
+  box-shadow: var(--nm-shadow-out-sm);
+}
+
+.mockup-toggle--on .mockup-toggle__thumb {
+  left: 23px;
+  background: var(--nm-accent);
+}
+
+.mockup-toggle__label { color: var(--nm-text); }
+
+/* ── Select ────────────────────────────────────────────────────────────── */
+
+.mockup-select { width: 100%; }
+
+.mockup-select__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  color: var(--nm-text);
+  background: var(--nm-bg);
+  cursor: pointer;
+  box-shadow: var(--nm-shadow-in);
+}
+
+.mockup-select__arrow { font-size: 10px; color: var(--nm-text-muted); }
+
+/* ── Slider ────────────────────────────────────────────────────────────── */
+
+.mockup-slider { width: 100%; padding: 8px 0; }
+
+.mockup-slider__track {
+  width: 100%;
+  height: 6px;
+  background: var(--nm-bg);
+  border-radius: 3px;
+  position: relative;
+  box-shadow: var(--nm-shadow-in);
+}
+
+.mockup-slider__fill { height: 100%; background: var(--nm-accent); border-radius: 3px; }
+
+.mockup-slider__thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--nm-bg);
+  border: none;
+  position: absolute;
+  top: -6px;
+  transform: translateX(-50%);
+  box-shadow: var(--nm-shadow-out-sm);
+}
+
+/* ── Sidebar ───────────────────────────────────────────────────────────── */
+
+.mockup-sidebar {
+  width: 100%;
+  height: 100%;
+  background: var(--nm-bg);
+  border-right: none;
+  box-shadow: 4px 0 12px #b8bec7;
+  padding: 12px 8px;
+}
+
+.mockup-sidebar__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: var(--nm-text-muted);
+  cursor: pointer;
+  border-radius: 12px;
+  margin-bottom: 4px;
+}
+
+/* Active item: inset shadow = pressed into the surface */
+.mockup-sidebar__item--active {
+  color: var(--nm-accent);
+  font-weight: 700;
+  box-shadow: var(--nm-shadow-in);
+}
+
+/* ── Breadcrumb ────────────────────────────────────────────────────────── */
+
+.mockup-breadcrumb { display: flex; align-items: center; gap: 4px; font-size: 13px; }
+.mockup-breadcrumb__item { color: var(--nm-accent); cursor: pointer; }
+.mockup-breadcrumb__item--current { color: var(--nm-text); font-weight: 600; cursor: default; }
+.mockup-breadcrumb__sep { color: var(--nm-text-placeholder); margin: 0 2px; }
+
+/* ── Table ─────────────────────────────────────────────────────────────── */
+
+.mockup-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+
+.mockup-table__th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 700;
+  color: var(--nm-text);
+  background: var(--nm-bg);
+  /* Row header shadow bottom-only looks like a shelf edge */
+  box-shadow: 0 3px 6px #b8bec7;
+}
+
+.mockup-table__td { padding: 12px 16px; border-bottom: 1px solid rgba(184,190,199,0.3); color: var(--nm-text); }
+.mockup-table__row--striped { background: rgba(224,229,236,0.5); }
+
+/* ── Avatar ────────────────────────────────────────────────────────────── */
+
+.mockup-avatar { flex-shrink: 0; box-shadow: var(--nm-shadow-out-sm); }
+
+/* ── Chip ──────────────────────────────────────────────────────────────── */
+
+.mockup-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  background: var(--nm-bg);
+  color: var(--nm-text);
+  border: none;
+  box-shadow: var(--nm-shadow-out-sm);
+}
+
+.mockup-chip--selected {
+  color: var(--nm-accent);
+  font-weight: 700;
+  box-shadow: var(--nm-shadow-in);
+}
+
+.mockup-chip__remove { font-size: 14px; cursor: pointer; color: var(--nm-text-muted); line-height: 1; }
+
+/* ── Modal ─────────────────────────────────────────────────────────────── */
+
+.mockup-modal__backdrop {
+  width: 100%;
+  height: 100%;
+  background: rgba(180,186,200,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.mockup-modal {
+  background: var(--nm-bg);
+  border-radius: 24px;
+  border: none;
+  width: 100%;
+  max-width: 420px;
+  overflow: hidden;
+  box-shadow: var(--nm-shadow-out-lg);
+}
+
+.mockup-modal__header {
+  padding: 20px 24px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--nm-text);
+  border-bottom: 1px solid rgba(184,190,199,0.3);
+  background: var(--nm-bg);
+}
+
+.mockup-modal__body { padding: 18px 24px; font-size: 14px; color: var(--nm-text-muted); }
+.mockup-modal__footer { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 24px; border-top: 1px solid rgba(184,190,199,0.3); }
+
+/* ── Skeleton ──────────────────────────────────────────────────────────── */
+
+.mockup-skeleton {
+  background: var(--nm-bg);
+  border-radius: 10px;
+  width: 100%;
+  height: 100%;
+  box-shadow: var(--nm-shadow-in);
+  animation: nm-pulse 2s ease-in-out infinite;
+}
+
+.mockup-skeleton--circle { border-radius: 50%; }
+.mockup-skeleton--text { height: 16px; border-radius: 8px; }
+
+@keyframes nm-pulse {
+  0%, 100% { box-shadow: var(--nm-shadow-in); }
+  50% { box-shadow: inset 2px 2px 4px #b8bec7, inset -2px -2px 4px #ffffff; }
+}
+
+/* ── Progress ──────────────────────────────────────────────────────────── */
+
+.mockup-progress {
+  width: 100%;
+  height: 10px;
+  background: var(--nm-bg);
+  border-radius: 5px;
+  overflow: hidden;
+  box-shadow: var(--nm-shadow-in);
+}
+
+.mockup-progress__bar { height: 100%; background: var(--nm-accent); border-radius: 5px; }
+
+/* ── Tooltip ───────────────────────────────────────────────────────────── */
+
+.mockup-tooltip { position: relative; display: inline-block; }
+
+.mockup-tooltip__content {
+  background: var(--nm-bg);
+  color: var(--nm-text);
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  white-space: nowrap;
+  box-shadow: var(--nm-shadow-out);
+}
+
+/* ── Search Bar ────────────────────────────────────────────────────────── */
+
+.mockup-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 20px;
+  background: var(--nm-bg);
+  box-shadow: var(--nm-shadow-in);
+  width: 100%;
+}
+
+.mockup-search-bar__icon { display: flex; flex-shrink: 0; color: var(--nm-text-muted); }
+.mockup-search-bar__input { font-size: 14px; color: var(--nm-text-placeholder); }
+
+/* ── Login Form ────────────────────────────────────────────────────────── */
+
+.mockup-login { display: flex; flex-direction: column; gap: 16px; padding: 32px; width: 100%; background: var(--nm-bg); border-radius: 28px; box-shadow: var(--nm-shadow-out-lg); }
+
+.mockup-login__title {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--nm-text);
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.mockup-login__field { width: 100%; }
+.mockup-login__forgot { font-size: 13px; color: var(--nm-accent); text-align: right; }
+.mockup-login__action { margin-top: 8px; }
+.mockup-login__action .mockup-button { width: 100%; }
+
+/* ── Header ────────────────────────────────────────────────────────────── */
+
+.mockup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: var(--nm-bg);
+  box-shadow: 0 4px 12px #b8bec7;
+  border-bottom: none;
+  width: 100%;
+}
+
+.mockup-header__logo { font-size: 18px; font-weight: 800; color: var(--nm-accent); }
+.mockup-header__nav { display: flex; gap: 20px; }
+.mockup-header__nav-item { font-size: 14px; color: var(--nm-text-muted); cursor: pointer; }
+.mockup-header__right { display: flex; align-items: center; }
+
+/* ── Footer ────────────────────────────────────────────────────────────── */
+
+.mockup-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px;
+  border-top: none;
+  box-shadow: 0 -4px 12px #b8bec7;
+  background: var(--nm-bg);
+  width: 100%;
+}
+
+.mockup-footer__links { display: flex; gap: 16px; }
+.mockup-footer__link { font-size: 13px; color: var(--nm-accent); cursor: pointer; }
+.mockup-footer__text { font-size: 12px; color: var(--nm-text-placeholder); }
+
+/* ── Data Table ────────────────────────────────────────────────────────── */
+
+.mockup-data-table {
+  width: 100%;
+  border: none;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: var(--nm-shadow-out-lg);
+  background: var(--nm-bg);
+}
+
+.mockup-data-table__toolbar { padding: 12px 16px; border-bottom: 1px solid rgba(184,190,199,0.3); }
+
+.mockup-data-table__search {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--nm-text);
+  background: var(--nm-bg);
+  box-shadow: var(--nm-shadow-in);
+}
+
+.mockup-data-table__th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--nm-accent);
+  border-bottom: 1px solid rgba(184,190,199,0.3);
+  background: var(--nm-bg);
+}
+
+.mockup-data-table__sort { font-size: 8px; margin-left: 4px; color: var(--nm-text-placeholder); }
+.mockup-data-table__td { padding: 12px 16px; border-bottom: 1px solid rgba(184,190,199,0.25); font-size: 14px; color: var(--nm-text); }
+.mockup-data-table__row:last-child .mockup-data-table__td { border-bottom: none; }
+
+.mockup-data-table__pagination {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  font-size: 13px;
+  color: var(--nm-text-muted);
+  border-top: 1px solid rgba(184,190,199,0.3);
+}
+
+.mockup-data-table__page-btn { cursor: pointer; padding: 6px 10px; color: var(--nm-accent); background: var(--nm-bg); border: none; border-radius: 8px; font-weight: 600; box-shadow: var(--nm-shadow-out-sm); }
+
+/* ── Chart Placeholder ─────────────────────────────────────────────────── */
+
+.mockup-chart {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border: none;
+  border-radius: 20px;
+  background: var(--nm-bg);
+  overflow: hidden;
+  box-shadow: var(--nm-shadow-out-lg);
+}
+
+.mockup-chart__title {
+  padding: 14px 20px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--nm-text);
+  border-bottom: 1px solid rgba(184,190,199,0.3);
+}
+
+.mockup-chart__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+}
+
+.mockup-chart__label { font-size: 12px; color: var(--nm-text-placeholder); text-transform: capitalize; }

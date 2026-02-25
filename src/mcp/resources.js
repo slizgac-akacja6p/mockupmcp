@@ -185,5 +185,68 @@ export async function registerResources(server, store) {
     }
   );
 
-  console.error('[MockupMCP] 3 static + 2 dynamic resources registered');
+  // --- Dynamic: screen approval status (M23) ---
+  // Returns versioning and comment data alongside status so the MCP client
+  // can decide whether to create a new version without extra round-trips.
+  const approvalTemplate = new ResourceTemplate(
+    'mockup://projects/{projectId}/screens/{screenId}/approval',
+    { list: undefined }
+  );
+
+  server.resource(
+    'screen-approval',
+    approvalTemplate,
+    { description: 'Screen approval status — status, version, unresolved comments, parent screen ID' },
+    async (uri, variables) => {
+      const { projectId, screenId } = variables;
+      const project = await store.getProject(projectId);
+      const screen = project.screens.find(s => s.id === screenId);
+      if (!screen) throw new Error(`Screen ${screenId} not found in project ${projectId}`);
+
+      const unresolvedComments = (screen.comments || []).filter(c => !c.resolved);
+
+      const data = {
+        screen_id: screenId,
+        version: screen.version ?? 1,
+        status: screen.status ?? 'draft',
+        unresolved_comments: unresolvedComments,
+        parent_screen_id: screen.parent_screen_id ?? null,
+        // backward compat: mirrors old approved boolean
+        approved: screen.status === 'approved',
+      };
+
+      return {
+        contents: [{
+          uri: uri.toString(),
+          text: JSON.stringify(data, null, 2),
+          mimeType: 'application/json',
+        }],
+      };
+    }
+  );
+
+  // --- Dynamic: screen comments ---
+  const commentsTemplate = new ResourceTemplate(
+    'mockup://projects/{projectId}/screens/{screenId}/comments',
+    { list: undefined }
+  );
+
+  server.resource(
+    'screen-comments',
+    commentsTemplate,
+    { description: 'All comments (including resolved) for a screen' },
+    async (uri, variables) => {
+      const { projectId, screenId } = variables;
+      const comments = await store.listComments(projectId, screenId, { include_resolved: true });
+      return {
+        contents: [{
+          uri: uri.toString(),
+          text: JSON.stringify(comments),
+          mimeType: 'application/json',
+        }],
+      };
+    }
+  );
+
+  console.error('[MockupMCP] 3 static + 4 dynamic resources registered');
 }

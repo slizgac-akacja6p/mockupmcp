@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { getAvailableStyles } from '../../renderer/styles/index.js';
 
 export async function registerScreenTools(server, store) {
   server.tool(
@@ -15,13 +16,18 @@ export async function registerScreenTools(server, store) {
         .default('#FFFFFF')
         .describe('Background color (hex), defaults to #FFFFFF'),
       style: z
-        .enum(['wireframe', 'material', 'ios'])
+        .enum(getAvailableStyles())
         .optional()
         .describe('Style override for this screen (defaults to project style)'),
+      color_scheme: z
+        .enum(['dark', 'light'])
+        .nullable()
+        .optional()
+        .describe('Color scheme for the screen. Only affects styles that support it (e.g., slate). "dark" or "light".'),
     },
-    async ({ project_id, name, width, height, background, style }) => {
+    async ({ project_id, name, width, height, background, style, color_scheme }) => {
       try {
-        const screen = await store.addScreen(project_id, name, width, height, background, style);
+        const screen = await store.addScreen(project_id, name, width, height, background, style, color_scheme);
         return {
           content: [{ type: 'text', text: JSON.stringify(screen, null, 2) }],
         };
@@ -112,7 +118,7 @@ export async function registerScreenTools(server, store) {
       description: z.string().describe('Natural language screen description, e.g. "login screen with email and password fields"'),
       name: z.string().optional().describe('Screen name (auto-derived from description if omitted)'),
       style: z
-        .enum(['wireframe', 'material', 'ios'])
+        .enum(getAvailableStyles())
         .optional()
         .describe('Style override (defaults to project style)'),
     },
@@ -142,6 +148,53 @@ export async function registerScreenTools(server, store) {
               match_info: matchInfo,
             }, null, 2),
           }],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: 'text', text: `Error: ${error.message}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // --- Versioning tools ---
+
+  server.tool(
+    'mockup_create_screen_version',
+    'Create a new version of a screen. The new version clones the source screen with all elements, increments version number, and sets status to "draft". Version name is automatically derived as "Original Name vN".',
+    {
+      project_id: z.string().describe('Project ID'),
+      screen_id: z.string().describe('Source screen ID to version from'),
+    },
+    async ({ project_id, screen_id }) => {
+      try {
+        const screen = await store.createScreenVersion(project_id, screen_id);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(screen, null, 2) }],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: 'text', text: `Error: ${error.message}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.tool(
+    'mockup_set_screen_status',
+    'Set the approval status of a screen: "draft" (in progress), "approved" (ready), or "rejected" (needs revision).',
+    {
+      project_id: z.string().describe('Project ID'),
+      screen_id: z.string().describe('Screen ID'),
+      status: z.enum(['draft', 'approved', 'rejected']).describe('Status: draft | approved | rejected'),
+    },
+    async ({ project_id, screen_id, status }) => {
+      try {
+        const screen = await store.updateScreen(project_id, screen_id, { status });
+        return {
+          content: [{ type: 'text', text: JSON.stringify(screen, null, 2) }],
         };
       } catch (error) {
         return {

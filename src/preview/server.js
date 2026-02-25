@@ -1,15 +1,174 @@
 import express from 'express';
+import { fileURLToPath } from 'url';
+import { dirname as pathDirname, join as pathJoin } from 'path';
 import { ProjectStore } from '../storage/project-store.js';
 import { buildScreenHtml } from '../renderer/html-builder.js';
+import { loadStyle } from '../renderer/styles/index.js';
+import { getAvailableTypes, getComponent } from '../renderer/components/index.js';
 import { config } from '../config.js';
 
 // Centered background styling injected into every preview page so the mockup
 // renders on a neutral canvas without modifying the stored screen data.
+// Dark theme matches the editor so switching between preview and edit feels
+// seamless. Sidebar margin-left comes from SIDEBAR_CSS (260px / 40px collapsed).
+// Theme CSS vars are shared with the editor so the toggle works in both modes.
 const PREVIEW_STYLE = `
 <style>
-  html { background: #E0E0E0; min-height: 100vh; display: flex; justify-content: center; padding: 20px; }
-  body { display: flex; justify-content: center; }
-  .screen { box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+  :root {
+    --surface-0: #0A0A0B;
+    --surface-1: #111113;
+    --surface-2: #1A1A1F;
+    --surface-3: #242429;
+    --surface-4: #2E2E35;
+    --accent: #6366F1;
+    --accent-hover: #818CF8;
+    --border-subtle: rgba(255, 255, 255, 0.04);
+    --border-default: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.16);
+    --text-primary: #E5E5E5;
+    --text-secondary: #888888;
+    --text-muted: #555555;
+    --text-xs: 11px;
+    --text-sm: 12px;
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+    --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  body[data-theme="light"] {
+    --surface-0: #F5F5F5;
+    --surface-1: #FFFFFF;
+    --surface-2: #F5F5F5;
+    --surface-3: #F0F0F0;
+    --surface-4: #E8E8E8;
+    --text-primary: #1A1A1A;
+    --text-secondary: #666666;
+    --text-muted: #999999;
+    --border-subtle: rgba(0, 0, 0, 0.06);
+    --border-default: #E0E0E0;
+    --border-strong: #CCCCCC;
+  }
+  html { background: var(--surface-0); min-height: 100vh; }
+  body {
+    display: flex; justify-content: center; align-items: flex-start;
+    width: auto !important; height: auto !important;
+    margin-left: 260px; margin-right: 24px;
+    padding: 68px 24px 20px;
+    min-height: calc(100vh - 68px);
+    overflow-x: hidden;
+    overflow: visible !important;
+    background: var(--surface-0);
+  }
+  body.sidebar-collapsed { margin-left: 40px; }
+  .screen { box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+  /* Preview sidebar themed to match editor */
+  #mockup-sidebar {
+    background: var(--surface-1) !important;
+    border-right-color: var(--border-default) !important;
+    color: var(--text-primary) !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  #mockup-sidebar-tree { flex: 1; overflow-y: auto; }
+  #mockup-sidebar-toggle {
+    background: var(--surface-1) !important;
+    border-color: var(--border-default) !important;
+    color: var(--text-secondary) !important;
+  }
+  #mockup-sidebar-toggle:hover { background: var(--surface-3) !important; }
+  #mockup-sidebar h3 { color: var(--text-muted) !important; }
+  .mockup-sidebar-project-name { color: var(--text-primary) !important; }
+  .mockup-sidebar-project-name:hover { background: var(--surface-3) !important; }
+  .mockup-sidebar-folder-name { color: var(--text-secondary) !important; }
+  .mockup-sidebar-folder-name:hover { background: var(--surface-3) !important; }
+  .mockup-sidebar-screen { color: var(--text-secondary) !important; }
+  .mockup-sidebar-screen:hover { background: var(--surface-3) !important; }
+  .mockup-sidebar-screen.active {
+    background: var(--accent) !important;
+    color: #FFFFFF !important;
+  }
+  /* Theme toggle in sidebar bottom */
+  #sidebar-theme-toggle {
+    margin-top: auto;
+    padding: 12px 8px;
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  #sidebar-theme-toggle button {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 16px;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #sidebar-theme-toggle button:hover {
+    background: var(--surface-3);
+    color: var(--text-primary);
+  }
+  /* Preview toolbar themed */
+  #preview-toolbar {
+    background: var(--surface-2) !important;
+    border-bottom-color: var(--border-subtle) !important;
+  }
+  #preview-toolbar .back-btn {
+    border-color: var(--border-default) !important;
+    background: var(--surface-2) !important;
+    color: var(--text-secondary) !important;
+  }
+  #preview-toolbar .back-btn:hover {
+    background: var(--surface-3) !important;
+    border-color: var(--text-secondary) !important;
+    color: var(--text-primary) !important;
+  }
+  #preview-toolbar .screen-name { color: var(--text-primary) !important; }
+  /* Floating zoom controls matching editor */
+  #preview-zoom-controls {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: var(--surface-3);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    padding: 4px 6px;
+    z-index: 10000;
+    box-shadow: var(--shadow-md);
+  }
+  #preview-zoom-controls .zoom-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 16px;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    padding: 0;
+  }
+  #preview-zoom-controls .zoom-btn:hover {
+    background: var(--surface-4);
+  }
+  #preview-zoom-controls .zoom-level {
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    min-width: 36px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
 </style>`;
 
 // CSS keyframe animations for screen-to-screen transitions (push, fade, slide-up).
@@ -57,7 +216,13 @@ const LINK_SCRIPT = `
 
   document.addEventListener('click', async (e) => {
     const el = e.target.closest('[data-link-to]');
-    if (!el || isTransitioning) return;
+    // Safety timeout: if isTransitioning gets stuck (e.g. due to a JS engine
+    // quirk or a future code change that bypasses the finally block), reset it
+    // after 500ms so subsequent clicks are not permanently dropped.
+    if (!el || isTransitioning) {
+      if (isTransitioning) setTimeout(() => { isTransitioning = false; }, 500);
+      return;
+    }
     e.preventDefault();
 
     const screenId = el.dataset.linkTo;
@@ -78,32 +243,42 @@ const LINK_SCRIPT = `
     isTransitioning = true;
     try {
       const res = await fetch('/api/screen-fragment/' + projectId + '/' + screenId);
-      if (!res.ok) { isTransitioning = false; return; }
+      if (!res.ok) { return; }
       const newHtml = await res.text();
 
       const container = document.querySelector('body');
       const currentScreen = container.querySelector('.screen');
-      if (!currentScreen) { isTransitioning = false; return; }
+      if (!currentScreen) { return; }
 
       const template = document.createElement('template');
       template.innerHTML = newHtml;
       const newScreen = template.content.querySelector('.screen');
-      if (!newScreen) { isTransitioning = false; return; }
+      if (!newScreen) { return; }
 
       if (transition === 'none') {
         currentScreen.replaceWith(newScreen);
       } else {
-        newScreen.style.position = 'absolute';
-        newScreen.style.top = '0';
-        newScreen.style.left = currentScreen.offsetLeft + 'px';
-        currentScreen.parentNode.style.position = 'relative';
-        currentScreen.parentNode.style.overflow = 'hidden';
-
         const suffix = isBack ? '-back' : '';
         const outClass = transition === 'fade' ? 'trans-fade-out' : ('trans-' + transition + suffix + '-out');
         const inClass = transition === 'fade' ? 'trans-fade-in' : ('trans-' + transition + suffix + '-in');
 
-        currentScreen.parentNode.appendChild(newScreen);
+        // Wrapper div replaces body-as-container to avoid PREVIEW_STYLE
+        // overflow:visible !important overriding JS-set overflow:hidden,
+        // and to eliminate the body padding offset bug in Safari.
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'width:' + currentScreen.offsetWidth + 'px;height:' + currentScreen.offsetHeight + 'px;position:relative;overflow:hidden;flex-shrink:0;';
+        currentScreen.parentNode.insertBefore(wrapper, currentScreen);
+        wrapper.appendChild(currentScreen);
+
+        // Capture original position before overriding for animation — html-builder.js
+        // sets position:relative inline, clearing to '' would leave position:static which
+        // breaks absolute children in Safari (they escape to viewport).
+        const savedPosition = newScreen.style.position || 'relative';
+        newScreen.style.position = 'absolute';
+        newScreen.style.top = '0';
+        newScreen.style.left = '0';
+        wrapper.appendChild(newScreen);
+
         currentScreen.classList.add(outClass);
         newScreen.classList.add(inClass);
 
@@ -111,8 +286,27 @@ const LINK_SCRIPT = `
 
         currentScreen.remove();
         newScreen.classList.remove(inClass);
-        newScreen.style.position = '';
+
+        // Move newScreen back into normal flex flow where wrapper was.
+        wrapper.parentNode.insertBefore(newScreen, wrapper);
+        wrapper.remove();
+
+        newScreen.style.position = savedPosition;
+        newScreen.style.left = '';
+        newScreen.style.top = '';
       }
+
+      // Bug A: update toolbar title to reflect the newly loaded screen.
+      // Screen name comes from the sidebar anchor text for the destination
+      // screen — avoids an extra API call while staying accurate.
+      const toolbarName = document.querySelector('#preview-toolbar .screen-name');
+      if (toolbarName) {
+        const sidebarLink = document.querySelector('.mockup-sidebar-screen[href$="/' + screenId + '"]');
+        if (sidebarLink) toolbarName.textContent = sidebarLink.textContent.trim();
+      }
+      // Keep toolbar data-screen-id in sync so zoom localStorage key is correct.
+      const toolbar = document.getElementById('preview-toolbar');
+      if (toolbar) toolbar.dataset.screenId = screenId;
 
       if (!skipHistory) {
         const newUrl = '/preview/' + projectId + '/' + screenId;
@@ -126,8 +320,12 @@ const LINK_SCRIPT = `
       }
     } catch (err) {
       console.error('Transition error:', err);
+    } finally {
+      // Bug B: use finally so isTransitioning is always cleared even when an
+      // early return or unexpected exception short-circuits normal control flow.
+      // A stuck true value silently drops all subsequent sidebar clicks.
+      isTransitioning = false;
     }
-    isTransitioning = false;
   }
 
   (function() {
@@ -138,13 +336,221 @@ const LINK_SCRIPT = `
   })();
 <\/script>`;
 
-// Fixed back button lets designers navigate the flow history without browser chrome.
-const BACK_BUTTON = `
-<div style="position:fixed;top:10px;left:10px;z-index:9999;">
-  <button onclick="history.back()" style="padding:4px 12px;font-size:12px;border:1px solid #999;border-radius:4px;background:#fff;cursor:pointer;opacity:0.8;">
-    Back
-  </button>
+// Shared zoom CSS injected into both preview and editor pages.
+// Zoom is applied via transform:scale so the mockup layout is unaffected.
+const ZOOM_CSS = `
+<style>
+  .zoom-controls {
+    display: flex; align-items: center; gap: 2px;
+  }
+  /* Dark zoom controls — preview toolbar uses the same dark palette as editor */
+  .zoom-btn {
+    width: 26px; height: 26px; border: 1px solid #333333; border-radius: 4px;
+    background: #252525; cursor: pointer; font-size: 14px; font-weight: 600;
+    color: #888888; display: flex; align-items: center; justify-content: center;
+    transition: background 0.1s; padding: 0; line-height: 1;
+  }
+  .zoom-btn:hover { background: #2C2C2E; border-color: #888888; }
+  .zoom-level {
+    min-width: 38px; text-align: center; font-size: 12px; font-weight: 500;
+    color: #888888; padding: 0 2px;
+  }
+  /* Preview toolbar — dark theme matching the editor toolbar */
+  #preview-toolbar {
+    position: fixed; top: 0; left: 260px; right: 0; height: 48px; z-index: 9999;
+    background: #252525; border-bottom: 1px solid #333333;
+    box-shadow: none;
+    display: flex; align-items: center; padding: 0 16px; gap: 12px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px;
+    transition: left 0.3s;
+  }
+  #preview-toolbar .back-btn {
+    padding: 5px 10px; font-size: 12px; font-weight: 500;
+    border: 1px solid #333333; border-radius: 5px;
+    background: #252525; color: #888888; cursor: pointer;
+    text-decoration: none; display: flex; align-items: center; gap: 4px;
+    transition: background 0.1s;
+  }
+  #preview-toolbar .back-btn:hover { background: #2C2C2E; border-color: #888888; color: #E5E5E5; }
+  #preview-toolbar .screen-name {
+    font-weight: 600; font-size: 14px; flex: 1; color: #E5E5E5;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  #preview-toolbar a.edit-link {
+    padding: 6px 14px; font-size: 12px; font-weight: 500;
+    border: none; border-radius: 5px;
+    background: #6366F1; color: #fff; text-decoration: none;
+    transition: background 0.15s; white-space: nowrap;
+  }
+  #preview-toolbar a.edit-link:hover { background: #818CF8; }
+  body.sidebar-collapsed #preview-toolbar { left: 40px; }
+  @media (max-width: 768px) { #preview-toolbar { left: 0; } }
+</style>`;
+
+// Shared zoom JS injected into both preview and editor pages.
+// Reads screen id from data-screen-id on the toolbar or canvas element and
+// persists the chosen zoom level in localStorage so it survives page reloads.
+const ZOOM_JS = `
+<script>
+(function() {
+  var ZOOM_LEVELS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2];
+  var currentZoomIndex = 3; // default 100%
+
+  function getScreenId() {
+    var el = document.getElementById('preview-toolbar') || document.getElementById('editor-canvas');
+    return el ? (el.dataset.screenId || '') : '';
+  }
+
+  function applyZoom(scale) {
+    var screen = document.querySelector('.screen');
+    if (!screen) return;
+    // Bug C: clear any leftover inline position/overflow that the SPA transition
+    // animation sets on body. If not cleared before applying transform:scale the
+    // body stays in relative/hidden state and the scaled .screen bleeds outside
+    // its container as a white rectangle.
+    document.body.style.position = '';
+    document.body.style.overflow = '';
+    screen.style.overflow = 'hidden';
+    screen.style.transform = 'scale(' + scale + ')';
+    screen.style.transformOrigin = 'top center';
+    var lvlEl = document.querySelector('.zoom-level');
+    if (lvlEl) lvlEl.textContent = Math.round(scale * 100) + '%';
+    var sid = getScreenId();
+    if (sid) localStorage.setItem('mockup-zoom-' + sid, String(scale));
+  }
+
+  function fitToScreen() {
+    var screen = document.querySelector('.screen');
+    if (!screen) return;
+
+    // Determine available canvas dimensions based on active layout mode.
+    // Both editor and preview reserve 320px right margin for consistent layout.
+    // Editor shows the property panel there; preview keeps the space empty.
+    var sidebar = document.getElementById('mockup-sidebar');
+    var sidebarW = (sidebar && sidebar.classList.contains('collapsed')) ? 40 : 260;
+    var toolbarH = 48;
+    var panelEl = document.getElementById("property-panel") || document.querySelector(".property-panel"); var panelW = panelEl ? panelEl.offsetWidth : 0;
+    var paletteEl = document.getElementById("editor-palette"); var paletteW = paletteEl ? paletteEl.offsetWidth : 0;
+    var padW = 48;  // horizontal padding inside the canvas area
+    var padH = 40;  // vertical padding below toolbar
+
+    // On mobile the sidebar is off-screen, so don't subtract its width.
+    if (window.innerWidth <= 768) sidebarW = 0;
+
+    var availW = window.innerWidth - sidebarW - paletteW - panelW - padW;
+    var availH = window.innerHeight - toolbarH - padH;
+
+    // Read the screen's intrinsic (un-scaled) dimensions from inline style so
+    // the calculation is independent of the current transform value.
+    var screenW = parseInt(screen.style.width, 10) || screen.offsetWidth || 390;
+    var screenH = parseInt(screen.style.height, 10) || screen.offsetHeight || 844;
+
+    // Fit both axes — use the more constraining dimension.
+    var scale = Math.min(availW / screenW, availH / screenH);
+    scale = Math.max(0.1, Math.min(scale, 3));
+
+    // Same body cleanup as applyZoom — fitToScreen can also be called right
+    // after a transition that left position/overflow set on body.
+    document.body.style.position = '';
+    document.body.style.overflow = '';
+    screen.style.overflow = 'hidden';
+    var lvlEl = document.querySelector('.zoom-level');
+    if (lvlEl) lvlEl.textContent = Math.round(scale * 100) + '%';
+    screen.style.transform = 'scale(' + scale + ')';
+    screen.style.transformOrigin = 'top center';
+    var sid = getScreenId();
+    if (sid) localStorage.setItem('mockup-zoom-' + sid, String(scale));
+  }
+
+  function init() {
+    var sid = getScreenId();
+    var saved = sid ? localStorage.getItem('mockup-zoom-' + sid) : null;
+    if (saved) {
+      var savedScale = parseFloat(saved);
+      if (!isNaN(savedScale)) {
+        var idx = ZOOM_LEVELS.indexOf(savedScale);
+        if (idx !== -1) currentZoomIndex = idx;
+        applyZoom(savedScale);
+      }
+    }
+
+    document.addEventListener('click', function(e) {
+      var btn = e.target.closest('.zoom-btn');
+      if (!btn) return;
+      var action = btn.dataset.zoom;
+      if (action === 'in') {
+        currentZoomIndex = Math.min(currentZoomIndex + 1, ZOOM_LEVELS.length - 1);
+        applyZoom(ZOOM_LEVELS[currentZoomIndex]);
+      } else if (action === 'out') {
+        currentZoomIndex = Math.max(currentZoomIndex - 1, 0);
+        applyZoom(ZOOM_LEVELS[currentZoomIndex]);
+      } else if (action === 'fit') {
+        fitToScreen();
+      }
+    });
+  }
+
+  // Run after DOM is ready — may already be ready if deferred.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+<\/script>`;
+
+// Zoom controls HTML snippet — embedded in both preview and editor toolbars.
+const ZOOM_CONTROLS_HTML = `<div class="zoom-controls">
+    <button class="zoom-btn" data-zoom="out" title="Zoom out">&minus;</button>
+    <span class="zoom-level">100%</span>
+    <button class="zoom-btn" data-zoom="in" title="Zoom in">+</button>
+    <button class="zoom-btn" style="min-width:32px;font-size:11px;" data-zoom="fit" title="Fit to width">Fit</button>
+  </div>`;
+
+// Preview toolbar replaces the old scattered BACK_BUTTON + buildEditButton overlay.
+// Styled to match the editor toolbar for visual consistency between modes.
+// Floating zoom controls HTML for preview mode — positioned bottom-right,
+// matching the editor's floating zoom controls layout and behavior.
+const PREVIEW_FLOATING_ZOOM_HTML = `
+<div id="preview-zoom-controls">
+  <button class="zoom-btn" data-zoom="out" title="Zoom out">&minus;</button>
+  <span class="zoom-level">100%</span>
+  <button class="zoom-btn" data-zoom="in" title="Zoom in">+</button>
+  <button class="zoom-btn" style="min-width:32px;font-size:11px;" data-zoom="fit" title="Fit to width">Fit</button>
 </div>`;
+
+// Theme toggle JS for preview pages — mirrors the editor's _installThemeToggle()
+// from property-panel.js. Reads/writes localStorage so theme persists and stays
+// in sync when switching between preview and editor.
+const THEME_TOGGLE_JS = `
+<script>
+(function() {
+  var btn = document.getElementById('theme-toggle-btn');
+  if (!btn) return;
+  var icon = btn.querySelector('#theme-icon');
+
+  // Restore persisted theme — shared key with editor so toggle is synchronized.
+  var saved = localStorage.getItem('editor-theme') || 'dark';
+  document.body.dataset.theme = saved;
+  if (icon) icon.textContent = saved === 'light' ? '\\u2600' : '\\u263E';
+
+  btn.addEventListener('click', function() {
+    var next = document.body.dataset.theme === 'light' ? 'dark' : 'light';
+    document.body.dataset.theme = next;
+    if (icon) icon.textContent = next === 'light' ? '\\u2600' : '\\u263E';
+    localStorage.setItem('editor-theme', next);
+  });
+})();
+<\/script>`;
+
+function buildPreviewToolbar(projectId, screenId, screenName) {
+  return `
+<div id="preview-toolbar" data-screen-id="${screenId}">
+  <button class="back-btn" onclick="history.back()">&#8592; Back</button>
+  <span class="screen-name">${screenName}</span>
+  <a class="edit-link" href="/editor/${projectId}/${screenId}">Edit</a>
+</div>`;
+}
 
 function buildReloadScript(projectId, updatedAt) {
   // Polling rather than WebSockets keeps the server stateless and avoids
@@ -166,49 +572,50 @@ function buildReloadScript(projectId, updatedAt) {
 
 // Sidebar: left panel showing project tree with collapsible navigation.
 // Uses mockup-sidebar prefix on all classes to avoid conflicts with mockup content.
+// Dark theme by default — matches both preview and editor dark canvas.
 const SIDEBAR_CSS = `
 <style>
   #mockup-sidebar {
     position: fixed; top: 0; left: 0; bottom: 0; width: 260px;
-    background: #f5f5f5; border-right: 1px solid #ddd; z-index: 10000;
+    background: #1C1C1E; border-right: 1px solid #333333; z-index: 9990;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: 13px; color: #333; overflow-y: auto;
+    font-size: 13px; color: #E5E5E5; overflow-y: auto;
     transition: transform 0.3s ease;
   }
   #mockup-sidebar.collapsed { transform: translateX(-220px); }
   #mockup-sidebar-toggle {
     position: absolute; top: 12px; right: -32px; width: 28px; height: 28px;
-    background: #f5f5f5; border: 1px solid #ddd; border-left: none;
+    background: #1C1C1E; border: 1px solid #333333; border-left: none;
     border-radius: 0 4px 4px 0; cursor: pointer; display: flex;
-    align-items: center; justify-content: center; font-size: 14px; color: #666;
+    align-items: center; justify-content: center; font-size: 14px; color: #888888;
   }
-  #mockup-sidebar-toggle:hover { background: #e8e8e8; }
+  #mockup-sidebar-toggle:hover { background: #2C2C2E; }
   #mockup-sidebar h3 {
     margin: 0; padding: 16px 12px 8px; font-size: 11px; text-transform: uppercase;
-    letter-spacing: 0.5px; color: #999;
+    letter-spacing: 0.5px; color: #555555;
   }
   .mockup-sidebar-project { padding: 4px 0; }
   .mockup-sidebar-project-name {
     padding: 6px 12px; font-weight: 600; cursor: pointer; display: flex;
-    align-items: center; gap: 6px;
+    align-items: center; gap: 6px; color: #E5E5E5;
   }
-  .mockup-sidebar-project-name:hover { background: #e8e8e8; }
+  .mockup-sidebar-project-name:hover { background: #2C2C2E; }
   .mockup-sidebar-project-name .arrow { font-size: 10px; transition: transform 0.2s; }
   .mockup-sidebar-project-name .arrow.open { transform: rotate(90deg); }
   .mockup-sidebar-folder { padding: 2px 0; }
   .mockup-sidebar-folder-name {
     padding: 6px 12px; font-weight: 600; cursor: pointer; display: flex;
-    align-items: center; gap: 6px; color: #666;
+    align-items: center; gap: 6px; color: #888888;
   }
-  .mockup-sidebar-folder-name:hover { background: #e8e8e8; }
+  .mockup-sidebar-folder-name:hover { background: #2C2C2E; }
   .mockup-sidebar-folder-name .arrow { font-size: 10px; transition: transform 0.2s; }
   .mockup-sidebar-folder-name .arrow.open { transform: rotate(90deg); }
   .mockup-sidebar-screen {
     padding: 5px 12px 5px 28px; cursor: pointer; text-decoration: none;
-    display: block; color: #555; border-radius: 4px; margin: 1px 8px;
+    display: block; color: #888888; border-radius: 4px; margin: 1px 8px;
   }
-  .mockup-sidebar-screen:hover { background: #e0e0e0; }
-  .mockup-sidebar-screen.active { background: #d0d0ff; color: #333; font-weight: 500; }
+  .mockup-sidebar-screen:hover { background: #2C2C2E; color: #E5E5E5; }
+  .mockup-sidebar-screen.active { background: #6366F1; color: #FFFFFF; font-weight: 500; }
   body { margin-left: 260px; transition: margin-left 0.3s; }
   body.sidebar-collapsed { margin-left: 40px; }
   @media (max-width: 768px) {
@@ -225,6 +632,11 @@ const SIDEBAR_HTML = `
   <button id="mockup-sidebar-toggle" aria-label="Toggle sidebar">&lsaquo;</button>
   <h3>Projects</h3>
   <div id="mockup-sidebar-tree"></div>
+  <div id="sidebar-theme-toggle">
+    <button id="theme-toggle-btn" title="Toggle theme">
+      <span id="theme-icon">&#9790;</span>
+    </button>
+  </div>
 </div>`;
 
 // Sidebar client-side JS: fetches project tree from /api/projects, handles
@@ -237,6 +649,10 @@ const SIDEBAR_JS = `
   var toggle = document.getElementById('mockup-sidebar-toggle');
   var tree = document.getElementById('mockup-sidebar-tree');
   if (!sidebar) return;
+
+  // In editor mode screen links must stay within the editor — /editor/:pid/:sid.
+  // In all other contexts (preview, landing) use /preview/:pid/:sid.
+  var pathPrefix = window.location.pathname.startsWith('/editor') ? '/editor/' : '/preview/';
 
   // expandedNodes tracks both folder paths and project IDs so collapse/expand
   // state survives the periodic 3s re-render without losing user choices.
@@ -313,7 +729,19 @@ const SIDEBAR_JS = `
         for (var k = 0; k < proj.screens.length; k++) {
           var scr = proj.screens[k];
           var cls = scr.id === active.screenId ? ' active' : '';
-          items.push('<a class="mockup-sidebar-screen' + cls + '" href="\\/preview\\/' + proj.id + '\\/' + scr.id + '" style="padding-left:' + screenPad + 'px">' + escName(scr.name) + '<\\/a>');
+          // Skip rendering draft screens as clickable links (no thumbnail).
+          var isDraft = scr.status === 'draft';
+          var screenHtml = isDraft ? '<div' : '<a';
+          var screenAttrs = isDraft ? ' class="mockup-sidebar-screen' + cls + '" style="padding-left:' + screenPad + 'px">' : ' class="mockup-sidebar-screen' + cls + '" href="' + pathPrefix + proj.id + '\\/' + scr.id + '" style="padding-left:' + screenPad + 'px">';
+          var screenEnd = isDraft ? '<\\/div>' : '<\\/a>';
+          var versionBadge = scr.version ? ' <span style="font-size:11px;opacity:0.7;margin-left:4px">v' + scr.version + '<\\/span>' : '';
+          var statusDot = '';
+          if (scr.status === 'approved') {
+            statusDot = ' <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#10b981;margin-left:4px;vertical-align:middle"><\\/span>';
+          } else if (scr.status === 'rejected') {
+            statusDot = ' <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#ef4444;margin-left:4px;vertical-align:middle"><\\/span>';
+          }
+          items.push(screenHtml + screenAttrs + escName(scr.name) + versionBadge + statusDot + screenEnd);
         }
       }
       items.push('<\\/div>');
@@ -391,11 +819,811 @@ const SIDEBAR_JS = `
 })();
 <\/script>`;
 
-function injectPreviewAssets(html, projectId, updatedAt) {
+// Returns an "Edit" button overlay injected into preview pages so designers
+// can jump directly from preview to the editor for the same screen.
+function buildEditButton(projectId, screenId) {
+  return `
+<div style="position:fixed;top:10px;right:10px;z-index:9999;">
+  <a href="/editor/${projectId}/${screenId}" style="padding:4px 12px;font-size:12px;border:1px solid #999;border-radius:4px;background:#fff;cursor:pointer;opacity:0.8;text-decoration:none;color:#333;">
+    Edit
+  </a>
+</div>`;
+}
+
+// Editor CSS: three-column layout (sidebar | canvas | property panel) with a
+// fixed toolbar. Uses editor- prefix to avoid clashing with mockup content styles.
+// Override SIDEBAR_CSS body rule so sidebar + toolbar + panel all cooperate in
+// the three-column layout (sidebar is already accounted for via margin-left on canvas/toolbar).
+// Design tokens extracted from Edit Mode — Dark mockup (scr_UhQyj7R04a).
+const EDITOR_CSS = `
+<style>
+  :root {
+    /* Surface hierarchy */
+    --surface-0: #0A0A0B;
+    --surface-1: #111113;
+    --surface-2: #1A1A1F;
+    --surface-3: #242429;
+    --surface-4: #2E2E35;
+
+    /* Accent */
+    --accent: #6366F1;
+    --accent-hover: #818CF8;
+    --accent-gradient: linear-gradient(135deg, #6366F1, #8B5CF6);
+    --accent-subtle: rgba(99, 102, 241, 0.15);
+    --accent-glow: 0 0 20px rgba(99, 102, 241, 0.3);
+
+    /* Borders */
+    --border-subtle: rgba(255, 255, 255, 0.04);
+    --border-default: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.16);
+
+    /* Text */
+    --text-primary: #E5E5E5;
+    --text-secondary: #888888;
+    --text-muted: #555555;
+    --text-xxs: 10px;
+    --text-xs: 11px;
+    --text-sm: 12px;
+    --text-base: 13px;
+    --text-md: 14px;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+
+    /* Border radius */
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 10px;
+
+    --danger: #FF453A;
+    --dot-grid: rgba(255, 255, 255, 0.04);
+    --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  /* Reset the sidebar's body margin — editor layout manages offsets explicitly */
+  body { margin: 0 !important; background: var(--surface-0); }
+
+  /* Dark sidebar override — editor uses dark sidebar matching the mockup,
+     while preview pages keep the default light sidebar from SIDEBAR_CSS. */
+  #mockup-sidebar {
+    width: 240px !important;
+    background: var(--surface-1) !important;
+    border-right: 1px solid var(--border-default) !important;
+    color: var(--text-primary) !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  #mockup-sidebar-tree { flex: 1; overflow-y: auto; }
+  #mockup-sidebar-toggle {
+    background: var(--surface-1) !important;
+    border-color: var(--border-default) !important;
+    color: var(--text-secondary) !important;
+  }
+  #mockup-sidebar-toggle:hover { background: var(--surface-3) !important; }
+  #mockup-sidebar h3 { color: var(--text-muted) !important; }
+  .mockup-sidebar-project-name { color: var(--text-primary) !important; }
+  .mockup-sidebar-project-name:hover { background: var(--surface-3) !important; }
+  .mockup-sidebar-folder-name { color: var(--text-secondary) !important; }
+  .mockup-sidebar-folder-name:hover { background: var(--surface-3) !important; }
+  .mockup-sidebar-screen { color: var(--text-secondary) !important; }
+  .mockup-sidebar-screen:hover { background: var(--surface-3) !important; }
+  .mockup-sidebar-screen.active {
+    background: var(--accent) !important;
+    color: #FFFFFF !important;
+    font-weight: 500;
+  }
+
+  /* Theme toggle pinned to sidebar bottom via flex margin-top:auto */
+  #sidebar-theme-toggle {
+    margin-top: auto;
+    padding: 12px 8px;
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  #sidebar-theme-toggle button {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 16px;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #sidebar-theme-toggle button:hover {
+    background: var(--surface-3);
+    color: var(--text-primary);
+  }
+
+  #editor-toolbar {
+    position: fixed; top: 0; left: 240px; right: 300px; height: 48px; z-index: 9999;
+    background: var(--surface-2); border-bottom: 1px solid var(--border-subtle);
+    box-shadow: none;
+    display: flex; align-items: center; padding: 0 16px; gap: 12px;
+    font-family: var(--font-ui); font-size: 13px;
+  }
+  #editor-toolbar .screen-name {
+    font-weight: 600; font-size: 14px; flex: 1; color: var(--text-secondary);
+  }
+  #editor-toolbar .edit-mode-badge {
+    font-size: 10px; font-weight: 500; color: var(--text-secondary);
+    background: var(--surface-2); border-radius: 3px; padding: 2px 6px;
+    text-transform: uppercase; letter-spacing: 0.4px;
+  }
+  #editor-toolbar a.preview-link {
+    padding: 6px 14px; font-size: 12px; font-weight: 500;
+    border: none; border-radius: 5px;
+    background: var(--accent); color: #fff; text-decoration: none;
+    transition: background 0.15s;
+  }
+  #editor-toolbar a.preview-link:hover { background: var(--accent-hover); }
+
+  #editor-canvas {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    margin-top: 0;
+    min-height: calc(100vh - 48px);
+    display: flex; align-items: flex-start; justify-content: center; padding: 20px 24px;
+    background: var(--surface-0);
+    /* Dot grid pattern matching mockup — 52px spacing, 3px dots */
+    background-image: radial-gradient(circle, var(--dot-grid) 1px, transparent 1px);
+    background-size: 52px 52px;
+    box-shadow: inset 2px 0 8px rgba(0,0,0,0.3);
+  }
+  #editor-canvas .screen { box-shadow: 0 4px 24px rgba(0,0,0,0.4); overflow: visible !important; }
+
+  #editor-right-panel {
+    width: 300px; min-width: 300px;
+    display: flex; flex-direction: column;
+    background: var(--surface-1); border-left: 1px solid var(--border-default);
+    overflow-x: hidden; overflow-y: auto;
+    box-sizing: border-box;
+  }
+  /* Tab navigation for right panel — Properties | Components */
+  #editor-panel-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-default);
+    background: var(--surface-1);
+    flex-shrink: 0;
+  }
+  .panel-tab {
+    flex: 1; padding: 8px 4px;
+    font-size: var(--text-xs); font-weight: 500;
+    color: var(--text-secondary); background: transparent;
+    border: none; cursor: pointer;
+    transition: color 0.15s, background 0.15s;
+    letter-spacing: 0.02em;
+  }
+  .panel-tab:hover { color: var(--text-primary); background: var(--surface-3); }
+  .panel-tab.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
+  .panel-tab-content {
+    display: none; flex: 1; overflow-y: auto; flex-direction: column;
+    padding: 0 12px;
+  }
+  .panel-tab-content.active { display: flex; }
+
+  #editor-property-panel {
+    flex: 1;
+    background: var(--surface-1);
+    font-family: var(--font-ui); font-size: 13px;
+    overflow-y: auto;
+    color: var(--text-primary);
+  }
+  #editor-property-panel .panel-header {
+    padding: 16px 24px 12px; border-bottom: 1px solid var(--border-default); margin-bottom: 0;
+    font-size: 13px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--text-muted); background: var(--surface-1);
+    position: sticky; top: 0; z-index: 1;
+  }
+  #editor-property-panel .panel-body { padding: 16px 24px 24px; }
+  #editor-property-panel .panel-placeholder {
+    color: var(--text-muted); font-size: 12px; text-align: center; margin-top: 24px; line-height: 1.5;
+  }
+  .panel-group { margin-bottom: 16px; }
+  .panel-group-title {
+    font-size: var(--text-xxs); font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--text-secondary);
+    padding: 14px 0 6px; border-top: 1px solid var(--border-subtle); margin-top: 4px;
+  }
+  .panel-group:first-child .panel-group-title { border-top: none; margin-top: 0; }
+  .panel-field { margin-bottom: 6px; }
+  .panel-field label {
+    display: block; font-size: var(--text-xxs); color: var(--text-secondary); margin-bottom: 4px;
+    font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .panel-field input[type="number"],
+  .panel-field input[type="text"],
+  .panel-field input[type="color"],
+  .panel-field select {
+    width: 100%; padding: 4px 8px; border: 1px solid var(--border-default); border-radius: var(--radius-sm);
+    font-size: var(--text-sm); box-sizing: border-box; background: var(--surface-2);
+    color: var(--text-primary);
+    transition: border-color 0.15s;
+  }
+  .panel-field input:focus, .panel-field select:focus {
+    border-color: var(--accent); outline: none; box-shadow: var(--accent-glow);
+  }
+  .panel-field input:disabled {
+    background: var(--border-subtle); color: var(--text-secondary);
+  }
+  .panel-position-grid {
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .panel-position-grid .panel-field { margin-bottom: 0; }
+  .panel-field input[type="number"] { -moz-appearance: textfield; }
+  .panel-field input[type="number"]::-webkit-inner-spin-button,
+  .panel-field input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none; margin: 0;
+  }
+  .panel-field-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 4px;
+  }
+  .panel-field-header label { margin-bottom: 0; }
+  .panel-field-header input[type="number"] {
+    width: 80px; text-align: right; padding: 6px 10px;
+    border: 1px solid var(--border-default); border-radius: 4px;
+    font-size: 14px; font-weight: 500; background: var(--surface-2);
+    color: var(--text-primary);
+  }
+  /* Ensure all property panel inputs use dark/themed styles */
+  #editor-right-panel input[type="text"],
+  #editor-right-panel input[type="number"],
+  #editor-right-panel select {
+    background: var(--surface-2) !important;
+    border: 1px solid var(--border-default) !important;
+    border-radius: var(--radius-sm) !important;
+    color: var(--text-primary) !important;
+    font-size: var(--text-sm) !important;
+    padding: 5px 8px !important;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  #editor-right-panel input[type="text"]:focus,
+  #editor-right-panel input[type="number"]:focus,
+  #editor-right-panel select:focus {
+    outline: none !important;
+    border-color: var(--accent) !important;
+    box-shadow: var(--accent-glow) !important;
+  }
+  /* Canvas element styling — shadow + selection outline */
+  .element { box-shadow: var(--shadow-sm); }
+  .selected, [data-element-id].selected {
+    outline: 1.5px solid var(--accent) !important;
+    outline-offset: 1px;
+  }
+
+  /* Resize handles on selected elements — override inline styles from resize.js */
+  .resize-handle {
+    position: absolute;
+    width: 8px !important;
+    height: 8px !important;
+    /* Centre the handle on its anchor point so left/top can target the exact
+       corner or midpoint without manual half-size offsets. */
+    transform: translate(-50%, -50%);
+    background: white !important;
+    border: 2px solid var(--accent) !important;
+    border-radius: 2px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    z-index: 1000;
+    cursor: pointer;
+    box-sizing: border-box;
+  }
+  .resize-handle:hover {
+    background: var(--accent) !important;
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+
+  .toolbar-separator {
+    width: 1px; height: 24px; background: var(--border-subtle);
+  }
+  .toolbar-sep {
+    width: 1px; height: 24px; background: var(--border-subtle);
+    margin: 0 4px; align-self: center;
+  }
+  .toolbar-btn {
+    width: 32px; height: 32px; border: 1px solid var(--border-default); border-radius: 4px;
+    background: var(--surface-2); cursor: pointer; font-size: 16px; color: var(--text-secondary);
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, border-color 0.15s;
+    padding: 0;
+  }
+  .toolbar-btn:hover:not(:disabled) { background: var(--surface-3); border-color: var(--text-secondary); }
+  .toolbar-btn:disabled { opacity: 0.4; cursor: default; }
+  .toolbar-btn-active { background: var(--accent-subtle); border-color: var(--accent); color: var(--accent); }
+
+  #lang-select {
+    background: var(--surface-2);
+    border: 1px solid var(--border-default);
+    color: var(--text-primary);
+    font-size: var(--text-xs);
+    padding: 3px 6px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    outline: none;
+  }
+  #lang-select:hover {
+    border-color: var(--border-strong);
+  }
+  #lang-select:focus {
+    border-color: var(--accent);
+  }
+
+  #style-select {
+    background: var(--surface-2);
+    border: 1px solid var(--border-default);
+    color: var(--text-primary);
+    font-size: var(--text-xs);
+    padding: 3px 6px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    outline: none;
+    max-width: 150px;
+  }
+  #style-select:hover {
+    border-color: var(--border-strong);
+  }
+  #style-select:focus {
+    border-color: var(--accent);
+  }
+  .toolbar-label {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  /* Mode toggle buttons — pill style for select/add mode */
+  .mode-btn {
+    border-radius: var(--radius-md); padding: 4px 10px;
+    font-size: var(--text-sm); border: none;
+    background: transparent; color: var(--text-secondary);
+    cursor: pointer; transition: background 0.15s, color 0.15s;
+  }
+  .mode-btn.active { background: var(--accent-gradient); color: white; }
+  .mode-btn:hover:not(.active) { background: var(--surface-3); color: var(--text-primary); }
+
+  #editor-flex-wrapper {
+    display: flex; flex: 1;
+    margin-left: 240px; margin-top: 48px;
+    transition: margin-left 0.2s ease;
+  }
+
+  body.sidebar-collapsed #editor-toolbar { left: 40px; }
+  body.sidebar-collapsed #editor-flex-wrapper { margin-left: 40px; }
+
+  /* Sidebar collapse — editor sidebar (JS wired separately) */
+  #editor-sidebar { position: relative; transition: width 0.2s ease; }
+  #editor-sidebar.collapsed { width: 48px; overflow: hidden; }
+  #editor-sidebar.collapsed .sidebar-label,
+  #editor-sidebar.collapsed .project-name,
+  #editor-sidebar.collapsed .screen-name { display: none; }
+  #editor-sidebar-collapse-btn {
+    position: absolute; right: -12px; top: 50%; transform: translateY(-50%);
+    width: 24px; height: 24px;
+    background: var(--surface-3); border: 1px solid var(--border-default); border-radius: 50%;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 10px; color: var(--text-secondary); z-index: 10;
+    transition: background 0.15s;
+  }
+  #editor-sidebar-collapse-btn:hover { background: var(--surface-4); }
+  #editor-flex-wrapper.sidebar-collapsed { margin-left: 48px; }
+  #editor-toolbar.sidebar-collapsed { left: 48px; }
+
+  /* Floating zoom controls — bottom-right of canvas, above right panel */
+  #zoom-controls {
+    position: fixed;
+    bottom: 20px;
+    right: 316px;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: var(--surface-3);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    padding: 4px 6px;
+    z-index: 100;
+    box-shadow: var(--shadow-md);
+  }
+  #zoom-controls .zoom-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 16px;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    padding: 0;
+  }
+  #zoom-controls .zoom-btn:hover {
+    background: var(--surface-4);
+  }
+  #zoom-controls .zoom-level {
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    min-width: 36px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Delete element button at bottom of property panel */
+  .panel-delete-btn {
+    background: transparent; border: 1px solid var(--danger); border-radius: 6px;
+    color: var(--danger); padding: 8px 16px; font-size: 13px; cursor: pointer;
+    width: 100%; margin-top: 16px;
+    transition: background 0.15s;
+  }
+  .panel-delete-btn:hover { background: rgba(255, 69, 58, 0.1); }
+
+  /* Compact number input inside position pair cells */
+  .panel-field--compact .panel-input--compact {
+    width: 100%; padding: 6px 8px; font-size: 13px;
+  }
+  /* Inline field row (label left, widget right) — used for boolean toggles */
+  .panel-field--inline {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .panel-field--inline .panel-label { margin-bottom: 0; }
+  /* Two-column grid for x+y and width+height pairs */
+  .panel-pos-pair {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 8px;
+  }
+  .panel-pos-pair .panel-field { margin-bottom: 0; }
+  /* Custom slim slider for numeric fields */
+  .prop-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--border-default);
+    margin-top: 4px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    display: block;
+  }
+  .prop-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 2px solid var(--surface-1);
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+  .prop-slider::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 2px solid var(--surface-1);
+  }
+  .prop-slider:focus {
+    outline: none;
+  }
+  .prop-slider::-webkit-slider-runnable-track {
+    height: 3px;
+    border-radius: 2px;
+  }
+
+  /* Color field: swatch (native picker) + hex text input side by side */
+  .panel-color-row { display: flex; align-items: center; gap: 6px; }
+  .panel-color-swatch {
+    width: 32px; height: 32px; border: 1px solid var(--border-default); border-radius: 4px;
+    cursor: pointer; padding: 2px; background: var(--surface-2); flex-shrink: 0;
+  }
+  .panel-input--color-text { flex: 1; }
+
+  /* Light theme overrides — toggled via data-theme="light" on <body>.
+     Provides a clean daytime palette for designers who prefer light backgrounds.
+     Maps new surface/border tokens to light equivalents. */
+  body[data-theme="light"] {
+    --surface-0: #F5F5F5;
+    --surface-1: #FFFFFF;
+    --surface-2: #F5F5F5;
+    --surface-3: #F0F0F0;
+    --surface-4: #E8E8E8;
+    --text-primary: #1A1A1A;
+    --text-secondary: #666666;
+    --text-muted: #999999;
+    --border-subtle: rgba(0, 0, 0, 0.06);
+    --border-default: #E0E0E0;
+    --border-strong: #CCCCCC;
+    --dot-grid: #E8E8E8;
+  }
+</style>`;
+
+// Build the component metadata blob that the editor's component-meta.js reads
+// from window.__COMPONENT_META__. Pre-computing this avoids a browser-side
+// import of server-only renderer modules (which would 404 in the browser).
+function buildComponentMetaJson() {
+  const types = getAvailableTypes();
+  const defaults = {};
+  for (const t of types) {
+    const comp = getComponent(t);
+    if (comp && typeof comp.defaults === 'function') {
+      defaults[t] = comp.defaults();
+    }
+  }
+  return JSON.stringify({ types, defaults });
+}
+
+// Full editor page layout: sidebar | palette | canvas (with rendered screen) | property panel.
+// screenHtml is the raw fragment content (from buildScreenFragment) — not a full doc.
+// style param injects component-specific CSS so element styles (borders, etc.) render
+// correctly inside the editor canvas, matching what preview/screenshot produce.
+// Palette sidebar shows recent components + search + categories. ADD_MODE shows when
+// user presses shortcut to add element. Multi-select toolbar appears when >1 element selected.
+// Style value → human-readable label mapping. Used by both the toolbar dropdown
+// (project-level) and the property panel dropdown (screen-level override).
+const STYLE_OPTIONS = [
+  { value: 'wireframe',      label: 'Wireframe' },
+  { value: 'material',       label: 'Material' },
+  { value: 'material3',      label: 'Material 3' },
+  { value: 'ios',            label: 'iOS' },
+  { value: 'hig',            label: 'Apple HIG' },
+  { value: 'fluent2',        label: 'Fluent 2' },
+  { value: 'antd',           label: 'Ant Design' },
+  { value: 'carbon',         label: 'IBM Carbon' },
+  { value: 'flat',           label: 'Flat' },
+  { value: 'blueprint',      label: 'Blueprint' },
+  { value: 'hand-drawn',     label: 'Hand-drawn' },
+  { value: 'neubrutalism',   label: 'Neubrutalism' },
+  { value: 'glassmorphism',  label: 'Glassmorphism' },
+  { value: 'neumorphic',     label: 'Neumorphic' },
+  { value: 'claymorphism',   label: 'Claymorphism' },
+  { value: 'dark-minimal',   label: 'Dark Minimal' },
+  { value: 'aurora',         label: 'Aurora' },
+  { value: 'skeuomorphic',   label: 'Skeuomorphic' },
+  { value: 'slate',          label: 'Slate' },
+];
+
+function buildStyleOptionsHtml(selectedValue) {
+  return STYLE_OPTIONS.map(({ value, label }) => {
+    const sel = value === selectedValue ? ' selected' : '';
+    return `<option value="${value}"${sel}>${label}</option>`;
+  }).join('');
+}
+
+function buildEditorPage(screenHtml, projectId, screenId, projectName, screenName, style = 'wireframe', projectStyle = 'wireframe', screenStyle = null) {
+  const componentMetaJson = buildComponentMetaJson();
+  // Component styles must come before EDITOR_CSS so editor rules can override them.
+  const componentStyle = `<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  .element > *:first-child { width: 100% !important; height: 100% !important; box-sizing: border-box; }
+  ${loadStyle(style)}
+</style>`;
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${screenName} — Editor</title>
+  ${SIDEBAR_CSS}
+  ${componentStyle}
+  ${EDITOR_CSS}
+  ${ZOOM_CSS}
+  <style>
+    #editor-palette {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      padding: 8px 0;
+      font-size: 12px;
+      color: var(--text-secondary);
+      background: var(--surface-1);
+    }
+    .palette-section-title { padding: 4px 12px; color: var(--text-muted); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+    .palette-recent-items { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 12px; }
+    .palette-recent-chip { background: var(--surface-3); border: 1px solid var(--border-default); border-radius: 4px; padding: 3px 8px; cursor: pointer; font-size: 11px; color: var(--text-primary); }
+    .palette-recent-chip:hover, .palette-recent-chip.active { background: var(--accent); color: white; border-color: var(--accent); }
+    .palette-search { padding: 8px 12px; position: relative; }
+    .palette-search input { width: 100%; background: var(--surface-2); border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: 6px 8px 6px 28px; color: var(--text-primary); font-size: var(--text-sm); box-sizing: border-box; }
+    .palette-search input:focus { border-color: var(--accent); outline: none; }
+    .palette-search-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 12px; pointer-events: none; }
+    .palette-category { margin-bottom: 4px; }
+    .palette-category-header { padding: 8px 12px 4px; color: var(--text-secondary); font-size: var(--text-xxs); text-transform: uppercase; letter-spacing: 0.08em; cursor: pointer; user-select: none; display: flex; align-items: center; gap: 4px; border-top: 1px solid var(--border-subtle); }
+    .palette-category-header:hover { color: var(--text-primary); }
+    .palette-category-header .chevron { transition: transform 0.15s; font-size: 8px; }
+    .palette-category.collapsed .chevron { transform: rotate(-90deg); }
+    .palette-category.collapsed .palette-category-items { display: none; }
+    .palette-items { padding: 0 12px; }
+    .palette-item { padding: 6px 12px; border-radius: var(--radius-md); cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; background: var(--surface-2); border: 1px solid transparent; transition: background 0.1s, border 0.1s; margin-bottom: 2px; }
+    .palette-item:hover { background: var(--surface-3); color: var(--text-primary); border: 1px solid var(--border-default); }
+    .palette-item.add-mode-active { background: var(--accent); color: white; border-color: var(--accent); }
+    .palette-shortcuts-hint { padding: 8px 12px; color: var(--text-muted); font-size: 10px; border-top: 1px solid var(--border-default); margin-top: auto; }
+    #multi-select-toolbar { display: none; gap: 4px; align-items: center; }
+    .toolbar-btn-danger { background: var(--danger) !important; color: white !important; border-color: var(--danger) !important; }
+    .toolbar-badge { padding: 2px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+    .toolbar-badge-add { background: #F59E0B; color: var(--surface-1); }
+    .box-select-overlay { position: absolute; pointer-events: none; border: 1px solid var(--accent); background: var(--accent-subtle); }
+    .element-selected-multi { outline: 2px solid var(--accent) !important; outline-offset: 1px; }
+    .toast { background: var(--surface-3); color: var(--text-primary); padding: 8px 14px; border-radius: 6px; margin-top: 8px; font-size: 12px; animation: fadeInOut 2.5s forwards; border: 1px solid var(--border-default); }
+    @keyframes fadeInOut { 0%{opacity:0;transform:translateY(8px)} 10%{opacity:1;transform:translateY(0)} 80%{opacity:1} 100%{opacity:0} }
+    /* Layers panel */
+    #layers-container { display: flex; flex-direction: column; height: 100%; overflow-y: auto; padding: 0; }
+    .layers-empty { padding: 16px 12px; text-align: center; color: var(--text-muted); font-size: 12px; }
+    .layers-list { display: flex; flex-direction: column; gap: 0; }
+    .layers-row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: var(--surface-2); border: 1px solid transparent; border-radius: 4px; margin: 0 8px 4px 8px; cursor: pointer; user-select: none; transition: background 0.1s, border 0.1s; }
+    .layers-row:hover { background: var(--surface-3); border-color: var(--border-default); }
+    .layers-row.selected { background: var(--accent-subtle); border-color: var(--accent); }
+    .layers-row.dragging { opacity: 0.6; background: var(--accent-subtle); }
+    .layers-row.drop-target { background: var(--accent-subtle); border: 2px solid var(--accent); }
+    .layers-drag-handle { flex-shrink: 0; color: var(--text-muted); cursor: grab; font-size: 10px; }
+    .layers-drag-handle:active { cursor: grabbing; }
+    .layers-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary); font-size: 12px; }
+    .layers-eye-btn { flex-shrink: 0; background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 12px; padding: 2px; }
+    .layers-eye-btn:hover { color: var(--text-primary); }
+    .layers-lock-icon { flex-shrink: 0; color: var(--text-muted); font-size: 12px; }
+  </style>
+</head>
+<body data-theme="dark">
+  <script>document.body.dataset.theme = localStorage.getItem('editor-theme') || 'dark';</script>
+  <div id="mockup-sidebar">
+    <button id="mockup-sidebar-toggle" aria-label="Toggle sidebar">&lsaquo;</button>
+    <button id="editor-sidebar-collapse-btn">&#x203A;</button>
+    <h3>Projects</h3>
+    <div id="mockup-sidebar-tree"></div>
+    <div id="sidebar-theme-toggle">
+      <button id="theme-toggle-btn" title="Toggle theme">
+        <span id="theme-icon">&#9790;</span>
+      </button>
+    </div>
+  </div>
+  <div id="editor-toolbar">
+    <span class="screen-name">${screenName}</span>
+    <span class="edit-mode-badge">Edit mode</span>
+    <div class="toolbar-separator"></div>
+    <button id="btn-undo" class="toolbar-btn" title="Undo (Cmd+Z)" disabled>&#8630;</button>
+    <button id="btn-redo" class="toolbar-btn" title="Redo (Cmd+Shift+Z)" disabled>&#8631;</button>
+    <div class="toolbar-separator"></div>
+    <button id="btn-grid" class="toolbar-btn toolbar-btn-active" title="Snap to grid (8px)">&#8862;</button>
+    <div id="add-mode-badge" style="display:none" class="toolbar-badge toolbar-badge-add">
+      ADD MODE: <span id="add-mode-label"></span> · Esc to cancel
+    </div>
+    <div id="multi-select-toolbar" style="display:none">
+      <button id="btn-delete-selected" class="toolbar-btn toolbar-btn-danger">Delete (<span id="multi-select-count">0</span>)</button>
+    </div>
+    <span class="toolbar-label">Style:</span>
+    <select id="style-select" title="Project style">
+      ${buildStyleOptionsHtml(projectStyle)}
+    </select>
+    <select id="lang-select" title="Język">
+      <option value="en">EN</option>
+      <option value="pl">PL</option>
+    </select>
+    <a class="preview-link" href="/preview/${projectId}/${screenId}">Preview</a>
+  </div>
+  <div id="editor-flex-wrapper">
+    <div id="editor-canvas" data-project-id="${projectId}" data-screen-id="${screenId}">
+      ${screenHtml}
+      <div id="zoom-controls">
+        <button class="zoom-btn" data-zoom="out" title="Zoom out">&minus;</button>
+        <span class="zoom-level">100%</span>
+        <button class="zoom-btn" data-zoom="in" title="Zoom in">+</button>
+        <button class="zoom-btn" data-zoom="fit" title="Fit to width">&#8865;</button>
+      </div>
+    </div>
+    <div id="editor-right-panel">
+      <div id="editor-panel-tabs">
+        <button class="panel-tab active" data-tab="properties">Properties</button>
+        <button class="panel-tab" data-tab="components">Components</button>
+        <button class="panel-tab" data-tab="layers">Layers</button>
+      </div>
+      <div id="editor-tab-properties" class="panel-tab-content active">
+        <div id="editor-property-panel">
+          <div class="panel-header">Properties</div>
+          <div class="panel-body">
+            <p class="panel-placeholder">Click an element to edit its properties</p>
+          </div>
+        </div>
+      </div>
+      <div id="editor-tab-components" class="panel-tab-content">
+        <div id="editor-palette">
+          <div class="palette-recent" id="palette-recent" style="display:none">
+            <div class="palette-section-title">RECENT</div>
+            <div class="palette-recent-items" id="palette-recent-items"></div>
+          </div>
+          <div class="palette-search">
+            <span class="palette-search-icon">&#128269;</span>
+            <input type="text" id="palette-search-input" placeholder="Search components..." />
+          </div>
+          <div id="palette-categories"></div>
+          <div class="palette-shortcuts-hint">B=Btn I=Input C=Card T=Text R=Rect · Esc=Cancel</div>
+        </div>
+      </div>
+      <div id="editor-tab-layers" class="panel-tab-content">
+        <div id="layers-container"></div>
+      </div>
+    </div>
+  </div>
+  <div id="toast-container" style="position:fixed;bottom:20px;right:20px;z-index:9999"></div>
+  ${SIDEBAR_JS}
+  ${ZOOM_JS}
+  <script>window.__COMPONENT_META__ = ${componentMetaJson};</script>
+  <script>window.__STYLE_OPTIONS__ = ${JSON.stringify(STYLE_OPTIONS)};
+  window.__PROJECT_STYLE__ = ${JSON.stringify(projectStyle)};
+  window.__SCREEN_STYLE__ = ${JSON.stringify(screenStyle)};</script>
+  <script src="/i18n/index.js"></script>
+  <script>
+    // Tab switching for right panel (Properties | Components)
+    (function() {
+      var tabs = document.getElementById('editor-panel-tabs');
+      if (!tabs) return;
+      tabs.addEventListener('click', function(e) {
+        var btn = e.target.closest('.panel-tab');
+        if (!btn) return;
+        var tabName = btn.dataset.tab;
+        tabs.querySelectorAll('.panel-tab').forEach(function(t) { t.classList.remove('active'); });
+        btn.classList.add('active');
+        document.querySelectorAll('.panel-tab-content').forEach(function(c) { c.classList.remove('active'); });
+        var target = document.getElementById('editor-tab-' + tabName);
+        if (target) target.classList.add('active');
+      });
+    })();
+  </script>
+  <script type="module">
+    import { initEditor } from '/editor/js/editor.js';
+    import { initApproval } from '/editor/js/approval.js';
+    const canvas = document.getElementById('editor-canvas');
+    const panel = document.getElementById('editor-property-panel');
+    // await initEditor so language-switcher listeners are registered only after
+    // the locale has fully loaded — avoids a race where clicks fire before
+    // window.setLanguage is wired up by initI18n.
+    (async () => {
+      await window.initI18n?.();
+      await initEditor({
+        projectId: canvas.dataset.projectId,
+        screenId: canvas.dataset.screenId,
+        canvas,
+        panel,
+      });
+      // initApproval runs after initEditor and i18n so translated button labels
+      // are available and the right panel DOM is fully in place.
+      await initApproval();
+    })();
+  </script>
+</body>
+</html>`;
+}
+
+function injectPreviewAssets(html, projectId, screenId, updatedAt, screenName) {
   // buildScreenHtml returns a full HTML document, so we inject into it
   // rather than nesting docs (which is invalid HTML).
-  html = html.replace('</head>', PREVIEW_STYLE + SIDEBAR_CSS + TRANSITION_CSS + '\n</head>');
-  html = html.replace('</body>', SIDEBAR_HTML + BACK_BUTTON + LINK_SCRIPT + SIDEBAR_JS + buildReloadScript(projectId, updatedAt) + '\n</body>');
+  html = html.replace('</head>', PREVIEW_STYLE + SIDEBAR_CSS + ZOOM_CSS + TRANSITION_CSS + '\n</head>');
+  // Inject data-theme on body so CSS vars apply from the start — the inline
+  // script reads localStorage before first paint to avoid a flash of wrong theme.
+  html = html.replace('<body', '<body data-theme="dark"');
+  html = html.replace('</body>',
+    '<script>document.body.dataset.theme = localStorage.getItem("editor-theme") || "dark";</script>' +
+    SIDEBAR_HTML +
+    buildPreviewToolbar(projectId, screenId, screenName) +
+    PREVIEW_FLOATING_ZOOM_HTML +
+    LINK_SCRIPT +
+    SIDEBAR_JS +
+    THEME_TOGGLE_JS +
+    buildReloadScript(projectId, updatedAt) +
+    ZOOM_JS +
+    '\n</body>',
+  );
   return html;
 }
 
@@ -421,12 +1649,14 @@ function buildLandingPage() {
   ${PREVIEW_STYLE}
   ${SIDEBAR_CSS}
 </head>
-<body>
+<body data-theme="dark">
+  <script>document.body.dataset.theme = localStorage.getItem('editor-theme') || 'dark';</script>
   ${SIDEBAR_HTML}
-  <div style="display:flex;align-items:center;justify-content:center;height:80vh;color:#999;font-family:-apple-system,sans-serif;font-size:18px;">
+  <div style="display:flex;align-items:center;justify-content:center;height:80vh;color:var(--text-muted);font-family:-apple-system,sans-serif;font-size:18px;">
     Select a screen from the sidebar to preview
   </div>
   ${SIDEBAR_JS}
+  ${THEME_TOGGLE_JS}
 </body>
 </html>`;
 }
@@ -435,6 +1665,20 @@ function buildLandingPage() {
 export function startPreviewServer(port = config.previewPort) {
   const app = express();
   const store = new ProjectStore(config.dataDir);
+
+  // Parse JSON bodies for PATCH/POST mutation endpoints.
+  app.use(express.json());
+
+  // Static JS modules for the editor — registered BEFORE /editor/:pid/:sid so
+  // Express doesn't interpret the literal segment 'js' as a projectId.
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = pathDirname(__filename);
+  app.use('/editor/js', express.static(pathJoin(__dirname, 'editor')));
+
+  // i18n browser module + locale JSON files — must be static so the <script>
+  // tag in buildEditorPage can load /i18n/index.js (not just the JSON files
+  // handled by the parameterized /i18n/:lang.json route below).
+  app.use('/i18n', express.static(pathJoin(__dirname, 'i18n')));
 
   // Root redirect and landing page must be registered before the parameterized
   // /preview/:projectId/:screenId route so Express doesn't treat "preview" as a projectId.
@@ -455,8 +1699,25 @@ export function startPreviewServer(port = config.previewPort) {
       const html = injectPreviewAssets(
         buildScreenHtml(screen, style),
         project.id,
+        screen.id,
         project.updated_at,
+        screen.name,
       );
+      res.type('html').send(html);
+    } catch (err) {
+      res.status(500).send('Error: ' + err.message);
+    }
+  });
+
+  app.get('/editor/:projectId/:screenId', async (req, res) => {
+    try {
+      const project = await store.getProject(req.params.projectId);
+      const screen = project.screens.find(s => s.id === req.params.screenId);
+      if (!screen) return res.status(404).send('Screen not found');
+
+      const style = screen.style || project.style || 'wireframe';
+      const fragment = buildScreenFragment(screen, style);
+      const html = buildEditorPage(fragment, project.id, screen.id, project.name, screen.name, style, project.style || 'wireframe', screen.style || null);
       res.type('html').send(html);
     } catch (err) {
       res.status(500).send('Error: ' + err.message);
@@ -488,17 +1749,220 @@ export function startPreviewServer(port = config.previewPort) {
     }
   });
 
-  // Read config.dataDir at request time so tests can swap data directories
-  // between requests without restarting the server.
   app.get('/api/projects', async (_req, res) => {
     try {
-      const projectStore = new ProjectStore(config.dataDir);
-      await projectStore.init();
-      const tree = await projectStore.listProjectsTree();
+      // Rebuild index on each listing request so the sidebar reflects files
+      // added or moved outside the store since the server started.
+      await store.init();
+      const tree = await store.listProjectsTree();
       res.json(tree);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
+  });
+
+  // PATCH /api/projects/:projectId
+  // Updates allowed project fields (name, style).
+  app.patch('/api/projects/:projectId', async (req, res) => {
+    try {
+      const project = await store.getProject(req.params.projectId);
+      const { name, style } = req.body;
+      if (name !== undefined) project.name = name;
+      if (style !== undefined) project.style = style;
+      await store._save(project);
+      res.json(project);
+    } catch (err) {
+      res.status(404).json({ error: err.message });
+    }
+  });
+
+  // Editor data endpoints — parameterized routes registered after the bare
+  // /api/projects route so Express does not interpret "projects" as a projectId.
+  app.get('/api/projects/:projectId', async (req, res) => {
+    try {
+      const project = await store.getProject(req.params.projectId);
+      res.json(project);
+    } catch (err) {
+      res.status(404).json({ error: err.message });
+    }
+  });
+
+  app.get('/api/projects/:projectId/screens/:screenId', async (req, res) => {
+    try {
+      const project = await store.getProject(req.params.projectId);
+      const screen = project.screens.find(s => s.id === req.params.screenId);
+      if (!screen) return res.status(404).json({ error: 'Screen not found' });
+      res.json(screen);
+    } catch (err) {
+      res.status(404).json({ error: err.message });
+    }
+  });
+
+  // PATCH /api/projects/:projectId/screens/:screenId
+  // Updates allowed screen fields (name, background, width, height, style, status).
+  app.patch('/api/projects/:projectId/screens/:screenId', async (req, res) => {
+    try {
+      // Validate status if provided before building updates object.
+      const { status } = req.body;
+      if (status !== undefined && !['draft', 'approved', 'rejected'].includes(status)) {
+        return res.status(400).json({ error: 'Invalid status. Must be: draft, approved, or rejected' });
+      }
+
+      // Build updates object with only provided fields.
+      const allowed = ['name', 'background', 'width', 'height', 'style', 'status'];
+      const updates = {};
+      for (const field of allowed) {
+        if (req.body[field] !== undefined) {
+          updates[field] = req.body[field];
+        }
+      }
+
+      // Use updateScreen() for proper encapsulation instead of direct _save().
+      const screen = await store.updateScreen(req.params.projectId, req.params.screenId, updates);
+      res.json(screen);
+    } catch (err) {
+      res.status(404).json({ error: err.message });
+    }
+  });
+
+  // POST /api/projects/:projectId/screens/:screenId/approve
+  // Approval flow — 3 actions: accept, accept_with_comments, reject.
+  // "accept_with_comments" keeps status draft so the author can address open comments.
+  app.post('/api/projects/:projectId/screens/:screenId/approve', async (req, res) => {
+    const { projectId, screenId } = req.params;
+    const { action, reason = '' } = req.body || {};
+
+    const validActions = ['accept', 'accept_with_comments', 'reject'];
+    if (!validActions.includes(action)) {
+      return res.status(400).json({ error: `Invalid action. Must be one of: ${validActions.join(', ')}` });
+    }
+
+    try {
+      // Fetch screen before update to access current comments.
+      const project = await store.getProject(projectId);
+      const screen = project.screens.find(s => s.id === screenId);
+      if (!screen) return res.status(404).json({ error: 'Screen not found' });
+
+      let newStatus;
+      let responseBody;
+
+      if (action === 'accept') {
+        newStatus = 'approved';
+        // backward compat: include approved:true for older clients
+        responseBody = { status: 'accepted', approved: true };
+      } else if (action === 'accept_with_comments') {
+        // Screen stays draft — author must address remaining open comments.
+        newStatus = 'draft';
+        const openComments = (screen.comments || []).filter(c => !c.resolved);
+        responseBody = { status: 'accepted_with_comments', comments: openComments };
+      } else {
+        // reject
+        newStatus = 'rejected';
+        responseBody = { status: 'rejected', reason };
+      }
+
+      await store.updateScreen(projectId, screenId, {
+        status: newStatus,
+        ...(action === 'accept_with_comments' && { _approval_action: 'accept_with_comments' }),
+        ...(action === 'reject' && { reject_reason: reason }),
+      });
+      res.json(responseBody);
+    } catch (err) {
+      res.status(404).json({ error: err.message });
+    }
+  });
+
+  // PATCH /api/projects/:projectId/screens/:screenId/elements/:elementId
+  // Applies positional update (moveElement) and/or properties update (updateElement).
+  app.patch('/api/projects/:projectId/screens/:screenId/elements/:elementId', async (req, res) => {
+    const { projectId, screenId, elementId } = req.params;
+    const { x, y, width, height, z_index, properties } = req.body;
+    try {
+      const hasPositional = [x, y, width, height, z_index].some(v => v !== undefined);
+      if (hasPositional) {
+        await store.moveElement(projectId, screenId, elementId, x, y, width, height, z_index);
+      }
+      if (properties !== undefined) {
+        await store.updateElement(projectId, screenId, elementId, properties);
+      }
+
+      // Return the current element state after all mutations.
+      const elements = await store.listElements(projectId, screenId);
+      const element = elements.find(e => e.id === elementId);
+      if (!element) return res.status(404).json({ error: 'Element not found' });
+      res.json(element);
+    } catch (err) {
+      res.status(404).json({ error: err.message });
+    }
+  });
+
+  // POST /api/projects/:projectId/screens/:screenId/elements
+  // Creates a new element; `type` is required, all positional fields default to 0.
+  app.post('/api/projects/:projectId/screens/:screenId/elements', async (req, res) => {
+    const { projectId, screenId } = req.params;
+    const { type, x = 0, y = 0, width = 100, height = 40, properties = {}, z_index = 0 } = req.body;
+
+    if (!type) return res.status(400).json({ error: 'type is required' });
+
+    try {
+      const element = await store.addElement(projectId, screenId, type, x, y, width, height, properties, z_index);
+      res.status(201).json(element);
+    } catch (err) {
+      res.status(404).json({ error: err.message });
+    }
+  });
+
+  // DELETE /api/projects/:projectId/screens/:screenId/elements/:elementId
+  // Removes element; returns 204 on success, 404 if not found.
+  app.delete('/api/projects/:projectId/screens/:screenId/elements/:elementId', async (req, res) => {
+    const { projectId, screenId, elementId } = req.params;
+    try {
+      await store.deleteElement(projectId, screenId, elementId);
+      res.status(204).end();
+    } catch (err) {
+      res.status(404).json({ error: err.message });
+    }
+  });
+
+  // POST /api/screens/:projectId/:screenId/comments
+  // Creates a new comment on a screen or element.
+  app.post('/api/screens/:projectId/:screenId/comments', async (req, res) => {
+    try {
+      const { element_id = null, text, author = 'user' } = req.body;
+      if (!text) return res.status(400).json({ error: 'text is required' });
+      if (!['user', 'ai'].includes(author)) return res.status(400).json({ error: 'Invalid author' });
+      const comment = await store.addComment(req.params.projectId, req.params.screenId, { element_id, text, author });
+      res.status(201).json(comment);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+  });
+
+  // GET /api/screens/:projectId/:screenId/comments
+  // Lists comments for a screen (filters resolved by default).
+  app.get('/api/screens/:projectId/:screenId/comments', async (req, res) => {
+    try {
+      const include_resolved = req.query.include_resolved === 'true';
+      const comments = await store.listComments(req.params.projectId, req.params.screenId, { include_resolved });
+      res.json(comments);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+  });
+
+  // PATCH /api/screens/:projectId/:screenId/comments/:commentId/resolve
+  // Marks a comment as resolved.
+  app.patch('/api/screens/:projectId/:screenId/comments/:commentId/resolve', async (req, res) => {
+    try {
+      const comment = await store.resolveComment(req.params.projectId, req.params.screenId, req.params.commentId);
+      res.json(comment);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+  });
+
+  // Serve i18n locale files — only allow lowercase alpha lang codes to prevent
+  // path traversal (e.g. "../secret" is stripped to "secret" which won't match).
+  app.get('/i18n/:lang.json', (req, res) => {
+    const lang = req.params.lang.replace(/[^a-z]/g, '');
+    const localePath = pathJoin(__dirname, 'i18n', `${lang}.json`);
+    res.sendFile(localePath, (err) => {
+      if (err) res.status(404).json({ error: 'Locale not found' });
+    });
   });
 
   const server = app.listen(port, () => {

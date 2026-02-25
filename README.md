@@ -37,17 +37,21 @@ Claude will call `mockup_create_project`, `mockup_generate_screen`, and `mockup_
 
 ## Features
 
-- **25 MCP tools** — full CRUD for projects, screens, elements, plus export, codegen, and layout
-- **5 MCP resources** — read project data, previews, and catalogs via `mockup://` URIs
-- **3 MCP prompts** — AI-assisted UX review, accessibility check, and screen comparison
+- **34 MCP tools** — full CRUD for projects, screens, elements, plus export, codegen, layout, versioning, and comments
+- **6 MCP resources** — read project data, previews, catalogs, and per-screen comments via `mockup://` URIs
+- **4 MCP prompts** — AI-assisted UX review, accessibility check, screen comparison, and layout guide
 - **35 UI components** — buttons, inputs, cards, tables, modals, charts, and more
-- **6 styles** — wireframe, Material Design 3, iOS HIG, blueprint, flat, hand-drawn
+- **19 styles** — wireframe, Material Design 3, iOS HIG, blueprint, flat, hand-drawn, and 13 additional design styles
 - **7 screen templates** — login, dashboard, settings, list, form, profile, onboarding
 - **Screen generation** — describe a screen in natural language, get a full mockup
 - **Code export** — generate HTML, React, Flutter, or SwiftUI from any screen
 - **Live preview** — browser preview with hot-reload at `http://localhost:3100`
 - **Navigation flows** — link screens together, export Mermaid flow diagrams
 - **Multiple formats** — export PNG, SVG, or PDF
+- **Layers panel** — visual layer reorder, bring-to-front/send-to-back, keyboard shortcuts
+- **Screen versioning** — create screen versions, track status (draft/review/approved/rejected)
+- **Per-element comments** — add, list, and resolve review comments pinned to canvas elements
+- **High-level Layout API** — compose screens from semantic sections (hero, navbar, footer, etc.)
 
 ## Usage Examples
 
@@ -73,6 +77,31 @@ mockup_update_element({ project_id: "proj_...", screen_id: "scr_...", element_id
 mockup_to_code({ project_id: "proj_...", screen_id: "scr_...", framework: "react" })
 ```
 
+### Compose a screen from layout sections
+
+```
+mockup_create_screen_layout({
+  project_id: "proj_...",
+  name: "Landing Page",
+  sections: ["navbar", "hero_with_cta", "card_grid_3", "footer"]
+})
+```
+
+### Manage screen versions
+
+```
+mockup_create_screen_version({ project_id: "proj_...", screen_id: "scr_...", label: "v2 — new header" })
+mockup_set_screen_status({ project_id: "proj_...", screen_id: "scr_...", status: "review" })
+```
+
+### Add review comments
+
+```
+mockup_add_comment({ project_id: "proj_...", screen_id: "scr_...", element_id: "el_...", text: "CTA too small" })
+mockup_list_comments({ project_id: "proj_...", screen_id: "scr_..." })
+mockup_resolve_comment({ project_id: "proj_...", screen_id: "scr_...", comment_id: "cmt_..." })
+```
+
 ## MCP Tools
 
 ### Projects
@@ -92,6 +121,8 @@ mockup_to_code({ project_id: "proj_...", screen_id: "scr_...", framework: "react
 | `mockup_delete_screen` | Delete a screen |
 | `mockup_duplicate_screen` | Clone a screen with all elements |
 | `mockup_generate_screen` | Generate a screen from natural language description |
+| `mockup_create_screen_version` | Create a version snapshot of a screen |
+| `mockup_set_screen_status` | Set screen status: draft, review, approved, rejected |
 
 ### Elements
 
@@ -110,6 +141,7 @@ mockup_to_code({ project_id: "proj_...", screen_id: "scr_...", framework: "react
 | `mockup_apply_template` | Apply a predefined template to a screen |
 | `mockup_list_templates` | List available templates |
 | `mockup_auto_layout` | Auto-arrange elements (vertical/horizontal/grid) |
+| `mockup_create_screen_layout` | Compose a screen from semantic layout sections |
 
 ### Export
 
@@ -130,6 +162,14 @@ mockup_to_code({ project_id: "proj_...", screen_id: "scr_...", framework: "react
 | `mockup_ungroup_elements` | Ungroup elements |
 | `mockup_move_group` | Move an entire group |
 
+### Comments
+
+| Tool | Description |
+|------|-------------|
+| `mockup_add_comment` | Add a review comment to an element on a screen |
+| `mockup_list_comments` | List all comments on a screen |
+| `mockup_resolve_comment` | Mark a comment as resolved |
+
 ## MCP Resources
 
 | URI | Description |
@@ -137,6 +177,7 @@ mockup_to_code({ project_id: "proj_...", screen_id: "scr_...", framework: "react
 | `mockup://projects` | List of all projects (summary) |
 | `mockup://projects/{projectId}` | Full project with screens and elements |
 | `mockup://projects/{projectId}/screens/{screenId}/preview` | PNG preview (base64) |
+| `mockup://projects/{projectId}/screens/{screenId}/comments` | All comments on a screen |
 | `mockup://templates` | Available templates with descriptions |
 | `mockup://components` | UI component types with default properties |
 
@@ -149,10 +190,13 @@ AI-assisted analysis prompts that provide screen data (JSON + PNG) for Claude to
 | `mockup_design_review` | Review a mockup for UX quality — visual hierarchy, spacing, CTA placement, consistency |
 | `mockup_accessibility_check` | Check for accessibility issues — touch targets (44px min), text sizes, contrast, labels |
 | `mockup_compare_screens` | Compare two screens for visual consistency — typography, colors, spacing, components |
+| `layout_guide` | Guide for composing screens using the high-level Layout API sections |
 
 Each prompt takes `project_id` + `screen_id` (or `screen_id_a`/`screen_id_b` for compare) and returns the screen element data plus a rendered PNG screenshot for visual analysis.
 
 ## Styles
+
+### Original styles
 
 | Style | Description |
 |-------|-------------|
@@ -163,9 +207,37 @@ Each prompt takes `project_id` + `screen_id` (or `screen_id_a`/`screen_id_b` for
 | `flat` | Vibrant colors, zero shadows — modern flat design |
 | `hand-drawn` | Sketchy, Comic Neue font — Balsamiq-like wireframes |
 
+### Extended design styles
+
+| Style | Description |
+|-------|-------------|
+| `dark-minimal` | Dark background, white text, minimal — developer tools |
+| `pastel` | Soft pastel palette — consumer apps |
+| `corporate` | Conservative blue/grey — enterprise software |
+| `retro` | 80s/90s aesthetic — nostalgic products |
+| `glassmorphism` | Frosted glass, blur effects — modern premium |
+| `neon` | Bright neons on dark — gaming / entertainment |
+| `paper` | Off-white, tactile — editorial / documentation |
+| `terminal` | Green on black, monospace — CLI tools |
+| `playful` | Rounded, colorful, bouncy — kids / casual |
+| `gradient` | Gradient backgrounds and fills — landing pages |
+| `monochrome` | Pure black-and-white — print / PDF export |
+| `soft-ui` | Neumorphic soft shadows — premium consumer |
+| `slate` | Two-variant dark/light — professional apps (use `color_scheme: "dark"` or `"light"`) |
+
+### Additional styles (available via style name)
+
+`antd`, `aurora`, `carbon`, `claymorphism`, `fluent2`, `hig`, `material3`, `neubrutalism`, `neumorphic`, `skeuomorphic`
+
 ## Templates
 
 `login`, `dashboard`, `settings`, `list`, `form`, `profile`, `onboarding`
+
+## Layout Sections (Layout API)
+
+Pre-built semantic sections for rapid screen composition:
+
+`navbar`, `hero_with_cta`, `card_grid_2`, `card_grid_3`, `feature_list`, `footer`, `login_form`, `profile_header`, `search_bar`, `settings_panel`
 
 ## UI Components
 
@@ -188,7 +260,7 @@ Each prompt takes `project_id` + `screen_id` (or `screen_id_a`/`screen_id_b` for
 | `MCP_TRANSPORT` | `stdio` | Transport mode: `stdio`, `http`, or `both` |
 | `PREVIEW_PORT` | `3100` | Preview server port |
 | `MCP_PORT` | `3200` | HTTP MCP transport port |
-| `DEFAULT_STYLE` | `wireframe` | Default style: `wireframe`, `material`, `ios`, `blueprint`, `flat`, `hand-drawn` |
+| `DEFAULT_STYLE` | `wireframe` | Default style for new screens |
 | `DATA_DIR` | `/data` | Data directory for project storage |
 
 ### HTTP Transport
@@ -223,11 +295,11 @@ services:
 # Install dependencies
 npm install
 
-# Run tests (767 tests)
-node --test tests/**/*.test.js tests/**/**/*.test.js
+# Run tests (~1564 tests)
+npm test
 
-# Run Docker E2E tests (requires Docker)
-RUN_E2E=1 node --test tests/e2e/docker-e2e.test.js
+# Run Docker E2E tests (requires running container)
+RUN_E2E=1 npm test
 
 # Build Docker image
 docker build -t mockupmcp:latest .
@@ -243,30 +315,56 @@ MCP_TRANSPORT=http node src/index.js
 
 ```
 src/
-  index.js                 # Entry point
+  index.js                 # Entry point: MCP + preview server
   config.js                # Environment configuration
   mcp/
     server.js              # MCP server (stdio)
     http-transport.js      # HTTP MCP transport
-    resources.js           # MCP resource handlers
-    prompts.js             # MCP prompt handlers
+    resources.js           # 6 MCP resource handlers
+    prompts.js             # 4 MCP prompt handlers
     screen-generator.js    # NLP screen generation
-    tools/                 # 25 MCP tool handlers
+    tools/                 # 34 MCP tool handlers
+      project-tools.js     # Project CRUD (3)
+      screen-tools.js      # Screen CRUD + versioning (7)
+      element-tools.js     # Element CRUD (5)
+      export-tools.js      # Export PNG/SVG/PDF + preview + codegen (4)
+      group-tools.js       # Element grouping (3)
+      layout-tools.js      # Auto-layout + Layout API (2)
+      template-tools.js    # Screen templates (2)
+      comment-tools.js     # Per-element comments (3)
+      approval-tools.js    # Screen approval workflow
+      bulk-tools.js        # Bulk element operations
   renderer/
     html-builder.js        # Screen JSON -> HTML
     screenshot.js          # Puppeteer PNG/PDF
+    layout-composer.js     # High-level layout section composition
     components/            # 35 UI components
-    styles/                # wireframe/material/ios/blueprint/flat/hand-drawn CSS
+    styles/                # 19 CSS styles
+    sections/              # 10 semantic layout sections
     templates/             # 7 screen templates
   storage/
-    project-store.js       # JSON file CRUD
+    project-store.js       # JSON file CRUD with folder-aware index
+  codegen/                 # Code generation: html, react, swiftui, flutter, flow
   preview/
-    server.js              # Express preview server
+    server.js              # Express preview server (port 3100)
+    editor/                # Client-side editor modules
+      layers.js            # Layers panel — reorder, z_index, drag-to-reorder
+      comments.js          # Comment pins on canvas
+      canvas.js            # Canvas interaction
+      drag.js              # Drag-and-drop
+      resize.js            # Resize handles
+      palette.js           # Component palette
+      inspector.js         # Property inspector
+      history.js           # Undo/redo
+      shortcuts.js         # Keyboard shortcuts
 tests/
-  mcp/                     # Tool + resource tests
-  renderer/                # Component + style tests
+  mcp/                     # Tool + resource + prompt tests
+  renderer/                # Component + style + layout tests
   storage/                 # Store tests
   integration/             # Cross-module tests
+  codegen/                 # Code generation tests
+  preview/                 # Preview server tests
+  e2e/                     # Docker E2E (gated: RUN_E2E=1)
 ```
 
 ## License

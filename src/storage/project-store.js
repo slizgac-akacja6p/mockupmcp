@@ -136,7 +136,17 @@ export class ProjectStore {
         throw err;
       }
     }
-    return JSON.parse(raw);
+    const project = JSON.parse(raw);
+    // Migration fallback: ensure all screens have versioning fields.
+    if (project.screens) {
+      for (const screen of project.screens) {
+        screen.version ??= 1;
+        screen.parent_screen_id ??= null;
+        screen.status ??= 'draft';
+        screen.comments ??= [];
+      }
+    }
+    return project;
   }
 
   async listProjects() {
@@ -229,7 +239,7 @@ export class ProjectStore {
 
   // --- Screen methods ---
 
-  async addScreen(projectId, name, width, height, background = '#FFFFFF', style = null) {
+  async addScreen(projectId, name, width, height, background = '#FFFFFF', style = null, color_scheme = null) {
     const project = await this.getProject(projectId);
 
     // Fall back to project viewport dimensions when caller omits explicit size.
@@ -243,7 +253,11 @@ export class ProjectStore {
       height: resolvedHeight,
       background,
       style,
+      color_scheme,
       elements: [],
+      version: 1,
+      parent_screen_id: null,
+      status: 'draft',
     };
     project.screens.push(screen);
     await this._save(project);
@@ -290,6 +304,18 @@ export class ProjectStore {
     project.screens.push(newScreen);
     await this._save(project);
     return newScreen;
+  }
+
+  async updateScreen(projectId, screenId, updates) {
+    this._validateId(screenId);
+    const project = await this.getProject(projectId);
+    const screen = this._findScreen(project, screenId);
+
+    // Merge updates into screen (allow partial updates).
+    Object.assign(screen, updates);
+
+    await this._save(project);
+    return screen;
   }
 
   async bulkMoveElements(projectId, screenId, updates) {
@@ -350,6 +376,32 @@ export class ProjectStore {
     screen.elements.push(element);
     await this._save(project);
     return element;
+  }
+
+  async bulkAddElements(projectId, screenId, elements) {
+    this._validateId(screenId);
+    const project = await this.getProject(projectId);
+    const screen = this._findScreen(project, screenId);
+
+    const added = [];
+    for (const el of elements) {
+      const { type, x = 0, y = 0, width = 100, height = 40, properties = {}, z_index = 0 } = el;
+      const element = {
+        id: generateId('el'),
+        type,
+        x,
+        y,
+        width,
+        height,
+        z_index,
+        properties,
+      };
+      screen.elements.push(element);
+      added.push(element);
+    }
+
+    await this._save(project);
+    return added;
   }
 
   async updateElement(projectId, screenId, elementId, properties) {
@@ -535,6 +587,53 @@ export class ProjectStore {
     return screen;
   }
 
+  // --- Comment methods ---
+
+  async addComment(projectId, screenId, { element_id = null, text, author = 'user' }) {
+    this._validateId(screenId);
+    const project = await this.getProject(projectId);
+    const screen = project.screens.find(s => s.id === screenId);
+    if (!screen) throw new Error(`Screen not found: ${screenId}`);
+    screen.comments ??= [];
+    const unresolvedPins = screen.comments.filter(c => !c.resolved).map(c => c.pin_number || 0);
+    const nextPin = unresolvedPins.length > 0 ? Math.max(...unresolvedPins) + 1 : 1;
+    const comment = {
+      id: generateId('cmt'),
+      element_id: element_id || null,
+      text,
+      author,
+      resolved: false,
+      pin_number: nextPin,
+      created_at: new Date().toISOString()
+    };
+    screen.comments.push(comment);
+    await this._save(project);
+    return comment;
+  }
+
+  async listComments(projectId, screenId, { include_resolved = false } = {}) {
+    this._validateId(screenId);
+    const project = await this.getProject(projectId);
+    const screen = project.screens.find(s => s.id === screenId);
+    if (!screen) throw new Error(`Screen not found: ${screenId}`);
+    screen.comments ??= [];
+    if (include_resolved) return screen.comments;
+    return screen.comments.filter(c => !c.resolved);
+  }
+
+  async resolveComment(projectId, screenId, commentId) {
+    this._validateId(screenId);
+    const project = await this.getProject(projectId);
+    const screen = project.screens.find(s => s.id === screenId);
+    if (!screen) throw new Error(`Screen not found: ${screenId}`);
+    screen.comments ??= [];
+    const comment = screen.comments.find(c => c.id === commentId);
+    if (!comment) throw new Error(`Comment not found: ${commentId}`);
+    comment.resolved = true;
+    await this._save(project);
+    return comment;
+  }
+
   // --- Export ---
 
   async saveExport(projectId, screenId, buffer, format = 'png') {
@@ -547,5 +646,311 @@ export class ProjectStore {
     const filePath = join(exportDir, `${screenId}.${format}`);
     await writeFile(filePath, buffer);
     return filePath;
+  }
+
+  // --- Bulk creation methods ---
+
+  async createScreenFull(projectId, screenDef) {
+    // Validate project exists before any mutations.
+    const project = await this.getProject(projectId);
+
+    const { name, width, height, background = '#FFFFFF', style = null, elements = [], links = [] } = screenDef;
+
+    // Pre-validate everything (atomicity: fail-all).
+    // Check all element types and links refs exist before creating anything.
+    const elementRefs = new Set();
+    for (const el of elements) {
+      if (!el.type) throw new Error('Element missing type');
+      if (el.ref) elementRefs.add(el.ref);
+    }
+
+    for (const link of links) {
+      if (!link.ref || !elementRefs.has(link.ref)) {
+        throw new Error(`Link ref "${link.ref}" does not exist in elements`);
+      }
+    }
+
+    // Resolve dimensions from project viewport if not provided.
+    const resolvedWidth = width ?? project.viewport.width;
+    const resolvedHeight = height ?? project.viewport.height;
+
+    // Create screen.
+    const screen = {
+      id: generateId('scr'),
+      name,
+      width: resolvedWidth,
+      height: resolvedHeight,
+      background,
+      style,
+      elements: [],
+      version: 1,
+      parent_screen_id: null,
+      status: 'draft',
+    };
+
+    // Create elements and build refMap.
+    const refMap = {};
+    for (const el of elements) {
+      const element = {
+        id: generateId('el'),
+        type: el.type,
+        x: el.x ?? 0,
+        y: el.y ?? 0,
+        width: el.width ?? 100,
+        height: el.height ?? 40,
+        z_index: el.z_index ?? 0,
+        properties: el.properties ?? {},
+      };
+      if (el.ref) refMap[el.ref] = element.id;
+      screen.elements.push(element);
+    }
+
+    // Apply links: replace ref with actual element_id.
+    for (const link of links) {
+      const targetElementId = refMap[link.ref];
+      const element = screen.elements.find((e) => e.id === targetElementId);
+      if (element) {
+        element.properties.link_to = {
+          screen_id: link.target_screen_id,
+          transition: link.transition ?? 'push',
+        };
+      }
+    }
+
+    project.screens.push(screen);
+    await this._save(project);
+
+    return { screen, refMap };
+  }
+
+  async createProjectFull(projectDef) {
+    // Pre-validate required fields before any mutations (atomicity: fail-all).
+    if (!projectDef || typeof projectDef !== 'object') {
+      throw new Error('Project definition must be an object');
+    }
+    if (!projectDef.name) {
+      throw new Error('Project JSON missing name field');
+    }
+    if (!Array.isArray(projectDef.screens)) {
+      throw new Error('Project JSON missing or invalid screens array');
+    }
+
+    const {
+      name,
+      description = '',
+      viewport = { width: 393, height: 852, preset: 'mobile' },
+      style = 'wireframe',
+      folder = null,
+      screens = [],
+      links = [],
+    } = projectDef;
+
+    // Pre-validate all screens and elements (atomicity: fail-all).
+    const screenRefs = new Set();
+    const allElementRefs = {}; // { screenRef_elementRef: exists? }
+
+    for (const screenDef of screens) {
+      if (screenDef.ref && screenRefs.has(screenDef.ref)) {
+        throw new Error(`Duplicate screen ref: "${screenDef.ref}"`);
+      }
+      if (screenDef.ref) screenRefs.add(screenDef.ref);
+
+      for (const el of screenDef.elements || []) {
+        if (!el.type) throw new Error('Element missing type');
+        const refKey = `${screenDef.ref || '__unnamed'}.${el.ref || '__unnamed'}`;
+        allElementRefs[refKey] = true;
+      }
+    }
+
+    // Validate link references.
+    for (const link of links) {
+      if (!link.screen_ref || !screenRefs.has(link.screen_ref)) {
+        throw new Error(`Link screen_ref "${link.screen_ref}" does not exist in screens`);
+      }
+      if (!link.target_screen_ref || !screenRefs.has(link.target_screen_ref)) {
+        throw new Error(`Link target_screen_ref "${link.target_screen_ref}" does not exist in screens`);
+      }
+      // For now, element_ref validation is lenient (allow optional).
+    }
+
+    // Create project.
+    const project = await this.createProject(name, description, viewport, style, folder);
+
+    // Screen ref -> screen ID map.
+    const screenRefMap = {};
+    // Element ref -> element ID map (key: screenRef.elementRef).
+    const elementRefMap = {};
+
+    for (const screenDef of screens) {
+      const { name: screenName, width, height, background = '#FFFFFF', style: screenStyle = null, elements = [] } = screenDef;
+
+      const resolvedWidth = width ?? project.viewport.width;
+      const resolvedHeight = height ?? project.viewport.height;
+
+      const screen = {
+        id: generateId('scr'),
+        name: screenName,
+        width: resolvedWidth,
+        height: resolvedHeight,
+        background,
+        style: screenStyle,
+        elements: [],
+        version: 1,
+        parent_screen_id: null,
+        status: 'draft',
+      };
+
+      if (screenDef.ref) screenRefMap[screenDef.ref] = screen.id;
+
+      // Create elements.
+      for (const el of elements) {
+        const element = {
+          id: generateId('el'),
+          type: el.type,
+          x: el.x ?? 0,
+          y: el.y ?? 0,
+          width: el.width ?? 100,
+          height: el.height ?? 40,
+          z_index: el.z_index ?? 0,
+          properties: el.properties ?? {},
+        };
+        if (el.ref) {
+          const refKey = `${screenDef.ref || '__unnamed'}.${el.ref}`;
+          elementRefMap[refKey] = element.id;
+        }
+        screen.elements.push(element);
+      }
+
+      project.screens.push(screen);
+    }
+
+    // Apply links: resolve screen and element refs to IDs.
+    for (const link of links) {
+      const screenId = screenRefMap[link.screen_ref];
+      const screen = project.screens.find((s) => s.id === screenId);
+      if (!screen) continue;
+
+      // If element_ref specified, apply to that element; otherwise apply to first element.
+      let targetElement;
+      if (link.element_ref) {
+        const refKey = `${link.screen_ref}.${link.element_ref}`;
+        const elementId = elementRefMap[refKey];
+        targetElement = screen.elements.find((e) => e.id === elementId);
+      } else if (screen.elements.length > 0) {
+        targetElement = screen.elements[0];
+      }
+
+      if (targetElement) {
+        targetElement.properties.link_to = {
+          screen_id: screenRefMap[link.target_screen_ref],
+          transition: link.transition ?? 'push',
+        };
+      }
+    }
+
+    await this._save(project);
+
+    return { project, screenRefMap, elementRefMap };
+  }
+
+  async importProject(projectJson, nameOverride = null, folder = null) {
+    if (!projectJson.name) throw new Error('Project JSON missing name field');
+    if (!Array.isArray(projectJson.screens)) throw new Error('Project JSON missing or invalid screens array');
+
+    // Create new project with imported data.
+    const newProject = await this.createProject(
+      nameOverride || projectJson.name,
+      projectJson.description || '',
+      projectJson.viewport || { width: 393, height: 852, preset: 'mobile' },
+      projectJson.style || 'wireframe',
+      folder
+    );
+
+    // Maps to track ID rewrites.
+    const screenIdMap = {}; // oldScreenId -> newScreenId
+    const elementIdMap = {}; // oldElementId -> newElementId
+
+    // Pre-generate all new screen IDs to ensure screenIdMap is complete before link processing.
+    for (const oldScreen of projectJson.screens) {
+      screenIdMap[oldScreen.id] = generateId('scr');
+    }
+
+    // Import screens with new IDs.
+    for (const oldScreen of projectJson.screens) {
+      const newScreenId = screenIdMap[oldScreen.id];
+
+      const newScreen = {
+        id: newScreenId,
+        name: oldScreen.name,
+        width: oldScreen.width,
+        height: oldScreen.height,
+        background: oldScreen.background || '#FFFFFF',
+        style: oldScreen.style || null,
+        elements: [],
+      };
+
+      // Import elements with new IDs.
+      for (const oldElement of oldScreen.elements || []) {
+        const newElementId = generateId('el');
+        elementIdMap[oldElement.id] = newElementId;
+
+        const newElement = {
+          id: newElementId,
+          type: oldElement.type,
+          x: oldElement.x,
+          y: oldElement.y,
+          width: oldElement.width,
+          height: oldElement.height,
+          z_index: oldElement.z_index || 0,
+          properties: structuredClone(oldElement.properties || {}),
+        };
+
+        // Rewrite link_to references to new screen IDs.
+        if (newElement.properties.link_to && newElement.properties.link_to.screen_id) {
+          const oldTargetScreenId = newElement.properties.link_to.screen_id;
+          newElement.properties.link_to.screen_id = screenIdMap[oldTargetScreenId] || oldTargetScreenId;
+        }
+
+        newScreen.elements.push(newElement);
+      }
+
+      newProject.screens.push(newScreen);
+    }
+
+    await this._save(newProject);
+
+    return { project: newProject };
+  }
+
+  // --- Versioning ---
+
+  async createScreenVersion(projectId, sourceScreenId) {
+    this._validateId(sourceScreenId);
+    const project = await this.getProject(projectId);
+    const source = this._findScreen(project, sourceScreenId);
+
+    // Clone with new ID and bump version.
+    const newScreen = structuredClone(source);
+    newScreen.id = generateId('scr');
+    newScreen.version = (source.version || 1) + 1;
+    newScreen.parent_screen_id = source.id;
+    newScreen.status = 'draft';
+    newScreen.name = `${source.name} v${newScreen.version}`;
+
+    // Regenerate all element IDs so the new version has independent elements.
+    newScreen.elements = source.elements.map((el) => ({
+      ...structuredClone(el),
+      id: generateId('el'),
+    }));
+
+    // Carry over unresolved comments so reviewers can track outstanding feedback.
+    // Resolved comments are not copied — they were already addressed in the source version.
+    newScreen.comments = (source.comments || [])
+      .filter(c => !c.resolved)
+      .map(c => ({ ...structuredClone(c), id: generateId('cmt') }));
+
+    project.screens.push(newScreen);
+    await this._save(project);
+    return newScreen;
   }
 }

@@ -1,0 +1,717 @@
+/* Glassmorphism — frosted glass panels on vivid gradients. Depth through blur, not shadow. */
+:root {
+  --glass-bg:            rgba(255,255,255,0.15);
+  --glass-bg-strong:     rgba(255,255,255,0.25);
+  --glass-bg-subtle:     rgba(255,255,255,0.08);
+  --glass-border:        1px solid rgba(255,255,255,0.25);
+  --glass-border-strong: 1px solid rgba(255,255,255,0.4);
+  --glass-blur:          blur(12px);
+  --glass-blur-sm:       blur(6px);
+  --glass-shadow:        0 8px 32px rgba(31,38,135,0.35);
+  --glass-shadow-lg:     0 16px 48px rgba(31,38,135,0.45);
+  --glass-radius:        16px;
+  --glass-radius-sm:     10px;
+  --glass-radius-lg:     24px;
+  --glass-text:          rgba(255,255,255,0.92);
+  --glass-text-muted:    rgba(255,255,255,0.6);
+  --glass-text-placeholder: rgba(255,255,255,0.45);
+  --glass-accent:        rgba(255,255,255,0.9);
+  --glass-highlight:     rgba(255,255,255,0.5);
+  /* Semantic colours remain white-tinted on the dark gradient background */
+  --color-text-primary:  rgba(255,255,255,0.92);
+  --color-text-secondary: rgba(255,255,255,0.6);
+  --color-text-placeholder: rgba(255,255,255,0.45);
+  --color-border:        rgba(255,255,255,0.25);
+  --color-bg-light:      rgba(255,255,255,0.1);
+  --color-bg-white:      rgba(255,255,255,0.15);
+  --color-primary:       rgba(255,255,255,0.9);
+  --color-disabled:      rgba(255,255,255,0.2);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'SF Pro Display', 'Segoe UI', 'Inter', system-ui, sans-serif;
+  color: var(--glass-text);
+  /* Gradient is set on .screen; body is transparent so Puppeteer captures correctly */
+  background: transparent;
+}
+
+/* ── Screen ─────────────────────────────────────────────────────────────── */
+
+/* Vivid gradient backdrop — the glass effect only works on rich colour underneath */
+.screen {
+  background: linear-gradient(135deg, #0f2027 0%, #203a43 40%, #2c5364 70%, #667eea 100%);
+  font-family: 'SF Pro Display', 'Segoe UI', 'Inter', system-ui, sans-serif;
+}
+
+/* ── Button ─────────────────────────────────────────────────────────────── */
+
+/* Glass button: translucent fill + white border creates the frosted capsule look */
+.mockup-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--glass-radius-sm);
+  border: var(--glass-border-strong);
+  font-family: inherit;
+  cursor: pointer;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  color: var(--glass-text);
+  box-shadow: var(--glass-shadow);
+}
+
+/* sizes */
+.mockup-button--sm  { padding: 6px 14px;  font-size: 12px; }
+.mockup-button--md  { padding: 10px 22px; font-size: 14px; }
+.mockup-button--lg  { padding: 13px 28px; font-size: 16px; }
+
+/* variants */
+.mockup-button--primary {
+  background: rgba(255,255,255,0.25);
+  color: #fff;
+  border-color: rgba(255,255,255,0.5);
+}
+
+.mockup-button--secondary {
+  background: rgba(255,255,255,0.1);
+  color: var(--glass-text);
+  border-color: rgba(255,255,255,0.2);
+}
+
+.mockup-button--outline {
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.6);
+}
+
+.mockup-button--ghost {
+  background: transparent;
+  color: var(--glass-text-muted);
+  border-color: transparent;
+  box-shadow: none;
+}
+
+/* ── Input ──────────────────────────────────────────────────────────────── */
+
+/* Input blurs less than cards — stays readable while echoing the glass theme */
+.mockup-input {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: var(--glass-radius-sm);
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--glass-text);
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+}
+
+.mockup-input::placeholder { color: var(--glass-text-placeholder); }
+
+.mockup-input-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--glass-text);
+}
+
+/* ── Navbar ─────────────────────────────────────────────────────────────── */
+
+/* Navbar is a slim glass bar — backdrop-filter creates depth above the gradient */
+.mockup-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 12px 20px;
+  border-bottom: var(--glass-border);
+  background: rgba(255,255,255,0.12);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
+
+.mockup-navbar__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--glass-text);
+  flex: 1;
+  text-align: center;
+}
+
+.mockup-navbar__side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 32px;
+  color: var(--glass-text);
+}
+
+/* ── Tab Bar ────────────────────────────────────────────────────────────── */
+
+.mockup-tabbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  width: 100%;
+  padding: 10px 0;
+  border-top: var(--glass-border);
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
+
+.mockup-tabbar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  font-size: 11px;
+  color: var(--glass-text-muted);
+  cursor: pointer;
+}
+
+.mockup-tabbar-item--active {
+  color: var(--glass-text);
+  font-weight: 600;
+}
+
+/* ── Card ───────────────────────────────────────────────────────────────── */
+
+/* Full glass panel — backdrop-filter is what separates this from a flat card */
+.mockup-card {
+  border: var(--glass-border);
+  border-radius: var(--glass-radius);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow);
+  overflow: hidden;
+}
+
+.mockup-card__body { padding: 16px 20px; }
+.mockup-card__title { font-size: 15px; font-weight: 600; color: var(--glass-text); margin-bottom: 4px; }
+.mockup-card__value { font-size: 32px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+.mockup-card__subtitle { font-size: 13px; color: var(--glass-text-muted); margin-bottom: 8px; }
+.mockup-card__actions { display: flex; gap: 8px; padding: 10px 20px 14px; border-top: var(--glass-border); }
+
+/* ── List ───────────────────────────────────────────────────────────────── */
+
+.mockup-list { border: var(--glass-border); border-radius: var(--glass-radius); background: var(--glass-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); overflow: hidden; box-shadow: var(--glass-shadow); }
+.mockup-list-item { padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 14px; color: var(--glass-text); display: flex; align-items: center; gap: 12px; }
+.mockup-list-item:last-child { border-bottom: none; }
+.mockup-list-item__avatar { width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.15); flex-shrink: 0; }
+
+/* ── Image placeholder ──────────────────────────────────────────────────── */
+
+.mockup-image-placeholder { width: 100%; height: 100%; background: rgba(255,255,255,0.08); border: var(--glass-border); border-radius: var(--glass-radius-sm); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; backdrop-filter: var(--glass-blur-sm); -webkit-backdrop-filter: var(--glass-blur-sm); }
+
+/* ── Icon ───────────────────────────────────────────────────────────────── */
+
+.mockup-icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--glass-text); }
+
+/* ── Badge ──────────────────────────────────────────────────────────────── */
+
+.mockup-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(255,255,255,0.25);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.4);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+}
+
+/* ── Alert ──────────────────────────────────────────────────────────────── */
+
+.mockup-alert {
+  padding: 12px 16px;
+  border: var(--glass-border);
+  border-radius: var(--glass-radius-sm);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  font-size: 14px;
+  color: var(--glass-text);
+  box-shadow: var(--glass-shadow);
+}
+
+.mockup-alert--info    { background: rgba(100,149,237,0.25); border-color: rgba(100,149,237,0.4); }
+.mockup-alert--success { background: rgba(0,200,150,0.2); border-color: rgba(0,200,150,0.4); }
+.mockup-alert--warning { background: rgba(255,193,7,0.2); border-color: rgba(255,193,7,0.4); }
+.mockup-alert--error   { background: rgba(244,67,54,0.2); border-color: rgba(244,67,54,0.4); }
+
+/* ── Textarea ──────────────────────────────────────────────────────────── */
+
+.mockup-textarea { font-family: inherit; line-height: 1.5; color: var(--glass-text); background: rgba(255,255,255,0.1); }
+
+/* ── Checkbox ──────────────────────────────────────────────────────────── */
+
+.mockup-checkbox { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; }
+
+.mockup-checkbox__box {
+  width: 18px;
+  height: 18px;
+  border: 1px solid rgba(255,255,255,0.5);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #fff;
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  flex-shrink: 0;
+}
+
+.mockup-checkbox__label { color: var(--glass-text); }
+
+/* ── Radio ─────────────────────────────────────────────────────────────── */
+
+.mockup-radio { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; }
+
+.mockup-radio__circle {
+  width: 18px;
+  height: 18px;
+  border: 1px solid rgba(255,255,255,0.5);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.1);
+  flex-shrink: 0;
+}
+
+.mockup-radio__dot { width: 8px; height: 8px; border-radius: 50%; background: #fff; }
+.mockup-radio__label { color: var(--glass-text); }
+
+/* ── Toggle ────────────────────────────────────────────────────────────── */
+
+.mockup-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; }
+
+.mockup-toggle__track {
+  width: 42px;
+  height: 24px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  position: relative;
+  flex-shrink: 0;
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+}
+
+/* ON: brighter glass fill — no opaque colour, just more white */
+.mockup-toggle--on .mockup-toggle__track { background: rgba(255,255,255,0.4); border-color: rgba(255,255,255,0.6); }
+
+.mockup-toggle__thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.9);
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: left 0.15s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.mockup-toggle--on .mockup-toggle__thumb { left: 20px; }
+.mockup-toggle__label { color: var(--glass-text); }
+
+/* ── Select ────────────────────────────────────────────────────────────── */
+
+.mockup-select { width: 100%; }
+
+.mockup-select__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border: var(--glass-border);
+  border-radius: var(--glass-radius-sm);
+  font-size: 14px;
+  color: var(--glass-text);
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  cursor: pointer;
+}
+
+.mockup-select__arrow { font-size: 10px; color: rgba(255,255,255,0.6); }
+
+/* ── Slider ────────────────────────────────────────────────────────────── */
+
+.mockup-slider { width: 100%; padding: 8px 0; }
+
+.mockup-slider__track {
+  width: 100%;
+  height: 4px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 2px;
+  position: relative;
+}
+
+.mockup-slider__fill { height: 100%; background: rgba(255,255,255,0.8); border-radius: 2px; }
+
+.mockup-slider__thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.9);
+  border: 1px solid rgba(255,255,255,0.6);
+  position: absolute;
+  top: -6px;
+  transform: translateX(-50%);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+/* ── Sidebar ───────────────────────────────────────────────────────────── */
+
+.mockup-sidebar {
+  width: 100%;
+  height: 100%;
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-right: var(--glass-border);
+  padding: 8px 0;
+}
+
+.mockup-sidebar__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  font-size: 14px;
+  color: var(--glass-text-muted);
+  cursor: pointer;
+  border-radius: var(--glass-radius-sm);
+  margin: 2px 8px;
+}
+
+.mockup-sidebar__item--active {
+  color: var(--glass-text);
+  font-weight: 600;
+  background: rgba(255,255,255,0.15);
+  border: var(--glass-border);
+}
+
+/* ── Breadcrumb ────────────────────────────────────────────────────────── */
+
+.mockup-breadcrumb { display: flex; align-items: center; gap: 4px; font-size: 13px; }
+.mockup-breadcrumb__item { color: rgba(255,255,255,0.7); cursor: pointer; }
+.mockup-breadcrumb__item--current { color: var(--glass-text); font-weight: 500; cursor: default; }
+.mockup-breadcrumb__sep { color: rgba(255,255,255,0.35); margin: 0 2px; }
+
+/* ── Table ─────────────────────────────────────────────────────────────── */
+
+.mockup-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+
+.mockup-table__th {
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--glass-text);
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+}
+
+.mockup-table__td { padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.1); color: var(--glass-text); }
+.mockup-table__row--striped { background: rgba(255,255,255,0.05); }
+
+/* ── Avatar ────────────────────────────────────────────────────────────── */
+
+.mockup-avatar { flex-shrink: 0; border: 1px solid rgba(255,255,255,0.4); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+
+/* ── Chip ──────────────────────────────────────────────────────────────── */
+
+.mockup-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  background: rgba(255,255,255,0.12);
+  color: var(--glass-text);
+  border: var(--glass-border);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+}
+
+.mockup-chip--selected {
+  background: rgba(255,255,255,0.3);
+  color: #fff;
+  border-color: rgba(255,255,255,0.5);
+}
+
+.mockup-chip__remove { font-size: 14px; cursor: pointer; color: var(--glass-text-muted); line-height: 1; }
+
+/* ── Modal ─────────────────────────────────────────────────────────────── */
+
+.mockup-modal__backdrop {
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.mockup-modal {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-radius: var(--glass-radius);
+  border: var(--glass-border-strong);
+  width: 100%;
+  max-width: 420px;
+  overflow: hidden;
+  box-shadow: var(--glass-shadow-lg);
+}
+
+.mockup-modal__header {
+  padding: 18px 22px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--glass-text);
+  border-bottom: var(--glass-border);
+  background: rgba(255,255,255,0.1);
+}
+
+.mockup-modal__body { padding: 18px 22px; font-size: 14px; color: var(--glass-text-muted); }
+.mockup-modal__footer { display: flex; justify-content: flex-end; gap: 8px; padding: 14px 22px; border-top: var(--glass-border); }
+
+/* ── Skeleton ──────────────────────────────────────────────────────────── */
+
+.mockup-skeleton {
+  background: rgba(255,255,255,0.1);
+  border-radius: var(--glass-radius-sm);
+  width: 100%;
+  height: 100%;
+  animation: glass-shimmer 1.8s ease-in-out infinite;
+}
+
+.mockup-skeleton--circle { border-radius: 50%; }
+.mockup-skeleton--text { height: 16px; border-radius: 4px; }
+
+@keyframes glass-shimmer {
+  0%, 100% { background: rgba(255,255,255,0.08); }
+  50% { background: rgba(255,255,255,0.18); }
+}
+
+/* ── Progress ──────────────────────────────────────────────────────────── */
+
+.mockup-progress {
+  width: 100%;
+  height: 8px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.mockup-progress__bar { height: 100%; background: rgba(255,255,255,0.7); border-radius: 4px; }
+
+/* ── Tooltip ───────────────────────────────────────────────────────────── */
+
+.mockup-tooltip { position: relative; display: inline-block; }
+
+.mockup-tooltip__content {
+  background: rgba(255,255,255,0.2);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  color: var(--glass-text);
+  padding: 6px 12px;
+  border-radius: var(--glass-radius-sm);
+  font-size: 12px;
+  white-space: nowrap;
+  border: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+/* ── Search Bar ────────────────────────────────────────────────────────── */
+
+.mockup-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: var(--glass-border);
+  border-radius: 24px;
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  width: 100%;
+}
+
+.mockup-search-bar__icon { display: flex; flex-shrink: 0; color: rgba(255,255,255,0.6); }
+.mockup-search-bar__input { font-size: 14px; color: var(--glass-text-placeholder); }
+
+/* ── Login Form ────────────────────────────────────────────────────────── */
+
+.mockup-login { display: flex; flex-direction: column; gap: 16px; padding: 28px; width: 100%; background: var(--glass-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border: var(--glass-border-strong); border-radius: var(--glass-radius-lg); box-shadow: var(--glass-shadow-lg); }
+
+.mockup-login__title {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--glass-text);
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.mockup-login__field { width: 100%; }
+.mockup-login__forgot { font-size: 13px; color: rgba(255,255,255,0.6); text-align: right; }
+.mockup-login__action { margin-top: 8px; }
+.mockup-login__action .mockup-button { width: 100%; }
+
+/* ── Header ────────────────────────────────────────────────────────────── */
+
+.mockup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: var(--glass-border);
+  background: rgba(255,255,255,0.12);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  width: 100%;
+}
+
+.mockup-header__logo { font-size: 18px; font-weight: 700; color: #fff; }
+.mockup-header__nav { display: flex; gap: 20px; }
+.mockup-header__nav-item { font-size: 14px; color: rgba(255,255,255,0.75); cursor: pointer; }
+.mockup-header__right { display: flex; align-items: center; }
+
+/* ── Footer ────────────────────────────────────────────────────────────── */
+
+.mockup-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  border-top: var(--glass-border);
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  width: 100%;
+}
+
+.mockup-footer__links { display: flex; gap: 16px; }
+.mockup-footer__link { font-size: 13px; color: rgba(255,255,255,0.6); cursor: pointer; }
+.mockup-footer__text { font-size: 12px; color: rgba(255,255,255,0.35); }
+
+/* ── Data Table ────────────────────────────────────────────────────────── */
+
+.mockup-data-table {
+  width: 100%;
+  border: var(--glass-border);
+  border-radius: var(--glass-radius);
+  overflow: hidden;
+  background: var(--glass-bg-subtle);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow);
+}
+
+.mockup-data-table__toolbar { padding: 10px 14px; border-bottom: var(--glass-border); background: rgba(255,255,255,0.06); }
+
+.mockup-data-table__search {
+  padding: 6px 12px;
+  border: var(--glass-border);
+  border-radius: var(--glass-radius-sm);
+  font-size: 13px;
+  color: var(--glass-text);
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+}
+
+.mockup-data-table__th {
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--glass-text);
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.12);
+}
+
+.mockup-data-table__sort { font-size: 8px; margin-left: 4px; color: rgba(255,255,255,0.5); }
+.mockup-data-table__td { padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 14px; color: var(--glass-text); }
+.mockup-data-table__row:last-child .mockup-data-table__td { border-bottom: none; }
+
+.mockup-data-table__pagination {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--glass-text-muted);
+  border-top: var(--glass-border);
+}
+
+.mockup-data-table__page-btn { cursor: pointer; padding: 4px 8px; color: var(--glass-text); background: rgba(255,255,255,0.15); border: var(--glass-border); border-radius: 4px; }
+
+/* ── Chart Placeholder ─────────────────────────────────────────────────── */
+
+.mockup-chart {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border: var(--glass-border);
+  border-radius: var(--glass-radius);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  overflow: hidden;
+  box-shadow: var(--glass-shadow);
+}
+
+.mockup-chart__title {
+  padding: 14px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--glass-text);
+  border-bottom: var(--glass-border);
+  background: rgba(255,255,255,0.08);
+}
+
+.mockup-chart__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+}
+
+.mockup-chart__label { font-size: 12px; color: var(--glass-text-muted); text-transform: capitalize; }

@@ -222,14 +222,14 @@ runner('M3b Integration — HTTP Transport', () => {
     assert.equal(r2.status, 200);
   });
 
-  it('exceeding max sessions (10) returns 503', async () => {
+  it('exceeding max sessions (50) evicts oldest and succeeds', async () => {
     // Fill the session pool to the limit.
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 50; i++) {
       await initSession(port);
     }
-    assert.equal(app._mcpSessions.size, 10, 'should have exactly 10 sessions');
+    assert.equal(app._mcpSessions.size, 50, 'should have exactly 50 sessions');
 
-    // The 11th initialize must be rejected.
+    // The 51st initialize should evict oldest and succeed.
     const res = await post(port, '/mcp', {
       jsonrpc: '2.0',
       id: 99,
@@ -240,7 +240,8 @@ runner('M3b Integration — HTTP Transport', () => {
         clientInfo: { name: 'overflow-client', version: '1.0' },
       },
     });
-    assert.equal(res.status, 503, `expected 503 when over limit, got ${res.status}`);
+    assert.equal(res.status, 200, `expected 200 when over limit (eviction), got ${res.status}`);
+    assert.equal(app._mcpSessions.size, 50, 'should still have 50 sessions after eviction');
   });
 
   it('DELETE /mcp closes session and returns 200 or 204', async () => {

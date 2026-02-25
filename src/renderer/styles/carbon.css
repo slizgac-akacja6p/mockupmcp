@@ -1,0 +1,734 @@
+/* IBM Carbon Design System — dark theme, precise 2px borders, zero radius, monospaced grid */
+:root {
+  /* Carbon dark-theme background layer tokens */
+  --cds-background:          #161616;
+  --cds-background-hover:    rgba(141, 141, 141, 0.12);
+  --cds-background-active:   rgba(141, 141, 141, 0.5);
+  --cds-background-selected: rgba(141, 141, 141, 0.24);
+  --cds-layer-01:            #262626;
+  --cds-layer-02:            #393939;
+  --cds-layer-03:            #525252;
+  --cds-layer-hover-01:      #333333;
+  --cds-layer-hover-02:      #474747;
+  --cds-layer-hover-03:      #636363;
+  --cds-layer-active-01:     #525252;
+  --cds-layer-active-02:     #6F6F6F;
+  --cds-layer-selected-01:   #393939;
+  --cds-layer-selected-02:   #525252;
+  --cds-layer-accent-01:     #393939;
+  --cds-layer-accent-02:     #525252;
+
+  /* Carbon interactive */
+  --cds-interactive:         #0F62FE;
+  --cds-interactive-hover:   #0050E6;
+  --cds-interactive-active:  #002D9C;
+  --cds-focus:               #FFFFFF;
+  --cds-link-primary:        #78A9FF;
+  --cds-link-visited:        #BE95FF;
+
+  /* Carbon text tokens */
+  --cds-text-primary:        #F4F4F4;
+  --cds-text-secondary:      #C6C6C6;
+  --cds-text-placeholder:    #6F6F6F;
+  --cds-text-disabled:       #525252;
+  --cds-text-on-color:       #FFFFFF;
+  --cds-text-error:          #FF8389;
+  --cds-text-inverse:        #161616;
+  --cds-text-helper:         #8D8D8D;
+
+  /* Carbon border tokens */
+  --cds-border-subtle-01:        #393939;
+  --cds-border-subtle-02:        #525252;
+  --cds-border-strong-01:        #6F6F6F;
+  --cds-border-strong-02:        #8D8D8D;
+  --cds-border-inverse:          #F4F4F4;
+  --cds-border-disabled:         rgba(141, 141, 141, 0.5);
+  --cds-border-interactive:      #4589FF;
+
+  /* Carbon semantic status */
+  --cds-support-error:           #FF8389;
+  --cds-support-warning:         #F1C21B;
+  --cds-support-success:         #42BE65;
+  --cds-support-info:            #4589FF;
+  --cds-support-error-inverse:   #DA1E28;
+  --cds-support-warning-inverse: #F1C21B;
+  --cds-support-success-inverse: #24A148;
+  --cds-support-info-inverse:    #0043CE;
+  --cds-support-caution-major:   #FF832B;
+  --cds-support-caution-minor:   #F1C21B;
+
+  /* Carbon brand */
+  --cds-brand-01: #0F62FE;
+  --cds-brand-02: #0043CE;
+  --cds-brand-03: #FFFFFF;
+
+  /* Carbon icon */
+  --cds-icon-primary:    #F4F4F4;
+  --cds-icon-secondary:  #C6C6C6;
+  --cds-icon-on-color:   #FFFFFF;
+  --cds-icon-disabled:   rgba(244, 244, 244, 0.25);
+  --cds-icon-interactive: #FFFFFF;
+
+  /* Carbon field */
+  --cds-field-01: #262626;
+  --cds-field-02: #393939;
+  --cds-field-03: #525252;
+
+  /* Carbon spacing — 8px base grid */
+  --cds-spacing-01: 2px;
+  --cds-spacing-02: 4px;
+  --cds-spacing-03: 8px;
+  --cds-spacing-04: 12px;
+  --cds-spacing-05: 16px;
+  --cds-spacing-06: 24px;
+  --cds-spacing-07: 32px;
+
+  /* Carbon has no border radius — zero-radius is intentional and systemic */
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  color: var(--cds-text-primary);
+  background: var(--cds-background);
+  font-size: 14px;
+  line-height: 1.28572;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Button ─────────────────────────────────────────────────────────────── */
+
+/* Carbon buttons — zero radius, precise heights, 2px focus ring */
+.mockup-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  border: none;
+  font-family: "IBM Plex Sans", "Helvetica Neue", sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  letter-spacing: 0.16px;
+  cursor: pointer;
+  line-height: 1.28572;
+  white-space: nowrap;
+}
+
+.mockup-button--sm  { padding: 7px 14px;  font-size: 14px; height: 32px; }
+.mockup-button--md  { padding: 13px 16px; font-size: 14px; height: 48px; }
+.mockup-button--lg  { padding: 16px 24px; font-size: 16px; height: 64px; }
+
+/* Primary — brand blue, white text */
+.mockup-button--primary {
+  background: var(--cds-interactive);
+  color:      var(--cds-text-on-color);
+}
+
+/* Secondary — dark fill, border */
+.mockup-button--secondary {
+  background: var(--cds-layer-02);
+  color:      var(--cds-text-primary);
+  border: 1px solid var(--cds-border-strong-01);
+}
+
+/* Tertiary/Outline — transparent, white border */
+.mockup-button--outline {
+  background: transparent;
+  color:      var(--cds-interactive);
+  border: 1px solid var(--cds-interactive);
+}
+
+/* Ghost — no border, link-like */
+.mockup-button--ghost {
+  background:   transparent;
+  color:        var(--cds-link-primary);
+  border:       none;
+}
+
+/* ── Input ──────────────────────────────────────────────────────────────── */
+
+/* Carbon text input — dark field, 2px bottom border for focus state */
+.mockup-input {
+  display: block;
+  width: 100%;
+  padding: 0 16px;
+  border: none;
+  border-bottom: 1px solid var(--cds-border-strong-01);
+  border-radius: 0;
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 14px;
+  color: var(--cds-text-primary);
+  background: var(--cds-field-01);
+  height: 40px;
+  outline: none;
+}
+
+.mockup-input-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--cds-text-secondary);
+  letter-spacing: 0.32px;
+}
+
+/* ── Navbar (Header) ────────────────────────────────────────────────────── */
+
+/* Carbon global header — 48px tall, black background */
+.mockup-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 16px;
+  height: 48px;
+  background: var(--cds-layer-01);
+  border-bottom: 1px solid var(--cds-border-subtle-01);
+}
+
+.mockup-navbar__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--cds-text-primary);
+  flex: 1;
+  text-align: center;
+  letter-spacing: 0.1px;
+}
+
+.mockup-navbar__side {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  min-width: 48px;
+  color: var(--cds-icon-primary);
+}
+
+/* ── Tab Bar (UI Shell Header Nav) ─────────────────────────────────────── */
+
+.mockup-tabbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  width: 100%;
+  padding: 0;
+  border-top: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer-01);
+  height: 40px;
+}
+
+.mockup-tabbar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0;
+  flex: 1;
+  font-size: 14px;
+  color: var(--cds-text-secondary);
+  cursor: pointer;
+  padding: 0 16px 8px;
+  height: 100%;
+  border-bottom: 2px solid transparent;
+}
+
+/* Carbon tab underline — 2px interactive blue */
+.mockup-tabbar-item--active {
+  color: var(--cds-text-primary);
+  border-bottom-color: var(--cds-interactive);
+}
+
+/* ── Card (Tile) ────────────────────────────────────────────────────────── */
+
+/* Carbon tiles — crisp grid, no shadows, border-only */
+.mockup-card {
+  border: 1px solid var(--cds-border-subtle-01);
+  border-radius: 0;
+  background: var(--cds-layer-01);
+  overflow: hidden;
+}
+
+.mockup-card__body     { padding: 16px; }
+.mockup-card__title    { font-size: 14px; font-weight: 600; color: var(--cds-text-primary); margin-bottom: 8px; letter-spacing: 0.16px; }
+.mockup-card__value    { font-size: 32px; font-weight: 300; color: var(--cds-text-primary); margin-bottom: 8px; letter-spacing: -0.5px; }
+.mockup-card__subtitle { font-size: 12px; color: var(--cds-text-secondary); margin-bottom: 12px; }
+.mockup-card__actions  { display: flex; gap: 0; padding: 0; border-top: 1px solid var(--cds-border-subtle-01); }
+
+/* ── List ───────────────────────────────────────────────────────────────── */
+
+.mockup-list       { border: 1px solid var(--cds-border-subtle-01); border-radius: 0; background: var(--cds-layer-01); overflow: hidden; }
+.mockup-list-item  { padding: 12px 16px; border-bottom: 1px solid var(--cds-border-subtle-01); font-size: 14px; color: var(--cds-text-primary); display: flex; align-items: center; gap: 16px; min-height: 48px; }
+.mockup-list-item:last-child { border-bottom: none; }
+.mockup-list-item__avatar { width: 32px; height: 32px; border-radius: 0; background: var(--cds-layer-02); flex-shrink: 0; }
+
+/* ── Image placeholder ──────────────────────────────────────────────────── */
+
+.mockup-image-placeholder { width: 100%; height: 100%; background: var(--cds-layer-02); border: 1px solid var(--cds-border-subtle-01); border-radius: 0; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+
+/* ── Icon ───────────────────────────────────────────────────────────────── */
+
+.mockup-icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--cds-icon-primary); }
+
+/* ── Badge (Tag) ────────────────────────────────────────────────────────── */
+
+/* Carbon tag — square corners, compact */
+.mockup-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  border-radius: 0;
+  font-size: 12px;
+  font-weight: 400;
+  height: 24px;
+  background: var(--cds-interactive);
+  color: var(--cds-text-on-color);
+  letter-spacing: 0.32px;
+}
+
+/* ── Alert (Notification) ───────────────────────────────────────────────── */
+
+/* Carbon inline notification — 2px left accent border */
+.mockup-alert {
+  padding: 12px 16px;
+  border-radius: 0;
+  border: 1px solid var(--cds-support-info);
+  border-left: 3px solid var(--cds-support-info);
+  background: var(--cds-layer-01);
+  font-size: 14px;
+  color: var(--cds-text-primary);
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.mockup-alert--info    { border-color: var(--cds-support-info);    border-left-color: var(--cds-support-info); }
+.mockup-alert--success { border-color: var(--cds-support-success); border-left-color: var(--cds-support-success); }
+.mockup-alert--warning { border-color: var(--cds-support-warning); border-left-color: var(--cds-support-warning); }
+.mockup-alert--error   { border-color: var(--cds-support-error);   border-left-color: var(--cds-support-error); }
+
+/* ── Textarea ──────────────────────────────────────────────────────────── */
+
+.mockup-textarea { font-family: "IBM Plex Sans", sans-serif; line-height: 1.42; }
+
+/* ── Checkbox ──────────────────────────────────────────────────────────── */
+
+.mockup-checkbox { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; color: var(--cds-text-primary); }
+
+.mockup-checkbox__box {
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--cds-border-strong-01);
+  border-radius: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--cds-text-on-color);
+  background: var(--cds-interactive);
+  flex-shrink: 0;
+}
+
+.mockup-checkbox__label { color: var(--cds-text-primary); letter-spacing: 0.16px; }
+
+/* ── Radio ─────────────────────────────────────────────────────────────── */
+
+.mockup-radio { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; }
+
+.mockup-radio__circle {
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--cds-border-strong-01);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cds-field-01);
+  flex-shrink: 0;
+}
+
+.mockup-radio__dot   { width: 8px; height: 8px; border-radius: 50%; background: var(--cds-interactive); }
+.mockup-radio__label { color: var(--cds-text-primary); }
+
+/* ── Toggle ────────────────────────────────────────────────────────────── */
+
+.mockup-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; }
+
+/* Carbon toggle — square track, very specific sizing */
+.mockup-toggle__track {
+  width: 48px;
+  height: 24px;
+  border-radius: 0;
+  background: var(--cds-layer-02);
+  border: 1px solid var(--cds-border-strong-01);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.mockup-toggle--on .mockup-toggle__track { background: var(--cds-interactive); border-color: var(--cds-interactive); }
+
+.mockup-toggle__thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 0;
+  background: var(--cds-icon-primary);
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  transition: left 0.15s;
+}
+
+.mockup-toggle--on .mockup-toggle__thumb { left: 29px; background: var(--cds-text-on-color); }
+.mockup-toggle__label { color: var(--cds-text-primary); letter-spacing: 0.16px; }
+
+/* ── Select ────────────────────────────────────────────────────────────── */
+
+.mockup-select { width: 100%; }
+
+.mockup-select__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  border: none;
+  border-bottom: 1px solid var(--cds-border-strong-01);
+  border-radius: 0;
+  font-size: 14px;
+  color: var(--cds-text-primary);
+  background: var(--cds-field-01);
+  cursor: pointer;
+  height: 40px;
+}
+
+.mockup-select__arrow { font-size: 10px; color: var(--cds-icon-secondary); }
+
+/* ── Slider ────────────────────────────────────────────────────────────── */
+
+.mockup-slider { width: 100%; padding: 8px 0; }
+
+.mockup-slider__track {
+  width: 100%;
+  height: 2px;
+  background: var(--cds-layer-02);
+  border-radius: 0;
+  position: relative;
+}
+
+.mockup-slider__fill  { height: 100%; background: var(--cds-interactive); border-radius: 0; }
+
+.mockup-slider__thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--cds-interactive);
+  border: 2px solid var(--cds-background);
+  position: absolute;
+  top: -6px;
+  transform: translateX(-50%);
+}
+
+/* ── Sidebar (UI Shell Left Nav) ────────────────────────────────────────── */
+
+/* Carbon left nav — dark sidebar, precise 32px items */
+.mockup-sidebar {
+  width: 100%;
+  height: 100%;
+  background: var(--cds-layer-01);
+  border-right: 1px solid var(--cds-border-subtle-01);
+  padding: 0;
+}
+
+.mockup-sidebar__item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 16px;
+  height: 32px;
+  font-size: 14px;
+  color: var(--cds-text-secondary);
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  letter-spacing: 0.16px;
+}
+
+/* Active nav item — bright blue left border, white text */
+.mockup-sidebar__item--active {
+  color: var(--cds-text-primary);
+  background: var(--cds-background-selected);
+  border-left-color: var(--cds-interactive);
+}
+
+/* ── Breadcrumb ────────────────────────────────────────────────────────── */
+
+.mockup-breadcrumb       { display: flex; align-items: center; gap: 4px; font-size: 14px; }
+.mockup-breadcrumb__item { color: var(--cds-link-primary); cursor: pointer; }
+.mockup-breadcrumb__item--current { color: var(--cds-text-primary); font-weight: 400; cursor: default; }
+.mockup-breadcrumb__sep  { color: var(--cds-text-secondary); margin: 0 4px; }
+
+/* ── Table ─────────────────────────────────────────────────────────────── */
+
+.mockup-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+
+/* Carbon data table — zero radius, crisp borders, dense rows */
+.mockup-table__th {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--cds-text-primary);
+  border-bottom: 2px solid var(--cds-border-strong-01);
+  background: var(--cds-layer-02);
+  border-radius: 0;
+}
+
+.mockup-table__td           { padding: 11px 16px; border-bottom: 1px solid var(--cds-border-subtle-01); color: var(--cds-text-primary); }
+.mockup-table__row--striped { background: var(--cds-layer-01); }
+
+/* ── Avatar ────────────────────────────────────────────────────────────── */
+
+.mockup-avatar { flex-shrink: 0; }
+
+/* ── Chip (Tag) ────────────────────────────────────────────────────────── */
+
+/* Carbon tags — square, dense */
+.mockup-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+  border-radius: 0;
+  font-size: 12px;
+  height: 24px;
+  background: var(--cds-layer-02);
+  color: var(--cds-text-primary);
+  border: 1px solid var(--cds-border-subtle-01);
+  letter-spacing: 0.32px;
+}
+
+.mockup-chip--selected {
+  background: var(--cds-interactive);
+  color: var(--cds-text-on-color);
+  border-color: var(--cds-interactive);
+}
+
+.mockup-chip__remove { font-size: 12px; cursor: pointer; color: var(--cds-icon-secondary); line-height: 1; }
+
+/* ── Modal ─────────────────────────────────────────────────────────────── */
+
+.mockup-modal__backdrop {
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+/* Carbon modal — zero radius, dark, precise padding */
+.mockup-modal {
+  background: var(--cds-layer-01);
+  border-radius: 0;
+  border: none;
+  width: 100%;
+  max-width: 480px;
+  overflow: hidden;
+}
+
+.mockup-modal__header { padding: 20px 24px 16px; font-size: 20px; font-weight: 400; color: var(--cds-text-primary); }
+.mockup-modal__body   { padding: 0 24px 24px; font-size: 14px; color: var(--cds-text-secondary); line-height: 1.42; }
+.mockup-modal__footer { display: flex; justify-content: flex-end; gap: 0; padding: 0; border-top: 1px solid var(--cds-border-subtle-01); }
+.mockup-modal__footer .mockup-button { flex: 1; border-radius: 0; height: 64px; }
+
+/* ── Skeleton ──────────────────────────────────────────────────────────── */
+
+.mockup-skeleton { background: var(--cds-layer-02); border-radius: 0; width: 100%; height: 100%; animation: carbon-pulse 1.5s ease-in-out infinite; }
+.mockup-skeleton--circle { border-radius: 50%; }
+.mockup-skeleton--text   { height: 14px; }
+
+@keyframes carbon-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+/* ── Progress ──────────────────────────────────────────────────────────── */
+
+.mockup-progress {
+  width: 100%;
+  height: 8px;
+  background: var(--cds-layer-02);
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.mockup-progress__bar { height: 100%; background: var(--cds-interactive); border-radius: 0; }
+
+/* ── Tooltip ───────────────────────────────────────────────────────────── */
+
+.mockup-tooltip { position: relative; display: inline-block; }
+
+.mockup-tooltip__content {
+  background: var(--cds-layer-03);
+  color: var(--cds-text-primary);
+  padding: 8px 16px;
+  border-radius: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: nowrap;
+  border: 1px solid var(--cds-border-subtle-01);
+}
+
+/* ── Search Bar ────────────────────────────────────────────────────────── */
+
+/* Carbon search — dark field, zero radius */
+.mockup-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  border: none;
+  border-bottom: 1px solid var(--cds-border-strong-01);
+  border-radius: 0;
+  background: var(--cds-field-01);
+  height: 40px;
+  width: 100%;
+}
+
+.mockup-search-bar__icon  { display: flex; flex-shrink: 0; color: var(--cds-icon-secondary); }
+.mockup-search-bar__input { font-size: 14px; color: var(--cds-text-placeholder); flex: 1; }
+
+/* ── Login Form ────────────────────────────────────────────────────────── */
+
+.mockup-login         { display: flex; flex-direction: column; gap: 16px; padding: 32px; width: 100%; background: var(--cds-layer-01); }
+.mockup-login__title  { font-size: 28px; font-weight: 300; color: var(--cds-text-primary); text-align: center; margin-bottom: 8px; letter-spacing: -0.3px; }
+.mockup-login__field  { width: 100%; }
+.mockup-login__forgot { font-size: 14px; color: var(--cds-link-primary); text-align: right; }
+.mockup-login__action { margin-top: 8px; }
+.mockup-login__action .mockup-button { width: 100%; justify-content: center; border-radius: 0; height: 48px; }
+
+/* ── Header ────────────────────────────────────────────────────────────── */
+
+.mockup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  height: 48px;
+  background: var(--cds-layer-01);
+  border-bottom: 1px solid var(--cds-border-subtle-01);
+  width: 100%;
+}
+
+.mockup-header__logo     { font-size: 14px; font-weight: 600; color: var(--cds-text-primary); letter-spacing: 0.1px; }
+.mockup-header__nav      { display: flex; gap: 0; }
+.mockup-header__nav-item { font-size: 14px; color: var(--cds-text-secondary); cursor: pointer; padding: 0 16px; height: 48px; line-height: 48px; border-bottom: 2px solid transparent; }
+.mockup-header__right    { display: flex; align-items: center; gap: 0; }
+
+/* ── Footer ────────────────────────────────────────────────────────────── */
+
+.mockup-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 16px;
+  background: var(--cds-layer-01);
+  border-top: 1px solid var(--cds-border-subtle-01);
+  width: 100%;
+}
+
+.mockup-footer__links { display: flex; gap: 24px; }
+.mockup-footer__link  { font-size: 14px; color: var(--cds-link-primary); cursor: pointer; }
+.mockup-footer__text  { font-size: 12px; color: var(--cds-text-secondary); }
+
+/* ── Data Table ────────────────────────────────────────────────────────── */
+
+/* Carbon data table — full grid appearance with visible borders */
+.mockup-data-table {
+  width: 100%;
+  border: 1px solid var(--cds-border-subtle-01);
+  border-radius: 0;
+  overflow: hidden;
+  background: var(--cds-layer-01);
+}
+
+.mockup-data-table__toolbar { padding: 8px 16px; border-bottom: 1px solid var(--cds-border-subtle-01); background: var(--cds-layer-02); }
+
+.mockup-data-table__search {
+  padding: 0 16px;
+  border: none;
+  border-bottom: 1px solid var(--cds-border-strong-01);
+  border-radius: 0;
+  font-size: 14px;
+  color: var(--cds-text-primary);
+  background: var(--cds-field-01);
+  height: 40px;
+}
+
+.mockup-data-table__th {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--cds-text-primary);
+  border-bottom: 2px solid var(--cds-border-strong-01);
+  background: var(--cds-layer-02);
+  border-radius: 0;
+}
+
+.mockup-data-table__sort     { font-size: 8px; margin-left: 4px; color: var(--cds-icon-secondary); }
+.mockup-data-table__td       { padding: 11px 16px; border-bottom: 1px solid var(--cds-border-subtle-01); font-size: 14px; color: var(--cds-text-primary); }
+.mockup-data-table__row:last-child .mockup-data-table__td { border-bottom: none; }
+
+.mockup-data-table__pagination {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  font-size: 12px;
+  color: var(--cds-text-secondary);
+  border-top: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer-02);
+  height: 48px;
+}
+
+.mockup-data-table__page-btn { cursor: pointer; padding: 4px 8px; color: var(--cds-link-primary); border-radius: 0; }
+
+/* ── Chart Placeholder ─────────────────────────────────────────────────── */
+
+.mockup-chart {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--cds-border-subtle-01);
+  border-radius: 0;
+  background: var(--cds-layer-01);
+  overflow: hidden;
+}
+
+.mockup-chart__title {
+  padding: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--cds-text-primary);
+  border-bottom: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer-02);
+}
+
+.mockup-chart__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+}
+
+.mockup-chart__label { font-size: 12px; color: var(--cds-text-helper); text-transform: uppercase; letter-spacing: 0.32px; }

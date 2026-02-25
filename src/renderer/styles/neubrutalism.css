@@ -1,0 +1,693 @@
+/* Neubrutalism — raw borders, hard shadows, zero radius, neon fills. No subtlety. */
+:root {
+  --neo-yellow:          #FFE500;
+  --neo-red:             #FF3F3F;
+  --neo-green:           #00FF87;
+  --neo-blue:            #3B82F6;
+  --neo-pink:            #FF2D78;
+  --neo-black:           #000000;
+  --neo-white:           #FFFFFF;
+  --neo-bg:              #FFFFFF;
+  --neo-border:          3px solid #000000;
+  --neo-shadow:          4px 4px 0 #000000;
+  --neo-shadow-lg:       6px 6px 0 #000000;
+  --neo-shadow-xl:       8px 8px 0 #000000;
+  --color-text-primary:  #000000;
+  --color-text-secondary:#333333;
+  --color-text-placeholder:#666666;
+  --color-border:        #000000;
+  --color-bg-light:      #F5F5F5;
+  --color-bg-white:      #FFFFFF;
+  --color-primary:       #FFE500;
+  --color-disabled:      #CCCCCC;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Arial Black', 'Impact', 'Helvetica Neue', sans-serif;
+  color: var(--neo-black);
+  background: var(--neo-bg);
+}
+
+/* ── Screen ─────────────────────────────────────────────────────────────── */
+
+.screen {
+  background: var(--neo-yellow);
+  font-family: 'Arial Black', 'Impact', 'Helvetica Neue', sans-serif;
+}
+
+/* ── Button ─────────────────────────────────────────────────────────────── */
+
+/* Hard offset shadow with zero blur is the signature neubrutalism depth cue */
+.mockup-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  border: var(--neo-border);
+  font-family: inherit;
+  cursor: pointer;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: var(--neo-shadow);
+  transition: box-shadow 0.1s, transform 0.1s;
+}
+
+/* sizes */
+.mockup-button--sm  { padding: 6px 14px;  font-size: 11px; }
+.mockup-button--md  { padding: 10px 20px; font-size: 14px; }
+.mockup-button--lg  { padding: 14px 28px; font-size: 16px; }
+
+/* variants */
+.mockup-button--primary {
+  background: var(--neo-yellow);
+  color: var(--neo-black);
+  border-color: var(--neo-black);
+}
+
+.mockup-button--secondary {
+  background: var(--neo-green);
+  color: var(--neo-black);
+  border-color: var(--neo-black);
+}
+
+.mockup-button--outline {
+  background: var(--neo-white);
+  color: var(--neo-black);
+  border-color: var(--neo-black);
+}
+
+.mockup-button--ghost {
+  background: transparent;
+  color: var(--neo-black);
+  border: var(--neo-border);
+  box-shadow: none;
+}
+
+/* ── Input ──────────────────────────────────────────────────────────────── */
+
+.mockup-input {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  border: var(--neo-border);
+  border-radius: 0;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--neo-black);
+  background: var(--neo-white);
+  box-shadow: none;
+}
+
+.mockup-input-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--neo-black);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── Navbar ─────────────────────────────────────────────────────────────── */
+
+/* Bottom border is extra thick — neubrutalism navbar is a stripe, not a shadow */
+.mockup-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 12px 16px;
+  border-bottom: var(--neo-border);
+  background: var(--neo-yellow);
+}
+
+.mockup-navbar__title {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--neo-black);
+  flex: 1;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.mockup-navbar__side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 32px;
+  color: var(--neo-black);
+}
+
+/* ── Tab Bar ────────────────────────────────────────────────────────────── */
+
+.mockup-tabbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  width: 100%;
+  padding: 8px 0;
+  border-top: var(--neo-border);
+  background: var(--neo-white);
+}
+
+.mockup-tabbar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--neo-black);
+  cursor: pointer;
+}
+
+.mockup-tabbar-item--active {
+  background: var(--neo-yellow);
+  color: var(--neo-black);
+  font-weight: 900;
+}
+
+/* ── Card ───────────────────────────────────────────────────────────────── */
+
+/* Hard shadow replaces elevation — border + offset shadow = visible hierarchy */
+.mockup-card {
+  border: var(--neo-border);
+  border-radius: 0;
+  background: var(--neo-white);
+  overflow: hidden;
+  box-shadow: var(--neo-shadow-lg);
+}
+
+.mockup-card__body { padding: 16px 20px; }
+.mockup-card__title { font-size: 16px; font-weight: 900; color: var(--neo-black); margin-bottom: 4px; text-transform: uppercase; }
+.mockup-card__value { font-size: 32px; font-weight: 900; color: var(--neo-black); margin-bottom: 4px; }
+.mockup-card__subtitle { font-size: 13px; font-weight: 700; color: var(--color-text-secondary); margin-bottom: 8px; }
+.mockup-card__actions { display: flex; gap: 8px; padding: 12px 20px; border-top: var(--neo-border); background: var(--neo-yellow); }
+
+/* ── List ───────────────────────────────────────────────────────────────── */
+
+.mockup-list { border: var(--neo-border); border-radius: 0; background: var(--neo-white); overflow: hidden; box-shadow: var(--neo-shadow); }
+.mockup-list-item { padding: 12px 16px; border-bottom: 2px solid var(--neo-black); font-size: 14px; font-weight: 700; color: var(--neo-black); display: flex; align-items: center; gap: 12px; }
+.mockup-list-item:last-child { border-bottom: none; }
+.mockup-list-item__avatar { width: 36px; height: 36px; border-radius: 0; border: 2px solid var(--neo-black); background: var(--neo-yellow); flex-shrink: 0; }
+
+/* ── Image placeholder ──────────────────────────────────────────────────── */
+
+.mockup-image-placeholder { width: 100%; height: 100%; background: var(--color-bg-light); border: var(--neo-border); border-radius: 0; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+
+/* ── Icon ───────────────────────────────────────────────────────────────── */
+
+.mockup-icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+/* ── Badge ──────────────────────────────────────────────────────────────── */
+
+/* Square badge with border — neubrutalism badge is a stamp, not a pill */
+.mockup-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 0;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  background: var(--neo-red);
+  color: var(--neo-white);
+  border: 2px solid var(--neo-black);
+  box-shadow: 2px 2px 0 var(--neo-black);
+}
+
+/* ── Alert ──────────────────────────────────────────────────────────────── */
+
+.mockup-alert {
+  padding: 12px 16px;
+  border: var(--neo-border);
+  border-radius: 0;
+  background: var(--neo-yellow);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--neo-black);
+  box-shadow: var(--neo-shadow);
+}
+
+.mockup-alert--info    { background: var(--neo-blue); color: var(--neo-white); }
+.mockup-alert--success { background: var(--neo-green); color: var(--neo-black); }
+.mockup-alert--warning { background: var(--neo-yellow); color: var(--neo-black); }
+.mockup-alert--error   { background: var(--neo-red); color: var(--neo-white); }
+
+/* ── Textarea ──────────────────────────────────────────────────────────── */
+
+.mockup-textarea { font-family: inherit; font-weight: 700; line-height: 1.4; }
+
+/* ── Checkbox ──────────────────────────────────────────────────────────── */
+
+.mockup-checkbox { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; font-weight: 700; }
+
+.mockup-checkbox__box {
+  width: 20px;
+  height: 20px;
+  border: 3px solid var(--neo-black);
+  border-radius: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--neo-black);
+  background: var(--neo-yellow);
+  flex-shrink: 0;
+}
+
+.mockup-checkbox__label { color: var(--neo-black); font-weight: 700; }
+
+/* ── Radio ─────────────────────────────────────────────────────────────── */
+
+.mockup-radio { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; font-weight: 700; }
+
+.mockup-radio__circle {
+  width: 20px;
+  height: 20px;
+  border: 3px solid var(--neo-black);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--neo-white);
+  flex-shrink: 0;
+}
+
+.mockup-radio__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--neo-black); }
+.mockup-radio__label { color: var(--neo-black); font-weight: 700; }
+
+/* ── Toggle ────────────────────────────────────────────────────────────── */
+
+.mockup-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; font-weight: 700; }
+
+.mockup-toggle__track {
+  width: 44px;
+  height: 24px;
+  border-radius: 0;
+  background: var(--color-bg-light);
+  border: 3px solid var(--neo-black);
+  position: relative;
+  flex-shrink: 0;
+  box-shadow: 2px 2px 0 var(--neo-black);
+}
+
+/* ON state: neon green fill — unmistakable active signal */
+.mockup-toggle--on .mockup-toggle__track { background: var(--neo-green); }
+
+.mockup-toggle__thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 0;
+  background: var(--neo-black);
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: left 0.15s;
+}
+
+.mockup-toggle--on .mockup-toggle__thumb { left: 22px; }
+.mockup-toggle__label { color: var(--neo-black); font-weight: 700; }
+
+/* ── Select ────────────────────────────────────────────────────────────── */
+
+.mockup-select { width: 100%; }
+
+.mockup-select__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border: var(--neo-border);
+  border-radius: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--neo-black);
+  background: var(--neo-white);
+  cursor: pointer;
+  box-shadow: var(--neo-shadow);
+}
+
+.mockup-select__arrow { font-size: 12px; color: var(--neo-black); font-weight: 900; }
+
+/* ── Slider ────────────────────────────────────────────────────────────── */
+
+.mockup-slider { width: 100%; padding: 8px 0; }
+
+.mockup-slider__track {
+  width: 100%;
+  height: 6px;
+  background: var(--neo-white);
+  border: 2px solid var(--neo-black);
+  position: relative;
+}
+
+.mockup-slider__fill { height: 100%; background: var(--neo-yellow); }
+
+.mockup-slider__thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 0;
+  background: var(--neo-yellow);
+  border: 3px solid var(--neo-black);
+  position: absolute;
+  top: -8px;
+  transform: translateX(-50%);
+  box-shadow: 2px 2px 0 var(--neo-black);
+}
+
+/* ── Sidebar ───────────────────────────────────────────────────────────── */
+
+.mockup-sidebar {
+  width: 100%;
+  height: 100%;
+  background: var(--neo-white);
+  border-right: var(--neo-border);
+  padding: 8px 0;
+}
+
+.mockup-sidebar__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--neo-black);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+/* Active: yellow fill + border — no hover shadow, just raw block color swap */
+.mockup-sidebar__item--active {
+  color: var(--neo-black);
+  font-weight: 900;
+  background: var(--neo-yellow);
+  border-left: 4px solid var(--neo-black);
+}
+
+/* ── Breadcrumb ────────────────────────────────────────────────────────── */
+
+.mockup-breadcrumb { display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; }
+.mockup-breadcrumb__item { color: var(--neo-black); cursor: pointer; text-decoration: underline; text-transform: uppercase; }
+.mockup-breadcrumb__item--current { color: var(--neo-black); font-weight: 900; cursor: default; text-decoration: none; }
+.mockup-breadcrumb__sep { color: var(--neo-black); margin: 0 4px; font-weight: 900; }
+
+/* ── Table ─────────────────────────────────────────────────────────────── */
+
+.mockup-table { width: 100%; border-collapse: collapse; font-size: 14px; border: var(--neo-border); }
+
+.mockup-table__th {
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: var(--neo-black);
+  border: var(--neo-border);
+  background: var(--neo-yellow);
+}
+
+.mockup-table__td { padding: 10px 12px; border: 2px solid var(--neo-black); color: var(--neo-black); font-weight: 700; }
+.mockup-table__row--striped { background: var(--color-bg-light); }
+
+/* ── Avatar ────────────────────────────────────────────────────────────── */
+
+/* Square avatars — neubrutalism rejects the rounded avatar convention */
+.mockup-avatar { flex-shrink: 0; border: 3px solid var(--neo-black); box-shadow: 2px 2px 0 var(--neo-black); }
+
+/* ── Chip ──────────────────────────────────────────────────────────────── */
+
+.mockup-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 0;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  background: var(--neo-white);
+  color: var(--neo-black);
+  border: 2px solid var(--neo-black);
+  box-shadow: 2px 2px 0 var(--neo-black);
+}
+
+.mockup-chip--selected {
+  background: var(--neo-yellow);
+  color: var(--neo-black);
+  border-color: var(--neo-black);
+}
+
+.mockup-chip__remove { font-size: 14px; cursor: pointer; color: var(--neo-black); line-height: 1; font-weight: 900; }
+
+/* ── Modal ─────────────────────────────────────────────────────────────── */
+
+.mockup-modal__backdrop {
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.mockup-modal {
+  background: var(--neo-white);
+  border-radius: 0;
+  border: var(--neo-border);
+  width: 100%;
+  max-width: 420px;
+  overflow: hidden;
+  box-shadow: var(--neo-shadow-xl);
+}
+
+/* Yellow header stripe: visible, loud, unmistakable — no gradient needed */
+.mockup-modal__header {
+  padding: 16px 20px;
+  font-size: 18px;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: var(--neo-black);
+  border-bottom: var(--neo-border);
+  background: var(--neo-yellow);
+}
+
+.mockup-modal__body { padding: 16px 20px; font-size: 14px; font-weight: 700; color: var(--neo-black); }
+.mockup-modal__footer { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px; border-top: var(--neo-border); background: var(--color-bg-light); }
+
+/* ── Skeleton ──────────────────────────────────────────────────────────── */
+
+.mockup-skeleton {
+  background: repeating-linear-gradient(45deg, #f0f0f0, #f0f0f0 10px, #e0e0e0 10px, #e0e0e0 20px);
+  border-radius: 0;
+  border: 2px solid var(--neo-black);
+  width: 100%;
+  height: 100%;
+}
+
+.mockup-skeleton--circle { border-radius: 0; }
+.mockup-skeleton--text { height: 16px; }
+
+/* ── Progress ──────────────────────────────────────────────────────────── */
+
+.mockup-progress {
+  width: 100%;
+  height: 12px;
+  background: var(--neo-white);
+  border: 3px solid var(--neo-black);
+  border-radius: 0;
+  overflow: hidden;
+}
+
+/* Neon fill: progress as a power meter */
+.mockup-progress__bar { height: 100%; background: var(--neo-green); border-radius: 0; }
+
+/* ── Tooltip ───────────────────────────────────────────────────────────── */
+
+.mockup-tooltip { position: relative; display: inline-block; }
+
+.mockup-tooltip__content {
+  background: var(--neo-black);
+  color: var(--neo-yellow);
+  padding: 6px 10px;
+  border-radius: 0;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border: 2px solid var(--neo-yellow);
+}
+
+/* ── Search Bar ────────────────────────────────────────────────────────── */
+
+.mockup-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: var(--neo-border);
+  border-radius: 0;
+  background: var(--neo-white);
+  width: 100%;
+  box-shadow: var(--neo-shadow);
+}
+
+.mockup-search-bar__icon { display: flex; flex-shrink: 0; color: var(--neo-black); }
+.mockup-search-bar__input { font-size: 14px; font-weight: 700; color: var(--neo-black); }
+
+/* ── Login Form ────────────────────────────────────────────────────────── */
+
+.mockup-login { display: flex; flex-direction: column; gap: 16px; padding: 24px; width: 100%; background: var(--neo-white); border: var(--neo-border); box-shadow: var(--neo-shadow-xl); }
+
+.mockup-login__title {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--neo-black);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.mockup-login__field { width: 100%; }
+.mockup-login__forgot { font-size: 13px; font-weight: 700; color: var(--neo-black); text-align: right; text-decoration: underline; text-transform: uppercase; }
+.mockup-login__action { margin-top: 8px; }
+.mockup-login__action .mockup-button { width: 100%; }
+
+/* ── Header ────────────────────────────────────────────────────────────── */
+
+/* Thick bottom border anchors the header — no shadow needed */
+.mockup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: var(--neo-border);
+  background: var(--neo-yellow);
+  width: 100%;
+}
+
+.mockup-header__logo { font-size: 20px; font-weight: 900; color: var(--neo-black); text-transform: uppercase; letter-spacing: 0.05em; }
+.mockup-header__nav { display: flex; gap: 16px; }
+.mockup-header__nav-item { font-size: 14px; font-weight: 700; color: var(--neo-black); text-transform: uppercase; cursor: pointer; text-decoration: underline; }
+.mockup-header__right { display: flex; align-items: center; }
+
+/* ── Footer ────────────────────────────────────────────────────────────── */
+
+.mockup-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px;
+  border-top: var(--neo-border);
+  background: var(--neo-black);
+  width: 100%;
+}
+
+.mockup-footer__links { display: flex; gap: 16px; }
+.mockup-footer__link { font-size: 13px; font-weight: 700; color: var(--neo-yellow); cursor: pointer; text-transform: uppercase; text-decoration: underline; }
+.mockup-footer__text { font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.6); text-transform: uppercase; }
+
+/* ── Data Table ────────────────────────────────────────────────────────── */
+
+.mockup-data-table {
+  width: 100%;
+  border: var(--neo-border);
+  border-radius: 0;
+  overflow: hidden;
+  box-shadow: var(--neo-shadow);
+}
+
+.mockup-data-table__toolbar { padding: 8px 12px; border-bottom: var(--neo-border); background: var(--neo-yellow); }
+
+.mockup-data-table__search {
+  padding: 6px 10px;
+  border: 2px solid var(--neo-black);
+  border-radius: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--neo-black);
+  background: var(--neo-white);
+}
+
+.mockup-data-table__th {
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 900;
+  font-size: 13px;
+  text-transform: uppercase;
+  color: var(--neo-black);
+  border: var(--neo-border);
+  background: var(--neo-green);
+}
+
+.mockup-data-table__sort { font-size: 10px; margin-left: 4px; color: var(--neo-black); font-weight: 900; }
+.mockup-data-table__td { padding: 10px 12px; border: 2px solid var(--neo-black); font-size: 14px; font-weight: 700; color: var(--neo-black); }
+.mockup-data-table__row:last-child .mockup-data-table__td { border-bottom: 2px solid var(--neo-black); }
+
+.mockup-data-table__pagination {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--neo-black);
+  border-top: var(--neo-border);
+  background: var(--neo-white);
+}
+
+.mockup-data-table__page-btn { cursor: pointer; padding: 4px 8px; color: var(--neo-black); border: 2px solid var(--neo-black); font-weight: 900; background: var(--neo-yellow); box-shadow: 2px 2px 0 var(--neo-black); }
+
+/* ── Chart Placeholder ─────────────────────────────────────────────────── */
+
+.mockup-chart {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border: var(--neo-border);
+  border-radius: 0;
+  background: var(--neo-white);
+  overflow: hidden;
+  box-shadow: var(--neo-shadow-lg);
+}
+
+.mockup-chart__title {
+  padding: 12px 16px;
+  font-size: 16px;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: var(--neo-black);
+  border-bottom: var(--neo-border);
+  background: var(--neo-yellow);
+}
+
+.mockup-chart__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+}
+
+.mockup-chart__label { font-size: 12px; font-weight: 700; color: var(--neo-black); text-transform: uppercase; }

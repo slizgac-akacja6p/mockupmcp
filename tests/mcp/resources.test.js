@@ -106,3 +106,57 @@ describe('MCP Resources — project detail', () => {
     assert.ok(projectResources.length >= 1);
   });
 });
+
+describe('MCP Resources — approval', () => {
+  let client;
+  let store;
+  let tmpDir;
+  let projectId;
+  let screenId;
+
+  before(async () => {
+    tmpDir = await mkdtemp(join(tmpdir(), 'mcp-res-approval-'));
+    store = new ProjectStore(tmpDir);
+    await store.init();
+    const proj = await store.createProject('Test');
+    projectId = proj.id;
+    const scr = await store.addScreen(projectId, 'Main');
+    screenId = scr.id;
+    await store.addElement(projectId, screenId, 'button', 10, 20, 120, 44, { label: 'OK' });
+    const pair = await createTestPair(store);
+    client = pair.client;
+  });
+
+  after(async () => {
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('returns not-approved by default', async () => {
+    const result = await client.readResource({
+      uri: `mockup://projects/${projectId}/screens/${screenId}/approval`,
+    });
+    const data = JSON.parse(result.contents[0].text);
+    // New M23 resource reads status from store — default is 'draft', approved is false
+    assert.equal(data.approved, false);
+    assert.equal(data.status, 'draft');
+    assert.equal(data.version, 1);
+    assert.equal(data.parent_screen_id, null);
+    assert.ok(Array.isArray(data.unresolved_comments));
+  });
+
+  it('returns approved after store update', async () => {
+    // New M23 flow: set screen status via store instead of editSessions Map
+    await store.updateScreen(projectId, screenId, { status: 'approved' });
+
+    const result = await client.readResource({
+      uri: `mockup://projects/${projectId}/screens/${screenId}/approval`,
+    });
+    const data = JSON.parse(result.contents[0].text);
+    assert.equal(data.approved, true);
+    assert.equal(data.status, 'approved');
+    assert.equal(data.screen_id, screenId);
+
+    // Reset
+    await store.updateScreen(projectId, screenId, { status: 'draft' });
+  });
+});

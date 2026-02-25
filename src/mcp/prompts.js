@@ -3,6 +3,7 @@
 import { z } from 'zod';
 import { buildScreenHtml } from '../renderer/html-builder.js';
 import { takeScreenshot } from '../renderer/screenshot.js';
+import { getAvailableSections } from '../renderer/sections/index.js';
 
 /**
  * Render a screen to a base64 PNG string.
@@ -209,5 +210,74 @@ For each inconsistency found, suggest specific fixes with element IDs.`;
     }
   );
 
-  console.error('[MockupMCP] 3 prompts registered (design_review, accessibility_check, compare_screens)');
+  // --- Layout guide: semantic sections for high-level mockup creation ---
+  const sections = getAvailableSections();
+  const sectionDescriptions = {
+    navbar: 'Horizontal navigation bar with logo/title on left and nav links on right. Props: title, links (array).',
+    hero_with_cta: 'Large hero section with heading, subheading, and centered CTA button. Props: heading, subheading, cta_text.',
+    login_form: 'Centered login form with email, password fields and submit button. Props: title, email_placeholder, password_placeholder, button_text.',
+    card_grid_3: '3-column card grid. Props: cards (array of {title, body}).',
+    card_grid_2: '2-column card grid. Props: cards (array of {title, body}).',
+    settings_panel: 'Settings panel with field labels, inputs, and save button. Props: title, fields (array of {label, placeholder}).',
+    profile_header: 'Profile card with avatar, name, and role. Props: name, role.',
+    search_bar: 'Search input field with search button. Props: placeholder, button_text.',
+    feature_list: '3-row feature list with icon, title, and description. Props: features (array of {title, description}).',
+    footer: 'Footer with copyright text and links. Props: copyright, links (array).',
+  };
+
+  server.prompt(
+    'mockup_layout_guide',
+    {
+      description: 'Guide for creating screens with semantic layout sections (10x faster mockup creation)',
+      argsSchema: {},
+    },
+    async () => {
+      const sectionsList = sections
+        .map(s => `- ${s}: ${sectionDescriptions[s] || 'No description'}`)
+        .join('\n');
+
+      const text =
+`# High-Level Layout API Guide
+
+Use the "mockup_create_screen_layout" tool to compose screens from semantic sections.
+
+## Available Sections (${sections.length})
+
+${sectionsList}
+
+## Example Usage
+
+\`\`\`
+mockup_create_screen_layout(
+  project_id="proj_abc",
+  name="Landing Page",
+  sections=[
+    { type: "navbar", props: { title: "MyApp", links: ["Home", "Features", "Pricing"] } },
+    { type: "hero_with_cta", props: { heading: "Welcome!", subheading: "Build fast", cta_text: "Start Now" } },
+    { type: "card_grid_3", props: { cards: [
+      { title: "Fast", body: "Lightning speed" },
+      { title: "Easy", body: "Simple to use" },
+      { title: "Secure", body: "Enterprise grade" }
+    ]}},
+    { type: "footer", props: { copyright: "© 2026", links: ["Privacy", "Terms"] } }
+  ]
+)
+\`\`\`
+
+## Tips
+- Sections stack vertically in the order specified
+- Each section can have custom props — see section descriptions above
+- Default screen width is 1280px
+- For faster iterations, use sections instead of adding elements one-by-one`;
+
+      return {
+        messages: [{
+          role: 'user',
+          content: [{ type: 'text', text }],
+        }],
+      };
+    }
+  );
+
+  console.error('[MockupMCP] 4 prompts registered (design_review, accessibility_check, compare_screens, layout_guide)');
 }

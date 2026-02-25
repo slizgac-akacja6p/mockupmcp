@@ -477,6 +477,44 @@ describe('MCP Tool Handlers (integration)', () => {
     });
   });
 
+  describe('mockup_bulk_add_elements', () => {
+    it('adds multiple elements in one call', async () => {
+      const projRes = await server.callTool('mockup_create_project', { name: 'Bulk Test' });
+      const projectId = parseResult(projRes).id;
+      const scrRes = await server.callTool('mockup_add_screen', { project_id: projectId, name: 'Main' });
+      const screenId = parseResult(scrRes).id;
+
+      const res = await server.callTool('mockup_bulk_add_elements', {
+        project_id: projectId,
+        screen_id: screenId,
+        elements: [
+          { type: 'rectangle', x: 0, y: 0, width: 100, height: 50, properties: { background: '#ff0000' } },
+          { type: 'text', x: 10, y: 60, width: 200, height: 30, properties: { content: 'Hello' } },
+          { type: 'button', x: 10, y: 100, width: 120, height: 44, properties: { label: 'Click' } },
+        ],
+      });
+      const data = parseResult(res);
+
+      assert.equal(data.added, 3);
+      assert.equal(data.elements.length, 3);
+      assert.ok(data.elements[0].id.startsWith('el_'));
+    });
+
+    it('returns error for invalid screen', async () => {
+      const projRes = await server.callTool('mockup_create_project', { name: 'Bulk Test 2' });
+      const projectId = parseResult(projRes).id;
+
+      const res = await server.callTool('mockup_bulk_add_elements', {
+        project_id: projectId,
+        screen_id: 'scr_invalid',
+        elements: [{ type: 'text', x: 0, y: 0, width: 100, height: 30 }],
+      });
+
+      assert.equal(res.isError, true);
+      assert.ok(res.content[0].text.includes('Error'));
+    });
+  });
+
   // -- Error handling --
 
   describe('error handling', () => {

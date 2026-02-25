@@ -1,0 +1,687 @@
+/* Microsoft Fluent 2 — Acrylic depth, neutral tokens, precise radius scale */
+:root {
+  /* Fluent 2 neutral color ramp */
+  --colorNeutralBackground1:           #FFFFFF;
+  --colorNeutralBackground2:           #F5F5F5;
+  --colorNeutralBackground3:           #F0F0F0;
+  --colorNeutralBackground4:           #EBEBEB;
+  --colorNeutralBackground5:           #E6E6E6;
+  --colorNeutralBackground6:           #E0E0E0;
+  --colorNeutralForeground1:           #242424;
+  --colorNeutralForeground2:           #424242;
+  --colorNeutralForeground3:           #616161;
+  --colorNeutralForeground4:           #707070;
+  --colorNeutralForegroundDisabled:    #BDBDBD;
+  --colorNeutralStroke1:               #D1D1D1;
+  --colorNeutralStroke2:               #E0E0E0;
+  --colorNeutralStroke3:               #F0F0F0;
+  --colorNeutralStrokeDisabled:        #E0E0E0;
+  --colorNeutralShadowAmbient:         rgba(0, 0, 0, 0.12);
+  --colorNeutralShadowKey:             rgba(0, 0, 0, 0.14);
+
+  /* Fluent 2 brand palette */
+  --colorBrandBackground:              #0F6CBD;
+  --colorBrandBackground2:             #115EA3;
+  --colorBrandBackground3:             #0D4F8C;
+  --colorBrandForeground1:             #0F6CBD;
+  --colorBrandForeground2:             #115EA3;
+  --colorBrandForegroundInverted:      #FFFFFF;
+  --colorBrandStroke1:                 #0F6CBD;
+  --colorBrandStroke2:                 #115EA3;
+
+  /* Fluent 2 semantic */
+  --colorStatusDangerBackground3:      #C50F1F;
+  --colorStatusSuccessBackground3:     #0E7A0D;
+  --colorStatusWarningBackground3:     #835C00;
+  --colorStatusInfoBackground3:        #0F6CBD;
+
+  /* Fluent 2 border radius */
+  --borderRadiusNone:   0px;
+  --borderRadiusSmall:  4px;
+  --borderRadiusMedium: 8px;
+  --borderRadiusLarge:  16px;
+  --borderRadiusXLarge: 20px;
+  --borderRadiusCircular: 9999px;
+
+  /* Fluent 2 shadow */
+  --shadow2:  0 1px 2px var(--colorNeutralShadowAmbient), 0 1px 2px var(--colorNeutralShadowKey);
+  --shadow4:  0 2px 4px var(--colorNeutralShadowAmbient), 0 0 2px var(--colorNeutralShadowKey);
+  --shadow8:  0 4px 8px var(--colorNeutralShadowAmbient), 0 0 2px var(--colorNeutralShadowKey);
+  --shadow16: 0 8px 16px var(--colorNeutralShadowAmbient), 0 0 2px var(--colorNeutralShadowKey);
+  --shadow28: 0 14px 28px var(--colorNeutralShadowAmbient), 0 0 8px var(--colorNeutralShadowKey);
+  --shadow64: 0 32px 64px var(--colorNeutralShadowAmbient), 0 0 8px var(--colorNeutralShadowKey);
+
+  /* Fluent 2 Acrylic */
+  --acrylic-tint: rgba(255, 255, 255, 0.6);
+  --acrylic-blur: blur(40px);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, sans-serif;
+  color: var(--colorNeutralForeground1);
+  background: var(--colorNeutralBackground2);
+  font-size: 14px;
+  line-height: 1.42;
+}
+
+/* ── Button ─────────────────────────────────────────────────────────────── */
+
+/* Fluent 2 buttons — compact padding, precise radius, no heavy shadows */
+.mockup-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--borderRadiusMedium);
+  border: 1px solid transparent;
+  font-family: "Segoe UI Variable", "Segoe UI", sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  line-height: 1;
+  white-space: nowrap;
+  transition: background 0.1s, border-color 0.1s;
+}
+
+.mockup-button--sm  { padding: 4px 10px;  font-size: 12px; }
+.mockup-button--md  { padding: 5px 12px;  font-size: 14px; }
+.mockup-button--lg  { padding: 8px 16px;  font-size: 16px; }
+
+/* Primary — brand blue fill */
+.mockup-button--primary {
+  background: var(--colorBrandBackground);
+  color:      var(--colorBrandForegroundInverted);
+  border-color: var(--colorBrandBackground);
+}
+
+/* Secondary — neutral background, brand border */
+.mockup-button--secondary {
+  background: var(--colorNeutralBackground1);
+  color:      var(--colorNeutralForeground1);
+  border-color: var(--colorNeutralStroke1);
+}
+
+/* Outline — transparent background, brand stroke */
+.mockup-button--outline {
+  background: transparent;
+  color:      var(--colorBrandForeground1);
+  border-color: var(--colorBrandStroke1);
+}
+
+/* Ghost/subtle — no border, text only */
+.mockup-button--ghost {
+  background:   transparent;
+  color:        var(--colorBrandForeground1);
+  border-color: transparent;
+}
+
+/* ── Input ──────────────────────────────────────────────────────────────── */
+
+/* Fluent 2 text field — underline-only focus style */
+.mockup-input {
+  display: block;
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--colorNeutralStroke1);
+  border-radius: var(--borderRadiusSmall) var(--borderRadiusSmall) 0 0;
+  border-bottom: 2px solid var(--colorBrandStroke1);
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--colorNeutralForeground1);
+  background: var(--colorNeutralBackground1);
+}
+
+.mockup-input-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--colorNeutralForeground2);
+}
+
+/* ── Navbar ─────────────────────────────────────────────────────────────── */
+
+/* Fluent 2 Command Bar / Title Bar — neutral white, subtle shadow */
+.mockup-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 16px;
+  height: 48px;
+  background: var(--acrylic-tint);
+  backdrop-filter: var(--acrylic-blur);
+  -webkit-backdrop-filter: var(--acrylic-blur);
+  border-bottom: 1px solid var(--colorNeutralStroke2);
+  box-shadow: var(--shadow2);
+}
+
+.mockup-navbar__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--colorNeutralForeground1);
+  flex: 1;
+  text-align: center;
+}
+
+.mockup-navbar__side {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 36px;
+  color: var(--colorNeutralForeground3);
+}
+
+/* ── Tab Bar ────────────────────────────────────────────────────────────── */
+
+.mockup-tabbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  width: 100%;
+  padding: 4px 0;
+  border-top: 1px solid var(--colorNeutralStroke2);
+  background: var(--colorNeutralBackground1);
+}
+
+.mockup-tabbar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  font-size: 11px;
+  color: var(--colorNeutralForeground3);
+  cursor: pointer;
+  padding: 6px 0;
+}
+
+/* Fluent 2 active tab — brand underline indicator */
+.mockup-tabbar-item--active {
+  color: var(--colorBrandForeground1);
+  font-weight: 600;
+  border-top: 2px solid var(--colorBrandStroke1);
+}
+
+/* ── Card ───────────────────────────────────────────────────────────────── */
+
+.mockup-card {
+  border: 1px solid var(--colorNeutralStroke2);
+  border-radius: var(--borderRadiusMedium);
+  background: var(--colorNeutralBackground1);
+  box-shadow: var(--shadow4);
+  overflow: hidden;
+}
+
+.mockup-card__body     { padding: 16px; }
+.mockup-card__title    { font-size: 16px; font-weight: 600; color: var(--colorNeutralForeground1); margin-bottom: 4px; }
+.mockup-card__value    { font-size: 28px; font-weight: 700; color: var(--colorBrandForeground1); margin-bottom: 4px; }
+.mockup-card__subtitle { font-size: 12px; color: var(--colorNeutralForeground3); margin-bottom: 8px; }
+.mockup-card__actions  { display: flex; gap: 8px; padding: 8px 16px 16px; border-top: 1px solid var(--colorNeutralStroke2); }
+
+/* ── List ───────────────────────────────────────────────────────────────── */
+
+.mockup-list       { border: 1px solid var(--colorNeutralStroke2); border-radius: var(--borderRadiusMedium); background: var(--colorNeutralBackground1); overflow: hidden; }
+.mockup-list-item  { padding: 10px 16px; border-bottom: 1px solid var(--colorNeutralStroke3); font-size: 14px; color: var(--colorNeutralForeground1); display: flex; align-items: center; gap: 12px; min-height: 44px; }
+.mockup-list-item:last-child { border-bottom: none; }
+.mockup-list-item__avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--colorNeutralBackground3); flex-shrink: 0; }
+
+/* ── Image placeholder ──────────────────────────────────────────────────── */
+
+.mockup-image-placeholder { width: 100%; height: 100%; background: var(--colorNeutralBackground3); border: 1px solid var(--colorNeutralStroke2); border-radius: var(--borderRadiusMedium); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+
+/* ── Icon ───────────────────────────────────────────────────────────────── */
+
+.mockup-icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--colorNeutralForeground3); }
+
+/* ── Badge ──────────────────────────────────────────────────────────────── */
+
+.mockup-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+  border-radius: var(--borderRadiusCircular);
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--colorStatusDangerBackground3);
+  color: #FFFFFF;
+  min-width: 16px;
+  height: 16px;
+}
+
+/* ── Alert ──────────────────────────────────────────────────────────────── */
+
+.mockup-alert {
+  padding: 12px 16px;
+  border-radius: var(--borderRadiusMedium);
+  border: 1px solid var(--colorNeutralStroke1);
+  background: var(--colorNeutralBackground1);
+  font-size: 14px;
+  color: var(--colorNeutralForeground1);
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.mockup-alert--info    { border-color: #0F6CBD; background: #EFF6FC; color: #004377; }
+.mockup-alert--success { border-color: #107C10; background: #DFF6DD; color: #0E4D0D; }
+.mockup-alert--warning { border-color: #835C00; background: #FFF4CE; color: #4D3700; }
+.mockup-alert--error   { border-color: #C50F1F; background: #FDE7E9; color: #750B0B; }
+
+/* ── Textarea ──────────────────────────────────────────────────────────── */
+
+.mockup-textarea { font-family: inherit; line-height: 1.42; }
+
+/* ── Checkbox ──────────────────────────────────────────────────────────── */
+
+.mockup-checkbox { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; color: var(--colorNeutralForeground1); }
+
+.mockup-checkbox__box {
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--colorNeutralStroke1);
+  border-radius: var(--borderRadiusSmall);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #FFFFFF;
+  background: var(--colorBrandBackground);
+  flex-shrink: 0;
+}
+
+.mockup-checkbox__label { color: var(--colorNeutralForeground1); }
+
+/* ── Radio ─────────────────────────────────────────────────────────────── */
+
+.mockup-radio { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; }
+
+.mockup-radio__circle {
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--colorNeutralStroke1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--colorNeutralBackground1);
+  flex-shrink: 0;
+}
+
+.mockup-radio__dot   { width: 8px; height: 8px; border-radius: 50%; background: var(--colorBrandBackground); }
+.mockup-radio__label { color: var(--colorNeutralForeground1); }
+
+/* ── Toggle ────────────────────────────────────────────────────────────── */
+
+.mockup-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; }
+
+.mockup-toggle__track {
+  width: 40px;
+  height: 20px;
+  border-radius: var(--borderRadiusCircular);
+  background: var(--colorNeutralBackground4);
+  border: 1px solid var(--colorNeutralStroke1);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.mockup-toggle--on .mockup-toggle__track { background: var(--colorBrandBackground); border-color: var(--colorBrandBackground); }
+
+.mockup-toggle__thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--colorNeutralForeground4);
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: left 0.1s;
+}
+
+.mockup-toggle--on .mockup-toggle__thumb { background: #FFFFFF; left: 22px; }
+.mockup-toggle__label { color: var(--colorNeutralForeground1); }
+
+/* ── Select ────────────────────────────────────────────────────────────── */
+
+.mockup-select { width: 100%; }
+
+.mockup-select__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border: 1px solid var(--colorNeutralStroke1);
+  border-bottom-color: var(--colorBrandStroke1);
+  border-radius: var(--borderRadiusSmall) var(--borderRadiusSmall) 0 0;
+  font-size: 14px;
+  color: var(--colorNeutralForeground1);
+  background: var(--colorNeutralBackground1);
+  cursor: pointer;
+}
+
+.mockup-select__arrow { font-size: 10px; color: var(--colorNeutralForeground3); }
+
+/* ── Slider ────────────────────────────────────────────────────────────── */
+
+.mockup-slider { width: 100%; padding: 8px 0; }
+
+.mockup-slider__track {
+  width: 100%;
+  height: 4px;
+  background: var(--colorNeutralBackground4);
+  border-radius: var(--borderRadiusCircular);
+  position: relative;
+}
+
+.mockup-slider__fill  { height: 100%; background: var(--colorBrandBackground); border-radius: var(--borderRadiusCircular); }
+
+.mockup-slider__thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--colorBrandBackground);
+  border: 2px solid #FFFFFF;
+  position: absolute;
+  top: -6px;
+  transform: translateX(-50%);
+  box-shadow: var(--shadow4);
+}
+
+/* ── Sidebar ───────────────────────────────────────────────────────────── */
+
+/* Fluent 2 navigation pane — acrylic surface */
+.mockup-sidebar {
+  width: 100%;
+  height: 100%;
+  background: var(--acrylic-tint);
+  backdrop-filter: var(--acrylic-blur);
+  -webkit-backdrop-filter: var(--acrylic-blur);
+  border-right: 1px solid var(--colorNeutralStroke2);
+  padding: 8px 4px;
+}
+
+.mockup-sidebar__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  color: var(--colorNeutralForeground2);
+  cursor: pointer;
+  border-radius: var(--borderRadiusSmall);
+}
+
+/* Active item — brand fill, no heavy shadow */
+.mockup-sidebar__item--active {
+  color: var(--colorBrandForeground1);
+  font-weight: 600;
+  background: color-mix(in srgb, var(--colorBrandBackground) 10%, transparent);
+}
+
+/* ── Breadcrumb ────────────────────────────────────────────────────────── */
+
+.mockup-breadcrumb       { display: flex; align-items: center; gap: 4px; font-size: 12px; }
+.mockup-breadcrumb__item { color: var(--colorBrandForeground1); cursor: pointer; }
+.mockup-breadcrumb__item--current { color: var(--colorNeutralForeground1); font-weight: 600; cursor: default; }
+.mockup-breadcrumb__sep  { color: var(--colorNeutralForeground4); margin: 0 2px; }
+
+/* ── Table ─────────────────────────────────────────────────────────────── */
+
+.mockup-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+
+.mockup-table__th {
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--colorNeutralForeground3);
+  border-bottom: 1px solid var(--colorNeutralStroke1);
+  background: var(--colorNeutralBackground2);
+}
+
+.mockup-table__td           { padding: 8px 12px; border-bottom: 1px solid var(--colorNeutralStroke3); color: var(--colorNeutralForeground1); }
+.mockup-table__row--striped { background: var(--colorNeutralBackground2); }
+
+/* ── Avatar ────────────────────────────────────────────────────────────── */
+
+.mockup-avatar { flex-shrink: 0; }
+
+/* ── Chip ──────────────────────────────────────────────────────────────── */
+
+.mockup-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: var(--borderRadiusCircular);
+  font-size: 12px;
+  font-weight: 400;
+  background: var(--colorNeutralBackground3);
+  color: var(--colorNeutralForeground1);
+  border: 1px solid var(--colorNeutralStroke2);
+}
+
+.mockup-chip--selected {
+  background: color-mix(in srgb, var(--colorBrandBackground) 12%, var(--colorNeutralBackground1));
+  color: var(--colorBrandForeground1);
+  border-color: var(--colorBrandStroke1);
+}
+
+.mockup-chip__remove { font-size: 12px; cursor: pointer; color: var(--colorNeutralForeground3); line-height: 1; }
+
+/* ── Modal ─────────────────────────────────────────────────────────────── */
+
+.mockup-modal__backdrop {
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+/* Fluent 2 dialog — medium radius, shadow28 elevation */
+.mockup-modal {
+  background: var(--colorNeutralBackground1);
+  border-radius: var(--borderRadiusLarge);
+  border: 1px solid var(--colorNeutralStroke2);
+  width: 100%;
+  max-width: 400px;
+  overflow: hidden;
+  box-shadow: var(--shadow28);
+}
+
+.mockup-modal__header { padding: 20px 24px 8px; font-size: 18px; font-weight: 600; color: var(--colorNeutralForeground1); }
+.mockup-modal__body   { padding: 8px 24px 20px; font-size: 14px; color: var(--colorNeutralForeground2); line-height: 1.5; }
+.mockup-modal__footer { display: flex; justify-content: flex-end; gap: 8px; padding: 0 24px 20px; }
+
+/* ── Skeleton ──────────────────────────────────────────────────────────── */
+
+.mockup-skeleton { background: var(--colorNeutralBackground3); border-radius: var(--borderRadiusMedium); width: 100%; height: 100%; animation: fluent-pulse 1.5s ease-in-out infinite; }
+.mockup-skeleton--circle { border-radius: 50%; }
+.mockup-skeleton--text   { height: 14px; }
+
+@keyframes fluent-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* ── Progress ──────────────────────────────────────────────────────────── */
+
+.mockup-progress {
+  width: 100%;
+  height: 4px;
+  background: var(--colorNeutralBackground4);
+  border-radius: var(--borderRadiusCircular);
+  overflow: hidden;
+}
+
+.mockup-progress__bar { height: 100%; background: var(--colorBrandBackground); border-radius: var(--borderRadiusCircular); }
+
+/* ── Tooltip ───────────────────────────────────────────────────────────── */
+
+.mockup-tooltip { position: relative; display: inline-block; }
+
+.mockup-tooltip__content {
+  background: var(--colorNeutralForeground1);
+  color: var(--colorNeutralBackground1);
+  padding: 6px 10px;
+  border-radius: var(--borderRadiusMedium);
+  font-size: 12px;
+  white-space: nowrap;
+  box-shadow: var(--shadow8);
+}
+
+/* ── Search Bar ────────────────────────────────────────────────────────── */
+
+.mockup-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border: 1px solid var(--colorNeutralStroke1);
+  border-radius: var(--borderRadiusMedium);
+  background: var(--colorNeutralBackground1);
+  box-shadow: var(--shadow2);
+  width: 100%;
+}
+
+.mockup-search-bar__icon  { display: flex; flex-shrink: 0; color: var(--colorNeutralForeground3); }
+.mockup-search-bar__input { font-size: 14px; color: var(--colorNeutralForeground3); flex: 1; }
+
+/* ── Login Form ────────────────────────────────────────────────────────── */
+
+.mockup-login         { display: flex; flex-direction: column; gap: 16px; padding: 28px; width: 100%; }
+.mockup-login__title  { font-size: 24px; font-weight: 600; color: var(--colorNeutralForeground1); text-align: center; margin-bottom: 8px; }
+.mockup-login__field  { width: 100%; }
+.mockup-login__forgot { font-size: 12px; color: var(--colorBrandForeground1); text-align: right; }
+.mockup-login__action { margin-top: 8px; }
+.mockup-login__action .mockup-button { width: 100%; justify-content: center; }
+
+/* ── Header ────────────────────────────────────────────────────────────── */
+
+.mockup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  height: 48px;
+  background: var(--acrylic-tint);
+  backdrop-filter: var(--acrylic-blur);
+  -webkit-backdrop-filter: var(--acrylic-blur);
+  border-bottom: 1px solid var(--colorNeutralStroke2);
+  box-shadow: var(--shadow2);
+  width: 100%;
+}
+
+.mockup-header__logo     { font-size: 16px; font-weight: 700; color: var(--colorBrandForeground1); }
+.mockup-header__nav      { display: flex; gap: 0; }
+.mockup-header__nav-item { font-size: 14px; color: var(--colorNeutralForeground2); cursor: pointer; padding: 4px 10px; border-radius: var(--borderRadiusSmall); }
+.mockup-header__right    { display: flex; align-items: center; gap: 4px; }
+
+/* ── Footer ────────────────────────────────────────────────────────────── */
+
+.mockup-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 16px;
+  background: var(--colorNeutralBackground2);
+  border-top: 1px solid var(--colorNeutralStroke2);
+  width: 100%;
+}
+
+.mockup-footer__links { display: flex; gap: 16px; }
+.mockup-footer__link  { font-size: 12px; color: var(--colorBrandForeground1); cursor: pointer; }
+.mockup-footer__text  { font-size: 11px; color: var(--colorNeutralForeground4); }
+
+/* ── Data Table ────────────────────────────────────────────────────────── */
+
+.mockup-data-table {
+  width: 100%;
+  border: 1px solid var(--colorNeutralStroke2);
+  border-radius: var(--borderRadiusMedium);
+  overflow: hidden;
+  background: var(--colorNeutralBackground1);
+}
+
+.mockup-data-table__toolbar { padding: 8px 12px; border-bottom: 1px solid var(--colorNeutralStroke2); }
+
+.mockup-data-table__search {
+  padding: 5px 8px;
+  border: 1px solid var(--colorNeutralStroke1);
+  border-bottom-color: var(--colorBrandStroke1);
+  border-radius: var(--borderRadiusSmall) var(--borderRadiusSmall) 0 0;
+  font-size: 13px;
+  color: var(--colorNeutralForeground3);
+  background: var(--colorNeutralBackground1);
+}
+
+.mockup-data-table__th {
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--colorNeutralForeground3);
+  border-bottom: 1px solid var(--colorNeutralStroke1);
+  background: var(--colorNeutralBackground2);
+}
+
+.mockup-data-table__sort     { font-size: 8px; margin-left: 4px; color: var(--colorNeutralForeground4); }
+.mockup-data-table__td       { padding: 8px 12px; border-bottom: 1px solid var(--colorNeutralStroke3); font-size: 14px; color: var(--colorNeutralForeground1); }
+.mockup-data-table__row:last-child .mockup-data-table__td { border-bottom: none; }
+
+.mockup-data-table__pagination {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--colorNeutralForeground3);
+  border-top: 1px solid var(--colorNeutralStroke2);
+}
+
+.mockup-data-table__page-btn { cursor: pointer; padding: 2px 6px; color: var(--colorBrandForeground1); border-radius: var(--borderRadiusSmall); }
+
+/* ── Chart Placeholder ─────────────────────────────────────────────────── */
+
+.mockup-chart {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--colorNeutralStroke2);
+  border-radius: var(--borderRadiusMedium);
+  background: var(--colorNeutralBackground1);
+  overflow: hidden;
+  box-shadow: var(--shadow4);
+}
+
+.mockup-chart__title {
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--colorNeutralForeground1);
+  border-bottom: 1px solid var(--colorNeutralStroke2);
+}
+
+.mockup-chart__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+}
+
+.mockup-chart__label { font-size: 12px; color: var(--colorNeutralForeground4); text-transform: capitalize; }
