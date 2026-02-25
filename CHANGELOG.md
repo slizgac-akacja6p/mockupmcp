@@ -5,6 +5,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-02-25
+
+### Added
+
+- **M23 — Approval Flow Redesign:** 3-state approval flow (`accepted`, `accepted_with_comments`, `rejected`); `mockup_await_approval` redesigned to poll store directly, default timeout raised to 300 s (was 120 s), returns `{ status, comments?, reason? }`; `POST /api/projects/:pid/screens/:sid/approve` REST endpoint; `src/preview/editor/approval.js` — 3-button approval panel in editor right panel (Accept / Accept with Comments / Reject); "Accept with Comments" disabled when no unresolved comments; Reject requires a reason textarea; `createScreenVersion()` now copies unresolved comments with fresh IDs to the new version; MCP resource `mockup://projects/{pid}/screens/{sid}/approval` returns `version`, `status`, `unresolved_comments`, `parent_screen_id`; backward-compatible `approved: true` field preserved alongside new `status` field; 13 new tests.
+
+### Changed
+
+- `mockup_await_approval` polling strategy: reads store directly (no `editSessions` Map dependency)
+- Test count: ~1564 → 1579
+
 ## [0.6.0] - 2026-02-24
 
 ### Added
