@@ -38,10 +38,19 @@ body {
 
 /* ── Screen ─────────────────────────────────────────────────────────────── */
 
+/* !important is required here: html-builder.js injects inline style="background:..."
+   on the .screen div, which would otherwise override CSS variables. The inline style
+   comes from screen.background field — for slate we always want CSS-driven colors. */
 .screen {
-  background: var(--bg);
-  color: var(--text);
+  background-color: #0f172a !important; /* slate-900 — dark default */
+  color: #f1f5f9 !important;
   font-family: inherit;
+}
+
+/* Dark mode explicit (matches slate default, kept for specificity clarity) */
+.screen[data-color-scheme="dark"] {
+  background-color: #0f172a !important; /* slate-900 */
+  color: #f1f5f9 !important;
 }
 
 /* Light theme: .screen[data-color-scheme="light"] */
@@ -54,7 +63,17 @@ body {
   --text-muted: #64748b;   /* slate-500 */
   --accent: #4f46e5;       /* indigo-600 */
   --accent-hover: #6366f1; /* indigo-500 */
-  background: var(--bg);
+  background-color: #f8fafc !important; /* slate-50 — must override inline style */
+  color: #0f172a !important;
+}
+
+/* Text elements in dark mode — ensure readable contrast when screen bg is dark */
+.screen[data-color-scheme="dark"] .element.text,
+.screen[data-color-scheme="dark"] .element.text p,
+.screen[data-color-scheme="dark"] .element.text span,
+.screen .element.text,
+.screen .element.text p,
+.screen .element.text span {
   color: var(--text);
 }
 
