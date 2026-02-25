@@ -2,12 +2,18 @@
 
 ## Status
 
-Phase A + Phase B complete (M19, M20, M21, M22, M24 merged to `develop`).
-Next: Phase C — M23 Approval Redesign (depends on M21 + M22, both done).
+All milestones M19–M24 complete. Roadmap done.
 
-Open PRs:
-- PR #22: `develop` → `main` (covers M16–M24, pending merge)
-- PR #23: `feature/m18-design-styles` → `develop` (M18, pending merge)
+Merged to `develop`:
+- PR #24: M19 Layers Panel
+- PR #25: M20 Layout API
+- PR #27: M21 Versioning
+- PR #29: M22 Comments
+- PR #30: M23 Approval Redesign
+- PR #26: M24 Slate Style
+
+Open PR:
+- PR #22: `develop` → `main` (covers M16–M24)
 
 ## Architecture
 
@@ -56,8 +62,8 @@ See `AGENTS/claude-sonnet-4-6/DECISIONS.md` for full list.
 | M20 Layout API | DONE | feature/m20-layout-api | PR #25 merged to develop |
 | M21 Versioning | DONE | feature/m21-versioning | PR #27 merged to develop |
 | M22 Comments | DONE | feature/m22-comments | PR #29 merged to develop |
+| M23 Approval Redesign | DONE | feature/m23-approval | PR #30 merged to develop |
 | M24 Slate Style | DONE | feature/m24-slate | PR #26 merged to develop |
-| M23 Approval Redesign | PENDING | — | — |
 
 ## Key File Paths
 
@@ -79,5 +85,5 @@ See `AGENTS/claude-sonnet-4-6/DECISIONS.md` for full list.
 
 ## Test Baseline
 
-~1564 tests, Node.js built-in runner (`npm test`).
+~1579 tests, Node.js built-in runner (`npm test`).
 E2E tests gated: `RUN_E2E=1 npm test` (requires running Docker container).
