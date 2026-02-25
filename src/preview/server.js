@@ -1582,6 +1582,7 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
   </script>
   <script type="module">
     import { initEditor } from '/editor/js/editor.js';
+    import { initApproval } from '/editor/js/approval.js';
     const canvas = document.getElementById('editor-canvas');
     const panel = document.getElementById('editor-property-panel');
     // await initEditor so language-switcher listeners are registered only after
@@ -1595,6 +1596,9 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
         canvas,
         panel,
       });
+      // initApproval runs after initEditor and i18n so translated button labels
+      // are available and the right panel DOM is fully in place.
+      await initApproval();
     })();
   </script>
 </body>
@@ -1816,6 +1820,53 @@ export function startPreviewServer(port = config.previewPort) {
       // Use updateScreen() for proper encapsulation instead of direct _save().
       const screen = await store.updateScreen(req.params.projectId, req.params.screenId, updates);
       res.json(screen);
+    } catch (err) {
+      res.status(404).json({ error: err.message });
+    }
+  });
+
+  // POST /api/projects/:projectId/screens/:screenId/approve
+  // Approval flow — 3 actions: accept, accept_with_comments, reject.
+  // "accept_with_comments" keeps status draft so the author can address open comments.
+  app.post('/api/projects/:projectId/screens/:screenId/approve', async (req, res) => {
+    const { projectId, screenId } = req.params;
+    const { action, reason = '' } = req.body || {};
+
+    const validActions = ['accept', 'accept_with_comments', 'reject'];
+    if (!validActions.includes(action)) {
+      return res.status(400).json({ error: `Invalid action. Must be one of: ${validActions.join(', ')}` });
+    }
+
+    try {
+      // Fetch screen before update to access current comments.
+      const project = await store.getProject(projectId);
+      const screen = project.screens.find(s => s.id === screenId);
+      if (!screen) return res.status(404).json({ error: 'Screen not found' });
+
+      let newStatus;
+      let responseBody;
+
+      if (action === 'accept') {
+        newStatus = 'approved';
+        // backward compat: include approved:true for older clients
+        responseBody = { status: 'accepted', approved: true };
+      } else if (action === 'accept_with_comments') {
+        // Screen stays draft — author must address remaining open comments.
+        newStatus = 'draft';
+        const openComments = (screen.comments || []).filter(c => !c.resolved);
+        responseBody = { status: 'accepted_with_comments', comments: openComments };
+      } else {
+        // reject
+        newStatus = 'rejected';
+        responseBody = { status: 'rejected', reason };
+      }
+
+      await store.updateScreen(projectId, screenId, {
+        status: newStatus,
+        ...(action === 'accept_with_comments' && { _approval_action: 'accept_with_comments' }),
+        ...(action === 'reject' && { reject_reason: reason }),
+      });
+      res.json(responseBody);
     } catch (err) {
       res.status(404).json({ error: err.message });
     }
