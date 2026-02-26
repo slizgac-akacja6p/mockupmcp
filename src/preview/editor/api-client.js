@@ -106,3 +106,35 @@ export async function updateScreen(projectId, screenId, updates) {
   await handleResponse(res);
   return res.json();
 }
+
+// --- Comment operations ---
+
+export async function addComment(projectId, screenId, { text, author = 'user', element_id = null }) {
+  const res = await fetch(
+    `/api/screens/${projectId}/${screenId}/comments`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, author, element_id }),
+    },
+  );
+  await handleResponse(res);
+  return res.json();
+}
+
+export async function listComments(projectId, screenId, { include_resolved = false } = {}) {
+  const res = await fetch(
+    `/api/screens/${projectId}/${screenId}/comments?include_resolved=${include_resolved}`,
+  );
+  await handleResponse(res);
+  return res.json();
+}
+
+export async function resolveComment(projectId, screenId, commentId) {
+  const res = await fetch(
+    `/api/screens/${projectId}/${screenId}/comments/${commentId}/resolve`,
+    { method: 'PATCH' },
+  );
+  await handleResponse(res);
+  return res.json();
+}

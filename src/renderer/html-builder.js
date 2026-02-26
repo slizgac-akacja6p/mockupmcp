@@ -1,24 +1,95 @@
 import { getComponent } from './components/index.js';
 import { loadStyle } from './styles/index.js';
+import { escapeHtml } from './components/utils.js';
+
+// Sanitize a CSS value to prevent injection attacks.
+// Only allows alphanumerics, hex colors, units, spaces, and common punctuation.
+function sanitizeCssValue(value) {
+  const str = String(value);
+  // Block known CSS injection vectors before any further processing
+  const BLOCKED = /expression\s*\(|javascript\s*:/i;
+  if (BLOCKED.test(str)) return '';
+  if (/^[a-zA-Z0-9#%._ ,()\/+-]+$/.test(str)) return str;
+  return escapeHtml(str);
+}
+
+// Build inline CSS overrides from element properties when inheritStyle is disabled.
+// Only visual properties are mapped — layout (x, y, width, height) is always handled
+// by the wrapper div regardless of inheritStyle.
+function buildPropertyStyles(properties) {
+  if (!properties) return '';
+  const parts = [];
+  const { color, backgroundColor, borderColor, fontSize, fontWeight, borderRadius, padding } = properties;
+
+  if (color !== undefined && color !== null) {
+    parts.push(`color:${sanitizeCssValue(color)}`);
+  }
+  if (backgroundColor !== undefined && backgroundColor !== null) {
+    parts.push(`background-color:${sanitizeCssValue(backgroundColor)}`);
+  }
+  if (borderColor !== undefined && borderColor !== null) {
+    parts.push(`border-color:${sanitizeCssValue(borderColor)}`);
+    parts.push('border-style:solid');
+    parts.push('border-width:1px');
+  }
+  if (fontSize !== undefined && fontSize !== null) {
+    const val = typeof fontSize === 'number' ? `${fontSize}px` : sanitizeCssValue(fontSize);
+    parts.push(`font-size:${val}`);
+  }
+  if (fontWeight !== undefined && fontWeight !== null) {
+    parts.push(`font-weight:${sanitizeCssValue(fontWeight)}`);
+  }
+  if (borderRadius !== undefined && borderRadius !== null) {
+    const val = typeof borderRadius === 'number' ? `${borderRadius}px` : sanitizeCssValue(borderRadius);
+    parts.push(`border-radius:${val}`);
+  }
+  if (padding !== undefined && padding !== null) {
+    const val = typeof padding === 'number' ? `${padding}px` : sanitizeCssValue(padding);
+    parts.push(`padding:${val}`);
+  }
+
+  return parts.length > 0 ? parts.join(';') + ';' : '';
+}
 
 export function buildScreenHtml(screen, style = 'wireframe') {
-  const css = loadStyle(style);
+  // When screen-level inheritStyle is false, omit the style CSS entirely
+  // so component markup renders unstyled (agent provides its own colors).
+  const skipStyleCss = screen.inheritStyle === false;
+  const css = skipStyleCss ? '' : loadStyle(style);
 
   const elementsHtml = (screen.elements || [])
     .sort((a, b) => (a.z_index || 0) - (b.z_index || 0))
     .map(el => {
       const component = getComponent(el.type);
-      if (!component) return `<!-- unknown type: ${el.type} -->`;
-      // Pass _style so components can render style-specific markup when needed
-      const innerHtml = component.render({ ...el.properties, _style: style });
+      if (!component) return `<!-- unknown type: ${escapeHtml(el.type)} -->`;
+
+      // Determine whether this element should skip style classes.
+      // Element-level flag takes precedence; screen-level is the fallback.
+      const elInheritStyle = el.inheritStyle !== undefined ? el.inheritStyle : screen.inheritStyle;
+      const skipClasses = elInheritStyle === false;
+
+      // Pass _style so components can render style-specific markup when needed.
+      // When inheritStyle is false, pass _style as null to signal unstyled rendering.
+      const innerHtml = component.render({ ...el.properties, _style: skipClasses ? null : style });
 
       // Build inline style for the element wrapper
       let inlineStyle = `position:absolute;left:${el.x}px;top:${el.y}px;width:${el.width}px;height:${el.height}px;z-index:${el.z_index || 0};overflow:hidden;`;
 
-      // Opacity support — skip when undefined, null, or fully opaque (1)
+      // When inheritStyle is disabled, inject visual property overrides as inline CSS
+      if (skipClasses) {
+        inlineStyle += buildPropertyStyles(el.properties);
+      }
+
+      // Opacity support — skip when undefined, null, or fully opaque (1).
+      // When fully hidden (0), also set visibility:hidden and pointer-events:none
+      // so the element is non-interactive and invisible even if CSS animations
+      // or style overrides would otherwise reveal it.
       const opacity = el.properties?.opacity;
       if (opacity !== undefined && opacity !== null && opacity !== 1) {
         inlineStyle += `opacity:${opacity};`;
+        if (opacity === 0) {
+          inlineStyle += 'visibility:hidden;pointer-events:none;';
+        }
       }
 
       // Link support — data attributes enable navigation in the preview layer
@@ -29,7 +100,10 @@ export function buildScreenHtml(screen, style = 'wireframe') {
         inlineStyle += 'cursor:pointer;';
       }
 
-      return `<div class="element" data-element-id="${el.id}" style="${inlineStyle}"${linkAttrs}>${innerHtml}</div>`;
+      // When inheritStyle is disabled, use a plain wrapper without the "element" class
+      // so no style rules apply. The data attribute is always present for editor support.
+      const cssClass = skipClasses ? '' : 'element';
+      return `<div class="${cssClass}" data-element-id="${el.id}" style="${inlineStyle}"${linkAttrs}>${innerHtml}</div>`;
     })
     .join('\n    ');
 

@@ -211,7 +211,10 @@ export function initBoxSelect(container, state, getElementRects, onMultiSelect) 
       return;
     }
 
-    const rect = container.getBoundingClientRect();
+    // Use .screen as origin — canvas has centering flex padding, so its
+    // getBoundingClientRect offset does not align with element coordinates.
+    const screenEl = container.querySelector('.screen') || container;
+    const rect = screenEl.getBoundingClientRect();
     boxStart = {
       x: e.clientX - rect.left,
       y: e.clientY - rect.top,
@@ -227,7 +230,8 @@ export function initBoxSelect(container, state, getElementRects, onMultiSelect) 
   document.addEventListener('mousemove', (e) => {
     if (!boxStart || !boxEl) return;
 
-    const rect = container.getBoundingClientRect();
+    const screenEl = container.querySelector('.screen') || container;
+    const rect = screenEl.getBoundingClientRect();
     const cur = {
       x: e.clientX - rect.left,
       y: e.clientY - rect.top,
@@ -249,7 +253,8 @@ export function initBoxSelect(container, state, getElementRects, onMultiSelect) 
   document.addEventListener('mouseup', (e) => {
     if (!boxStart || !boxEl) return;
 
-    const rect = container.getBoundingClientRect();
+    const screenEl = container.querySelector('.screen') || container;
+    const rect = screenEl.getBoundingClientRect();
     const cur = {
       x: e.clientX - rect.left,
       y: e.clientY - rect.top,

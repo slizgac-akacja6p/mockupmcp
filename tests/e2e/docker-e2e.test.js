@@ -105,9 +105,10 @@ describe('Docker E2E', { skip: !dockerAvailable && 'RUN_E2E=1 not set or Docker 
       assert.equal(data.result.serverInfo.name, 'mockupmcp');
     });
 
-    it('lists 25 tools', async () => {
+    it('lists tools', async () => {
       const { data } = await mcpRequest('tools/list', {}, sessionId);
-      assert.equal(data.result.tools.length, 25);
+      // Use minimum threshold so test stays valid when new tools are added
+      assert.ok(data.result.tools.length >= 34, `Expected at least 34 tools, got ${data.result.tools.length}`);
     });
 
     it('lists resources', async () => {
@@ -154,9 +155,15 @@ describe('Docker E2E', { skip: !dockerAvailable && 'RUN_E2E=1 not set or Docker 
         name: 'mockup_export',
         arguments: { project_id: projectId, screen_id: screenId, format: 'png' },
       }, sessionId);
-      const result = JSON.parse(data.result.content[0].text);
-      assert.ok(result.image, 'Should have base64 image');
-      assert.ok(result.image.length > 100, 'Image should not be empty');
+      // content[0] is a text confirmation, content[1] is the image with base64 data
+      const textContent = data.result.content[0];
+      assert.equal(textContent.type, 'text', 'First content item should be text');
+      assert.ok(textContent.text.startsWith('Exported'), 'Text should be export confirmation');
+
+      const imageContent = data.result.content[1];
+      assert.equal(imageContent.type, 'image', 'Second content item should be image');
+      assert.equal(imageContent.mimeType, 'image/png', 'Should be PNG mime type');
+      assert.ok(imageContent.data.length > 100, 'Base64 image data should not be empty');
     });
   });
 

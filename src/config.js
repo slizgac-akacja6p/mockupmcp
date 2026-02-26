@@ -5,6 +5,7 @@ export const config = {
   mcpTransport: process.env.MCP_TRANSPORT || 'stdio',
   chromiumPath: process.env.CHROMIUM_PATH || '/usr/bin/chromium-browser',
   defaultStyle: process.env.DEFAULT_STYLE || 'wireframe',
+  browserPoolSize: parseInt(process.env.BROWSER_POOL_SIZE || '3', 10),
   defaultViewport: { width: 393, height: 852, preset: 'mobile' },
   screenshotScale: 2,
   viewportPresets: {

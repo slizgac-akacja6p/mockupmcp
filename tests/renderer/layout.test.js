@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { autoLayout } from '../../src/renderer/layout.js';
+import { autoLayout, resolveOverlaps } from '../../src/renderer/layout.js';
 
 // Helper to create element stubs
 function el(id, x, y, width, height, zIndex = 0) {
@@ -244,6 +244,179 @@ describe('autoLayout', () => {
       const originalY = original[0].y;
       autoLayout(original, 393, 852, { direction: 'vertical' });
       assert.equal(original[0].y, originalY, 'Input should not be mutated');
+    });
+  });
+});
+
+describe('resolveOverlaps', () => {
+  describe('basic overlap resolution', () => {
+    it('shifts overlapping element below the conflicting one', () => {
+      const elements = [
+        el('el_card', 20, 180, 350, 90),   // card ends at y=270
+        el('el_bar', 20, 246, 350, 8),      // starts inside card (y=246 < 270)
+      ];
+
+      const result = resolveOverlaps(elements, 393);
+
+      assert.equal(result[0].y, 180, 'First element unchanged');
+      assert.equal(result[1].y, 180 + 90 + 8, 'Second element shifted below card + gap');
+    });
+
+    it('resolves chain of overlapping elements', () => {
+      const elements = [
+        el('el_1', 20, 0, 200, 80),
+        el('el_2', 20, 50, 200, 80),   // overlaps el_1
+        el('el_3', 20, 100, 200, 80),  // overlaps el_2 (after fix)
+      ];
+
+      const result = resolveOverlaps(elements, 393);
+
+      assert.ok(result[1].y >= result[0].y + result[0].height, 'el_2 below el_1');
+      assert.ok(result[2].y >= result[1].y + result[1].height, 'el_3 below el_2');
+    });
+
+    it('does not move non-overlapping elements', () => {
+      const elements = [
+        el('el_1', 20, 0, 200, 40),
+        el('el_2', 20, 60, 200, 40),   // no overlap (gap of 20px)
+        el('el_3', 20, 120, 200, 40),  // no overlap
+      ];
+
+      const result = resolveOverlaps(elements, 393);
+
+      assert.equal(result[0].y, 0);
+      assert.equal(result[1].y, 60);
+      assert.equal(result[2].y, 120);
+    });
+
+    it('handles side-by-side elements without shifting', () => {
+      const elements = [
+        el('el_left', 20, 100, 163, 100),
+        el('el_right', 207, 100, 163, 100),
+      ];
+
+      const result = resolveOverlaps(elements, 393);
+
+      assert.equal(result[0].y, 100);
+      assert.equal(result[1].y, 100);
+    });
+  });
+
+  describe('intentional overlap preservation', () => {
+    it('preserves text contained inside a rectangle (child pattern)', () => {
+      const elements = [
+        el('el_bg', 0, 0, 390, 88),
+        el('el_text', 20, 20, 180, 28),   // contained inside bg
+      ];
+
+      const result = resolveOverlaps(elements, 393);
+
+      assert.equal(result[1].y, 20, 'Contained text should not be moved');
+    });
+
+    it('preserves same-origin overlay (progress fill on track)', () => {
+      const elements = [
+        el('el_track', 20, 246, 350, 8),
+        el('el_fill', 20, 246, 228, 8),  // same x,y = intentional overlay
+      ];
+
+      const result = resolveOverlaps(elements, 393);
+
+      assert.equal(result[0].y, 246);
+      assert.equal(result[1].y, 246, 'Same-origin elements should not be moved');
+    });
+
+    it('preserves full-width background element overlaps', () => {
+      const elements = [
+        el('el_fullbg', 0, 0, 390, 844),   // full-width backdrop
+        el('el_content', 20, 100, 350, 80), // content on top
+      ];
+
+      const result = resolveOverlaps(elements, 393);
+
+      assert.equal(result[1].y, 100, 'Content on full-width bg should not be moved');
+    });
+  });
+
+  describe('z_index layer isolation', () => {
+    it('only resolves overlaps within the same z_index layer', () => {
+      const elements = [
+        el('el_nav', 0, 0, 393, 56, 10),   // pinned nav (z=10)
+        el('el_content', 0, 0, 393, 100, 0), // content at z=0
+      ];
+
+      const result = resolveOverlaps(elements, 393);
+
+      assert.equal(result[0].y, 0, 'Pinned nav unchanged');
+      assert.equal(result[1].y, 0, 'Different z_index = no overlap check');
+    });
+
+    it('does not move pinned elements (z_index >= 10)', () => {
+      const elements = [
+        el('el_nav', 0, 0, 393, 56, 10),
+        el('el_tab', 0, 0, 393, 56, 10),  // overlaps nav at same pinned layer
+      ];
+
+      const result = resolveOverlaps(elements, 393);
+
+      assert.equal(result[0].y, 0);
+      assert.equal(result[1].y, 0, 'Pinned elements are never moved');
+    });
+  });
+
+  describe('edge cases', () => {
+    it('returns empty array for empty input', () => {
+      const result = resolveOverlaps([], 393);
+      assert.deepEqual(result, []);
+    });
+
+    it('returns single element unchanged', () => {
+      const elements = [el('el_1', 20, 100, 200, 40)];
+      const result = resolveOverlaps(elements, 393);
+      assert.equal(result[0].y, 100);
+    });
+
+    it('does not mutate input array', () => {
+      const original = [
+        el('el_1', 20, 0, 200, 80),
+        el('el_2', 20, 50, 200, 80),
+      ];
+      const origY = original[1].y;
+      resolveOverlaps(original, 393);
+      assert.equal(original[1].y, origY, 'Input should not be mutated');
+    });
+
+    it('handles the real FitTrack overlap case (card vs progress bar)', () => {
+      // Real data from FitTrack Pro benchmark project.
+      // Track (350x8) overlaps card (350x90) — same width = sibling, not child.
+      // Fill (228x8) is narrower, so it's treated as a child of the card.
+      const elements = [
+        el('el_bg', 0, 0, 390, 844),
+        el('el_hdr', 0, 0, 390, 88),
+        el('el_title', 20, 48, 180, 28),
+        el('el_avatar', 330, 40, 40, 40),
+        el('el_sub', 20, 108, 200, 20),
+        el('el_steps', 20, 130, 300, 32),
+        el('el_card', 20, 180, 350, 90),        // ends at 270
+        el('el_track', 20, 246, 350, 8),         // same width as card = sibling, gets pushed
+        el('el_fill', 20, 246, 228, 8),          // narrower = child of card (stays)
+        el('el_label', 20, 272, 160, 24),
+        el('el_card_tl', 20, 304, 163, 100),
+        el('el_card_tr', 207, 304, 163, 100),
+      ];
+
+      const result = resolveOverlaps(elements, 393);
+
+      const card = result.find(e => e.id === 'el_card');
+      const track = result.find(e => e.id === 'el_track');
+      const label = result.find(e => e.id === 'el_label');
+
+      // Track (full-width sibling) should be pushed below the card
+      assert.ok(track.y >= card.y + card.height,
+        `Progress track (y=${track.y}) should be below card bottom (${card.y + card.height})`);
+      // Label should not overlap the track
+      assert.ok(label.y >= track.y + track.height,
+        `Label (y=${label.y}) should be below track (${track.y + track.height})`);
     });
   });
 });

@@ -129,6 +129,34 @@ describe('opacity support', () => {
     // (CSS keyframes may contain "opacity:" with a space, so we look for the compact form)
     assert.ok(!html.includes('opacity:0') && !html.includes('opacity:1'));
   });
+
+  it('adds visibility:hidden and pointer-events:none when opacity is 0', () => {
+    const screen = {
+      width: 393, height: 852, background: '#FFF',
+      elements: [
+        { id: 'el_1', type: 'button', x: 10, y: 20, width: 100, height: 40, z_index: 0,
+          properties: { label: 'Hidden', opacity: 0 } },
+      ],
+    };
+    const html = buildScreenHtml(screen);
+    assert.ok(html.includes('opacity:0;'));
+    assert.ok(html.includes('visibility:hidden;'));
+    assert.ok(html.includes('pointer-events:none;'));
+  });
+
+  it('does not add visibility:hidden for partial opacity (e.g. 0.5)', () => {
+    const screen = {
+      width: 393, height: 852, background: '#FFF',
+      elements: [
+        { id: 'el_1', type: 'text', x: 0, y: 0, width: 100, height: 30, z_index: 0,
+          properties: { content: 'Semi', opacity: 0.5 } },
+      ],
+    };
+    const html = buildScreenHtml(screen);
+    assert.ok(html.includes('opacity:0.5;'));
+    assert.ok(!html.includes('visibility:hidden'));
+    assert.ok(!html.includes('pointer-events:none'));
+  });
 });
 
 describe('link data attributes', () => {

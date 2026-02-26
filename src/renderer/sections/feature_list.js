@@ -3,9 +3,9 @@ import { escapeHtml } from '../components/utils.js';
 export function defaults() {
   return {
     features: [
-      { title: 'Feature 1', description: 'Fast and reliable' },
-      { title: 'Feature 2', description: 'Easy to use' },
-      { title: 'Feature 3', description: 'Fully customizable' },
+      { name: 'Feature 1', description: 'Fast and reliable' },
+      { name: 'Feature 2', description: 'Easy to use' },
+      { name: 'Feature 3', description: 'Fully customizable' },
     ],
   };
 }
@@ -35,7 +35,7 @@ export function generate(screenWidth, sectionY, props) {
       properties: { fill: '#0066cc' },
     });
 
-    // Feature title
+    // Feature name
     elements.push({
       type: 'text',
       x: padding + 70,
@@ -44,7 +44,7 @@ export function generate(screenWidth, sectionY, props) {
       height: 20,
       z_index: 2,
       properties: {
-        content: escapeHtml(feature.title),
+        content: escapeHtml(feature.name),
         fontSize: 14,
         fontWeight: 'bold',
         color: '#333',

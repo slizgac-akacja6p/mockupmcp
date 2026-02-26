@@ -4,7 +4,7 @@ import { getAvailableTypes } from '../../renderer/components/index.js';
 export function registerElementTools(server, store) {
   server.tool(
     'mockup_add_element',
-    'Add a single UI element to a screen. For creating full screens, prefer mockup_generate_screen (1 call) or mockup_apply_template (1 call) which are 10x faster than adding elements individually. Types: text, rectangle, circle, line, image, icon, avatar, badge, chip, skeleton, progress, tooltip, button, input, textarea, checkbox, radio, toggle, select, slider, navbar, tabbar, sidebar, breadcrumb, card, list, table, alert, modal, login_form, search_bar, header, footer, data_table, chart_placeholder',
+    'Add a single UI element to a screen. For creating full screens, prefer mockup_generate_screen (1 call) or mockup_apply_template (1 call) which are 10x faster than adding elements individually. Types: text, rectangle, circle, line, image, icon, avatar, badge, chip, skeleton, progress, tooltip, button, input, textarea, checkbox, radio, toggle, select, slider, navbar, tabbar, sidebar, breadcrumb, card, list, table, alert, modal, login_form, search_bar, header, footer, data_table, chart_placeholder\n\nPROPERTIES BY TYPE (use exactly these field names):\n- text: content* (string), fontSize (number), fontWeight (bold/normal), color (hex), align (left/center/right)\n- button: label* (string), variant (primary/secondary/outline/ghost), size (sm/md/lg)\n- rectangle: fill (hex), stroke (hex), cornerRadius (number), opacity (0-1)\n- input: placeholder (string), label (string), type (text/email/password)\n- textarea: placeholder (string), rows (number), label (string)\n- image: placeholder (bool), aspectRatio (string e.g. "16/9")\n- card: title (string), subtitle (string), value (string), image (bool)\n- header: logo (string), nav (array of strings)\n- avatar: initials (string), size (sm/md/lg)\n- badge: label (string), color (default/blue/green/red/yellow)\n*required field',
     {
       project_id: z.string().describe('Project ID'),
       screen_id: z.string().describe('Screen ID'),
@@ -196,7 +196,7 @@ export function registerElementTools(server, store) {
 
   server.tool(
     'mockup_bulk_add_elements',
-    'Add multiple elements to a screen in a single call. Much faster than individual mockup_add_element calls when building layouts.',
+    'Add multiple elements to a screen in a single call. Much faster than individual mockup_add_element calls when building layouts.\n\nPROPERTIES BY TYPE (use exactly these field names):\n- text: content* (string), fontSize (number), fontWeight (bold/normal), color (hex), align (left/center/right)\n- button: label* (string), variant (primary/secondary/outline/ghost), size (sm/md/lg)\n- rectangle: fill (hex), stroke (hex), cornerRadius (number), opacity (0-1)\n- input: placeholder (string), label (string), type (text/email/password)\n- textarea: placeholder (string), rows (number), label (string)\n- image: placeholder (bool), aspectRatio (string e.g. "16/9")\n- card: title (string), subtitle (string), value (string), image (bool)\n- header: logo (string), nav (array of strings)\n- avatar: initials (string), size (sm/md/lg)\n- badge: label (string), color (default/blue/green/red/yellow)\n*required field',
     {
       project_id: z.string().describe('Project ID'),
       screen_id: z.string().describe('Screen ID'),

@@ -23,6 +23,9 @@ const TOGGLE_SWITCH_CSS = `
 .prop-toggle-slider:before { content: ''; position: absolute; width: 14px; height: 14px; left: 2px; bottom: 2px; background: #888; border-radius: 50%; transition: .2s; }
 input:checked + .prop-toggle-slider { background: #6366F1; }
 input:checked + .prop-toggle-slider:before { transform: translateX(14px); background: white; }
+.panel-inherit-label { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #aaa; cursor: pointer; margin-top: 4px; }
+.panel-inherit-label input[type="checkbox"] { width: 13px; height: 13px; cursor: pointer; accent-color: #6366F1; }
+.panel-hint { display: block; font-size: 11px; color: #777; margin-top: 3px; font-style: italic; }
 </style>`;
 
 // Fields that live at element level in the data model, not inside .properties.
@@ -355,34 +358,50 @@ export function renderPanelHtml(fields) {
 // ---------------------------------------------------------------------------
 
 /**
- * Render the screen-level properties panel, including a style override dropdown.
+ * Render the screen-level properties panel, including a style override control.
  * When no element is selected the property panel shows screen info instead of
  * the "click an element" placeholder.
  *
+ * The style control uses an "Inherit" checkbox pattern:
+ * - Checked (inherited): screen.style === null — shows project style as read-only hint
+ * - Unchecked (overridden): shows dropdown so user can pick a specific style
+ *
  * @param {string|null} currentScreenStyle - current screen style override (null = inherit)
  * @param {Array<{value: string, label: string}>} styleOptions - available styles
+ * @param {string} projectStyle - project-level style used as fallback hint when inherited
  * @returns {string} HTML string
  */
-export function renderScreenStyleHtml(currentScreenStyle, styleOptions) {
+export function renderScreenStyleHtml(currentScreenStyle, styleOptions, projectStyle = 'wireframe') {
   const title = _t('panel.screen', 'Screen');
+  const inheritLabel = _t('panel.inheritProjectStyle', 'Inherited');
   const styleLabel = _t('panel.screenStyle', 'Screen Style');
-  const inheritLabel = _t('panel.inheritFromProject', 'Inherit from project');
 
+  const inherited = currentScreenStyle === null;
+  const inheritedChecked = inherited ? ' checked' : '';
+
+  // Dropdown: when inherited, pre-select the project style so toggling off shows a sensible default
+  const effectiveStyle = inherited ? projectStyle : currentScreenStyle;
   const options = styleOptions.map(({ value, label }) => {
-    const sel = value === currentScreenStyle ? ' selected' : '';
+    const sel = value === effectiveStyle ? ' selected' : '';
     return `<option value="${escPanelVal(value)}"${sel}>${escPanelVal(label)}</option>`;
   }).join('');
 
-  const inheritSelected = !currentScreenStyle ? ' selected' : '';
+  const dropdownHidden = inherited ? ' style="display:none"' : '';
+  const hintHidden = inherited ? '' : ' style="display:none"';
+  const hintText = escPanelVal(_t('panel.projectStyle', 'Project style') + ': ' + (projectStyle || 'wireframe'));
 
   return `<div class="panel-group" data-group="screen">
   <div class="panel-group-title">${escPanelVal(title)}</div>
   <div class="panel-field">
     <label class="panel-label">${escPanelVal(styleLabel)}</label>
+    <label class="panel-inherit-label">
+      <input type="checkbox" id="screen-style-inherit"${inheritedChecked}>
+      ${escPanelVal(inheritLabel)}
+    </label>
+    <span id="screen-style-hint" class="panel-hint"${hintHidden}>${hintText}</span>
     <select id="screen-style-select"
             data-field="screen-style"
-            data-field-type="text">
-      <option value=""${inheritSelected}>${escPanelVal(inheritLabel)}</option>
+            data-field-type="text"${dropdownHidden}>
       ${options}
     </select>
   </div>

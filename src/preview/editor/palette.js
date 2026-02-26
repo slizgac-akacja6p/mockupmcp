@@ -159,6 +159,14 @@ function renderCategories(activeType, searchQuery, onClickItem) {
       item.className = 'palette-item' + (comp.type === activeType ? ' add-mode-active' : '');
       item.dataset.type = comp.type;
 
+      // Enable native drag-and-drop so users can drag a component from the
+      // palette directly onto the canvas as an alternative to click-to-add.
+      item.draggable = true;
+      item.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('component/type', comp.type);
+        e.dataTransfer.effectAllowed = 'copy';
+      });
+
       // Small colour square acts as a simple visual icon without SVG deps.
       const icon = document.createElement('span');
       icon.style.cssText = 'display:inline-block;width:10px;height:10px;border-radius:2px;background:#4a90e2;flex-shrink:0;';

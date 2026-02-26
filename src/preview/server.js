@@ -69,7 +69,7 @@ const PREVIEW_STYLE = `
     display: flex !important;
     flex-direction: column !important;
   }
-  #mockup-sidebar-tree { flex: 1; overflow-y: auto; }
+  #mockup-sidebar-tree { flex: 1; overflow-y: auto; overscroll-behavior: contain; }
   #mockup-sidebar-toggle {
     background: var(--surface-1) !important;
     border-color: var(--border-default) !important;
@@ -488,6 +488,33 @@ const ZOOM_JS = `
         fitToScreen();
       }
     });
+
+    // Pinch-to-zoom (trackpad) and Ctrl+scroll — prevents browser zoom and
+    // applies the scale only to the mockup .screen element. Uses continuous
+    // scale tracking so intermediate values between ZOOM_LEVELS are preserved.
+    // { passive: false } is required so preventDefault() is allowed.
+    var continuousScale = ZOOM_LEVELS[currentZoomIndex];
+    window.addEventListener('wheel', function(e) {
+      if (!e.ctrlKey) return; // only intercept pinch / ctrl+scroll
+      e.preventDefault();
+
+      // deltaY is negative when zooming in (pinch-open or scroll-up).
+      // Sensitivity 0.008 keeps pinch gesture feeling natural on macOS.
+      var delta = -e.deltaY * 0.008;
+      continuousScale = Math.max(0.25, Math.min(4.0, continuousScale + delta));
+
+      // Sync currentZoomIndex to the nearest ZOOM_LEVELS entry so button
+      // steps start from the right position after a pinch gesture.
+      var closest = 0;
+      var minDist = Math.abs(ZOOM_LEVELS[0] - continuousScale);
+      for (var i = 1; i < ZOOM_LEVELS.length; i++) {
+        var dist = Math.abs(ZOOM_LEVELS[i] - continuousScale);
+        if (dist < minDist) { minDist = dist; closest = i; }
+      }
+      currentZoomIndex = closest;
+
+      applyZoom(continuousScale);
+    }, { passive: false });
   }
 
   // Run after DOM is ready — may already be ready if deferred.
@@ -556,6 +583,9 @@ function buildReloadScript(projectId, updatedAt) {
   // Polling rather than WebSockets keeps the server stateless and avoids
   // connection management across MCP tool calls that mutate project data.
   // Redirect to /preview when the project has been deleted (404 response).
+  // On change: fetch the screen fragment and swap only the .screen element in-place
+  // so the sidebar, toolbar, and browser address bar are untouched. Full location.reload()
+  // was the root cause of the "sidebar resets on mockup refresh" bug.
   return `
 <script>
   let lastMod = '${updatedAt}';
@@ -564,7 +594,20 @@ function buildReloadScript(projectId, updatedAt) {
       const r = await fetch('/api/lastmod/${projectId}');
       if (r.status === 404) { window.location.href = '/preview'; return; }
       const data = await r.json();
-      if (data.updated_at !== lastMod) location.reload();
+      if (data.updated_at !== lastMod) {
+        lastMod = data.updated_at;
+        // Re-use swapScreen (defined by LINK_SCRIPT) if available — it handles
+        // the DOM swap, toolbar sync, and zoom state without a page reload.
+        // Fall back to location.reload() only when running outside preview context
+        // (e.g. editor mode which has its own refresh mechanism).
+        const parts = window.location.pathname.split('/');
+        const screenId = parts[3];
+        if (typeof swapScreen === 'function' && screenId) {
+          swapScreen('${projectId}', screenId, 'none', false, true);
+        } else {
+          location.reload();
+        }
+      }
     } catch (_) {}
   }, 2000);
 <\/script>`;
@@ -656,7 +699,10 @@ const SIDEBAR_JS = `
 
   // expandedNodes tracks both folder paths and project IDs so collapse/expand
   // state survives the periodic 3s re-render without losing user choices.
+  // firstLoad gates the auto-expand logic so it only runs once — subsequent
+  // polls must not force-expand folders the user intentionally collapsed.
   var expandedNodes = new Set();
+  var firstLoad = true;
   var collapsed = localStorage.getItem('mockup-sidebar-collapsed') === '1';
   if (collapsed) { sidebar.classList.add('collapsed'); document.body.classList.add('sidebar-collapsed'); toggle.textContent = '\\u203a'; }
 
@@ -677,7 +723,13 @@ const SIDEBAR_JS = `
     return { projectId: parts[2] || '', screenId: parts[3] || '' };
   }
 
-  function escName(s) { var d = document.createElement('div'); d.textContent = s; return d.textContent; }
+  // escName: encode text content inserted via innerHTML (encodes &, <, >).
+  // escAttr: encode values placed inside HTML attribute strings (also encodes ").
+  // Without escAttr, a folder path containing " would break the data-folder-path
+  // attribute and cause dataset.folderPath to return a different value than the
+  // key stored in expandedNodes, silently breaking expand/collapse state.
+  function escName(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+  function escAttr(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
   // Walk the tree to find ancestor folder paths for the active project so we
   // can auto-expand them on first load without user interaction.
@@ -702,12 +754,15 @@ const SIDEBAR_JS = `
 
   function renderNode(node, depth, items, active, singleRoot) {
     // Render folders before projects so hierarchy is visually grouped.
-    for (var i = 0; i < node.folders.length; i++) {
-      var folder = node.folders[i];
+    // Sort both alphabetically for a stable, predictable order across polls.
+    var folders = node.folders.slice().sort(function(a, b) { return a.name.localeCompare(b.name); });
+    var projects = node.projects.slice().sort(function(a, b) { return a.name.localeCompare(b.name); });
+    for (var i = 0; i < folders.length; i++) {
+      var folder = folders[i];
       var isFolderExpanded = expandedNodes.has(folder.path);
       var pad = 12 + depth * 16;
       items.push('<div class="mockup-sidebar-folder">');
-      items.push('<div class="mockup-sidebar-folder-name" data-folder-path="' + escName(folder.path) + '" style="padding-left:' + pad + 'px">');
+      items.push('<div class="mockup-sidebar-folder-name" data-folder-path="' + escAttr(folder.path) + '" style="padding-left:' + pad + 'px">');
       items.push('<span class="arrow' + (isFolderExpanded ? ' open' : '') + '">\\u25b6<\\/span> ' + escName(folder.name));
       items.push('<\\/div>');
       if (isFolderExpanded) {
@@ -715,13 +770,13 @@ const SIDEBAR_JS = `
       }
       items.push('<\\/div>');
     }
-    for (var j = 0; j < node.projects.length; j++) {
-      var proj = node.projects[j];
+    for (var j = 0; j < projects.length; j++) {
+      var proj = projects[j];
       var isActiveProj = proj.id === active.projectId;
       var isProjExpanded = isActiveProj || expandedNodes.has(proj.id) || singleRoot;
       var projPad = 12 + depth * 16;
       items.push('<div class="mockup-sidebar-project">');
-      items.push('<div class="mockup-sidebar-project-name" data-proj="' + proj.id + '" style="padding-left:' + projPad + 'px">');
+      items.push('<div class="mockup-sidebar-project-name" data-proj="' + escAttr(proj.id) + '" style="padding-left:' + projPad + 'px">');
       items.push('<span class="arrow' + (isProjExpanded ? ' open' : '') + '">\\u25b6<\\/span> ' + escName(proj.name));
       items.push('<\\/div>');
       if (isProjExpanded) {
@@ -729,11 +784,12 @@ const SIDEBAR_JS = `
         for (var k = 0; k < proj.screens.length; k++) {
           var scr = proj.screens[k];
           var cls = scr.id === active.screenId ? ' active' : '';
-          // Skip rendering draft screens as clickable links (no thumbnail).
-          var isDraft = scr.status === 'draft';
-          var screenHtml = isDraft ? '<div' : '<a';
-          var screenAttrs = isDraft ? ' class="mockup-sidebar-screen' + cls + '" style="padding-left:' + screenPad + 'px">' : ' class="mockup-sidebar-screen' + cls + '" href="' + pathPrefix + proj.id + '\\/' + scr.id + '" style="padding-left:' + screenPad + 'px">';
-          var screenEnd = isDraft ? '<\\/div>' : '<\\/a>';
+          // All screens are clickable regardless of approval status — draft indicator
+          // is shown via statusDot only. Rendering as <div> blocked navigation for
+          // other screens when one was approved (they remained draft).
+          var screenHtml = '<a';
+          var screenAttrs = ' class="mockup-sidebar-screen' + cls + '" href="' + pathPrefix + proj.id + '\\/' + scr.id + '" style="padding-left:' + screenPad + 'px">';
+          var screenEnd = '<\\/a>';
           var versionBadge = scr.version ? ' <span style="font-size:11px;opacity:0.7;margin-left:4px">v' + scr.version + '<\\/span>' : '';
           var statusDot = '';
           if (scr.status === 'approved') {
@@ -750,18 +806,22 @@ const SIDEBAR_JS = `
 
   function loadTree() {
     fetch('/api/projects').then(function(res) { return res.json(); }).then(function(data) {
-      // Read scroll right before DOM write so it reflects the latest position.
-      var scrollTop = sidebar.scrollTop;
+      // Read scroll from the scrollable tree div (not the sidebar wrapper which
+      // has overflow:hidden) so position survives the periodic re-render.
+      var scrollTop = tree.scrollTop;
       var active = getActivePath();
 
-      // Auto-expand folder ancestors of the currently viewed project on load.
-      if (active.projectId) {
+      // Auto-expand folder ancestors of the active project only on the very first
+      // load. Running this on every poll would re-open folders the user collapsed,
+      // because add() to the Set is permanent and overrides the user's collapse click.
+      if (firstLoad && active.projectId) {
         var activePath = findActiveProjectPath(data, active.projectId);
         if (activePath) {
           for (var a = 0; a < activePath.length; a++) {
             expandedNodes.add(activePath[a]);
           }
         }
+        firstLoad = false;
       }
 
       var totalProjects = countProjects(data);
@@ -769,7 +829,8 @@ const SIDEBAR_JS = `
       var items = [];
       renderNode(data, 0, items, active, singleRoot);
       tree.innerHTML = items.join('');
-      sidebar.scrollTop = scrollTop;
+      // Restore to the same element we read from.
+      tree.scrollTop = scrollTop;
     }).catch(function() {});
   }
 
@@ -882,8 +943,9 @@ const EDITOR_CSS = `
     --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
 
-  /* Reset the sidebar's body margin — editor layout manages offsets explicitly */
-  body { margin: 0 !important; background: var(--surface-0); }
+  /* Reset the sidebar's body margin — editor layout manages offsets explicitly.
+     overflow:hidden prevents wheel events on side panels from scrolling the body. */
+  body { margin: 0 !important; background: var(--surface-0); overflow: hidden; height: 100vh; }
 
   /* Dark sidebar override — editor uses dark sidebar matching the mockup,
      while preview pages keep the default light sidebar from SIDEBAR_CSS. */
@@ -895,7 +957,7 @@ const EDITOR_CSS = `
     display: flex !important;
     flex-direction: column !important;
   }
-  #mockup-sidebar-tree { flex: 1; overflow-y: auto; }
+  #mockup-sidebar-tree { flex: 1; overflow-y: auto; overscroll-behavior: contain; }
   #mockup-sidebar-toggle {
     background: var(--surface-1) !important;
     border-color: var(--border-default) !important;
@@ -969,6 +1031,9 @@ const EDITOR_CSS = `
     position: relative;
     flex: 1;
     min-width: 0;
+    /* overflow: auto clips the scaled .screen so it never paints over the right panel,
+       AND preserves two-finger trackpad pan (scroll). hidden would block scroll events. */
+    overflow: auto;
     margin-top: 0;
     min-height: calc(100vh - 48px);
     display: flex; align-items: flex-start; justify-content: center; padding: 20px 24px;
@@ -984,7 +1049,9 @@ const EDITOR_CSS = `
     width: 300px; min-width: 300px;
     display: flex; flex-direction: column;
     background: var(--surface-1); border-left: 1px solid var(--border-default);
-    overflow-x: hidden; overflow-y: auto;
+    /* overflow: hidden lets flex children (layers, comments) own their own scroll
+       and prevents wheel events in the panel from propagating to the canvas */
+    overflow: hidden;
     box-sizing: border-box;
   }
   /* Tab navigation for right panel — Properties | Components */
@@ -1005,8 +1072,10 @@ const EDITOR_CSS = `
   .panel-tab:hover { color: var(--text-primary); background: var(--surface-3); }
   .panel-tab.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
   .panel-tab-content {
-    display: none; flex: 1; overflow-y: auto; flex-direction: column;
-    padding: 0 12px;
+    /* min-height: 0 lets the flex child shrink below its content height so
+       a long layers list cannot push the tab bar off screen */
+    display: none; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+    flex-direction: column; padding: 0 12px;
   }
   .panel-tab-content.active { display: flex; }
 
@@ -1015,6 +1084,7 @@ const EDITOR_CSS = `
     background: var(--surface-1);
     font-family: var(--font-ui); font-size: 13px;
     overflow-y: auto;
+    overscroll-behavior: contain;
     color: var(--text-primary);
   }
   #editor-property-panel .panel-header {
@@ -1218,11 +1288,12 @@ const EDITOR_CSS = `
   #editor-flex-wrapper.sidebar-collapsed { margin-left: 48px; }
   #editor-toolbar.sidebar-collapsed { left: 48px; }
 
-  /* Floating zoom controls — bottom-right of canvas, above right panel */
+  /* Floating zoom controls — bottom-right of canvas, above right panel.
+     right = panel width (300px) + gap (20px) so controls don't overlap the panel. */
   #zoom-controls {
     position: fixed;
     bottom: 20px;
-    right: 316px;
+    right: 320px;
     display: flex;
     align-items: center;
     gap: 2px;
@@ -1402,7 +1473,7 @@ function buildStyleOptionsHtml(selectedValue) {
   }).join('');
 }
 
-function buildEditorPage(screenHtml, projectId, screenId, projectName, screenName, style = 'wireframe', projectStyle = 'wireframe', screenStyle = null) {
+function buildEditorPage(screenHtml, projectId, screenId, projectName, screenName, style = 'wireframe', projectStyle = 'wireframe', screenStyle = null, screenStatus = null) {
   const componentMetaJson = buildComponentMetaJson();
   // Component styles must come before EDITOR_CSS so editor rules can override them.
   const componentStyle = `<style>
@@ -1424,6 +1495,7 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
     #editor-palette {
       flex: 1;
       overflow-y: auto;
+      overscroll-behavior: contain;
       display: flex;
       flex-direction: column;
       padding: 8px 0;
@@ -1459,7 +1531,7 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
     .toast { background: var(--surface-3); color: var(--text-primary); padding: 8px 14px; border-radius: 6px; margin-top: 8px; font-size: 12px; animation: fadeInOut 2.5s forwards; border: 1px solid var(--border-default); }
     @keyframes fadeInOut { 0%{opacity:0;transform:translateY(8px)} 10%{opacity:1;transform:translateY(0)} 80%{opacity:1} 100%{opacity:0} }
     /* Layers panel */
-    #layers-container { display: flex; flex-direction: column; height: 100%; overflow-y: auto; padding: 0; }
+    #layers-container { display: flex; flex-direction: column; height: 100%; overflow-y: auto; overscroll-behavior: contain; padding: 0; }
     .layers-empty { padding: 16px 12px; text-align: center; color: var(--text-muted); font-size: 12px; }
     .layers-list { display: flex; flex-direction: column; gap: 0; }
     .layers-row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: var(--surface-2); border: 1px solid transparent; border-radius: 4px; margin: 0 8px 4px 8px; cursor: pointer; user-select: none; transition: background 0.1s, border 0.1s; }
@@ -1473,6 +1545,25 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
     .layers-eye-btn { flex-shrink: 0; background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 12px; padding: 2px; }
     .layers-eye-btn:hover { color: var(--text-primary); }
     .layers-lock-icon { flex-shrink: 0; color: var(--text-muted); font-size: 12px; }
+    /* Comments panel */
+    #comments-container { display: flex; flex-direction: column; height: 100%; overflow-y: auto; overscroll-behavior: contain; padding: 0; }
+    .comment-form { padding: 12px; border-bottom: 1px solid var(--border-default); display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+    .comment-textarea { background: var(--surface-2); color: var(--text-primary); border: 1px solid var(--border-default); border-radius: var(--radius-sm); padding: 8px; font-size: 12px; font-family: var(--font-ui); resize: vertical; min-height: 40px; }
+    .comment-textarea:focus { outline: none; border-color: var(--accent); }
+    .comment-textarea::placeholder { color: var(--text-muted); }
+    .comment-add-btn { background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; align-self: flex-end; }
+    .comment-add-btn:hover:not(:disabled) { background: var(--accent-hover); }
+    .comment-add-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .comments-panel { display: flex; flex-direction: column; gap: 0; flex: 1; }
+    .comments-panel-empty { padding: 16px 12px; text-align: center; color: var(--text-muted); font-size: 12px; }
+    .comment-item { display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--border-subtle); }
+    .comment-item:hover { background: var(--surface-2); }
+    .comment-pin-badge { flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; background: #FCD34D; color: #111; font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+    .comment-content { flex: 1; min-width: 0; }
+    .comment-text { color: var(--text-primary); font-size: 12px; line-height: 1.4; word-break: break-word; }
+    .comment-meta { color: var(--text-muted); font-size: 10px; margin-top: 4px; }
+    .comment-resolve-btn { flex-shrink: 0; background: transparent; border: 1px solid var(--border-default); color: var(--text-secondary); cursor: pointer; border-radius: var(--radius-sm); padding: 2px 6px; font-size: 12px; }
+    .comment-resolve-btn:hover { background: var(--surface-3); color: var(--text-primary); border-color: var(--accent); }
   </style>
 </head>
 <body data-theme="dark">
@@ -1527,6 +1618,7 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
         <button class="panel-tab active" data-tab="properties">Properties</button>
         <button class="panel-tab" data-tab="components">Components</button>
         <button class="panel-tab" data-tab="layers">Layers</button>
+        <button class="panel-tab" data-tab="comments">Comments</button>
       </div>
       <div id="editor-tab-properties" class="panel-tab-content active">
         <div id="editor-property-panel">
@@ -1553,6 +1645,9 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
       <div id="editor-tab-layers" class="panel-tab-content">
         <div id="layers-container"></div>
       </div>
+      <div id="editor-tab-comments" class="panel-tab-content">
+        <div id="comments-container"></div>
+      </div>
     </div>
   </div>
   <div id="toast-container" style="position:fixed;bottom:20px;right:20px;z-index:9999"></div>
@@ -1561,7 +1656,8 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
   <script>window.__COMPONENT_META__ = ${componentMetaJson};</script>
   <script>window.__STYLE_OPTIONS__ = ${JSON.stringify(STYLE_OPTIONS)};
   window.__PROJECT_STYLE__ = ${JSON.stringify(projectStyle)};
-  window.__SCREEN_STYLE__ = ${JSON.stringify(screenStyle)};</script>
+  window.__SCREEN_STYLE__ = ${JSON.stringify(screenStyle)};
+  window.__SCREEN_STATUS__ = ${JSON.stringify(screenStatus)};</script>
   <script src="/i18n/index.js"></script>
   <script>
     // Tab switching for right panel (Properties | Components)
@@ -1583,6 +1679,7 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
   <script type="module">
     import { initEditor } from '/editor/js/editor.js';
     import { initApproval } from '/editor/js/approval.js';
+    import { initComments } from '/editor/js/comments.js';
     const canvas = document.getElementById('editor-canvas');
     const panel = document.getElementById('editor-property-panel');
     // await initEditor so language-switcher listeners are registered only after
@@ -1590,6 +1687,7 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
     // window.setLanguage is wired up by initI18n.
     (async () => {
       await window.initI18n?.();
+      const _t = (key, fb) => (typeof window.t === 'function' ? window.t(key, fb) : fb ?? key);
       await initEditor({
         projectId: canvas.dataset.projectId,
         screenId: canvas.dataset.screenId,
@@ -1599,6 +1697,13 @@ function buildEditorPage(screenHtml, projectId, screenId, projectName, screenNam
       // initApproval runs after initEditor and i18n so translated button labels
       // are available and the right panel DOM is fully in place.
       await initApproval();
+      // initComments wires up the Comments tab panel — loads existing comments
+      // and provides the add-comment form.
+      await initComments({
+        projectId: canvas.dataset.projectId,
+        screenId: canvas.dataset.screenId,
+        localize: _t,
+      });
     })();
   </script>
 </body>
@@ -1717,7 +1822,7 @@ export function startPreviewServer(port = config.previewPort) {
 
       const style = screen.style || project.style || 'wireframe';
       const fragment = buildScreenFragment(screen, style);
-      const html = buildEditorPage(fragment, project.id, screen.id, project.name, screen.name, style, project.style || 'wireframe', screen.style || null);
+      const html = buildEditorPage(fragment, project.id, screen.id, project.name, screen.name, style, project.style || 'wireframe', screen.style || null, screen.status || null);
       res.type('html').send(html);
     } catch (err) {
       res.status(500).send('Error: ' + err.message);

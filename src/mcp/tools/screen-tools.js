@@ -24,10 +24,14 @@ export async function registerScreenTools(server, store) {
         .nullable()
         .optional()
         .describe('Color scheme for the screen. Only affects styles that support it (e.g., slate). "dark" or "light".'),
+      inheritStyle: z
+        .boolean()
+        .optional()
+        .describe('When false, renderer skips style CSS classes — elements use inline styles from properties instead. Default: true (normal style rendering).'),
     },
-    async ({ project_id, name, width, height, background, style, color_scheme }) => {
+    async ({ project_id, name, width, height, background, style, color_scheme, inheritStyle }) => {
       try {
-        const screen = await store.addScreen(project_id, name, width, height, background, style, color_scheme);
+        const screen = await store.addScreen(project_id, name, width, height, background, style, color_scheme, inheritStyle);
         return {
           content: [{ type: 'text', text: JSON.stringify(screen, null, 2) }],
         };

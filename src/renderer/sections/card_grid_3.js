@@ -3,9 +3,9 @@ import { escapeHtml } from '../components/utils.js';
 export function defaults() {
   return {
     cards: [
-      { title: 'Card 1', body: 'Description here' },
-      { title: 'Card 2', body: 'Description here' },
-      { title: 'Card 3', body: 'Description here' },
+      { title: 'Card 1', description: 'Description here' },
+      { title: 'Card 2', description: 'Description here' },
+      { title: 'Card 3', description: 'Description here' },
     ],
   };
 }
@@ -52,7 +52,7 @@ export function generate(screenWidth, sectionY, props) {
       },
     });
 
-    // Card body
+    // Card description
     elements.push({
       type: 'text',
       x: cardX + 12,
@@ -61,7 +61,7 @@ export function generate(screenWidth, sectionY, props) {
       height: 100,
       z_index: 2,
       properties: {
-        content: escapeHtml(card.body),
+        content: escapeHtml(card.description),
         fontSize: 12,
         color: '#666',
       },

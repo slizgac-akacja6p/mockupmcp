@@ -3,6 +3,7 @@ import { mkdirSync } from 'fs';
 import { join, dirname, relative, sep } from 'path';
 import { generateId, validateId } from './id-generator.js';
 import { scanProjectFiles } from './folder-scanner.js';
+import { resolveOverlaps } from '../renderer/layout.js';
 
 export class ProjectStore {
   constructor(dataDir) {
@@ -191,7 +192,7 @@ export class ProjectStore {
           id: project.id,
           name: project.name,
           style: project.style,
-          screens: (project.screens || []).map((s) => ({ id: s.id, name: s.name })),
+          screens: (project.screens || []).map((s) => ({ id: s.id, name: s.name, status: s.status, version: s.version })),
         };
 
         if (parts.length === 1) {
@@ -239,7 +240,7 @@ export class ProjectStore {
 
   // --- Screen methods ---
 
-  async addScreen(projectId, name, width, height, background = '#FFFFFF', style = null, color_scheme = null) {
+  async addScreen(projectId, name, width, height, background = '#FFFFFF', style = null, color_scheme = null, inheritStyle = undefined) {
     const project = await this.getProject(projectId);
 
     // Fall back to project viewport dimensions when caller omits explicit size.
@@ -259,6 +260,10 @@ export class ProjectStore {
       parent_screen_id: null,
       status: 'draft',
     };
+    // Only persist inheritStyle when explicitly set (backward compat: absent = true)
+    if (inheritStyle !== undefined) {
+      screen.inheritStyle = inheritStyle;
+    }
     project.screens.push(screen);
     await this._save(project);
     return screen;
@@ -352,6 +357,9 @@ export class ProjectStore {
       });
     }
 
+    // Resolve unintentional overlaps after bulk element insertion
+    screen.elements = resolveOverlaps(screen.elements, screen.width);
+
     await this._save(project);
     return screen;
   }
@@ -398,6 +406,14 @@ export class ProjectStore {
       };
       screen.elements.push(element);
       added.push(element);
+    }
+
+    // Resolve unintentional overlaps after bulk element insertion
+    screen.elements = resolveOverlaps(screen.elements, screen.width);
+    // Update added references to reflect resolved positions
+    for (const el of added) {
+      const resolved = screen.elements.find(e => e.id === el.id);
+      if (resolved) { el.x = resolved.x; el.y = resolved.y; }
     }
 
     await this._save(project);
@@ -654,7 +670,7 @@ export class ProjectStore {
     // Validate project exists before any mutations.
     const project = await this.getProject(projectId);
 
-    const { name, width, height, background = '#FFFFFF', style = null, elements = [], links = [] } = screenDef;
+    const { name, width, height, background = '#FFFFFF', style = null, inheritStyle, elements = [], links = [] } = screenDef;
 
     // Pre-validate everything (atomicity: fail-all).
     // Check all element types and links refs exist before creating anything.
@@ -687,6 +703,9 @@ export class ProjectStore {
       parent_screen_id: null,
       status: 'draft',
     };
+    if (inheritStyle !== undefined) {
+      screen.inheritStyle = inheritStyle;
+    }
 
     // Create elements and build refMap.
     const refMap = {};
@@ -716,6 +735,9 @@ export class ProjectStore {
         };
       }
     }
+
+    // Resolve unintentional overlaps before persisting
+    screen.elements = resolveOverlaps(screen.elements, screen.width);
 
     project.screens.push(screen);
     await this._save(project);
@@ -782,7 +804,7 @@ export class ProjectStore {
     const elementRefMap = {};
 
     for (const screenDef of screens) {
-      const { name: screenName, width, height, background = '#FFFFFF', style: screenStyle = null, elements = [] } = screenDef;
+      const { name: screenName, width, height, background = '#FFFFFF', style: screenStyle = null, inheritStyle: screenInheritStyle, elements = [] } = screenDef;
 
       const resolvedWidth = width ?? project.viewport.width;
       const resolvedHeight = height ?? project.viewport.height;
@@ -800,6 +822,9 @@ export class ProjectStore {
         status: 'draft',
       };
 
+      if (screenInheritStyle !== undefined) {
+        screen.inheritStyle = screenInheritStyle;
+      }
       if (screenDef.ref) screenRefMap[screenDef.ref] = screen.id;
 
       // Create elements.
@@ -820,6 +845,9 @@ export class ProjectStore {
         }
         screen.elements.push(element);
       }
+
+      // Resolve unintentional overlaps per screen
+      screen.elements = resolveOverlaps(screen.elements, screen.width);
 
       project.screens.push(screen);
     }
