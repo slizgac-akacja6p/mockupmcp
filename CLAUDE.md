@@ -7,7 +7,7 @@ Dockerized MCP server for creating UI mockups from Claude Code. JSON mockup defi
 | Command | Description |
 |---------|-------------|
 | `npm start` | Start MCP server (stdio mode) |
-| `npm test` | Run all tests (~1564 tests, Node.js built-in runner) |
+| `npm test` | Run all tests (~1649 tests, Node.js built-in runner) |
 | `node --test tests/renderer/*.test.js` | Run renderer tests only |
 | `RUN_E2E=1 npm test` | Run including E2E tests (requires running Docker container) |
 | `docker build -t mockupmcp:latest .` | Build Docker image |
@@ -50,7 +50,7 @@ src/
     folder-scanner.js   # Recursive project file discovery
     id-generator.js     # nanoid prefixed IDs
   renderer/
-    html-builder.js     # Screen JSON → HTML string
+    html-builder.js     # Screen JSON → HTML string (inheritStyle, sanitizeCssValue)
     screenshot.js       # Puppeteer HTML → PNG
     styles/             # 19 styles: wireframe, blueprint, flat, hand-drawn, ios, material, dark-minimal, pastel, corporate, retro, glassmorphism, neon, paper, terminal, playful, gradient, monochrome, soft-ui, slate
     sections/           # 10 section generators (semantic layout sections)
@@ -97,6 +97,8 @@ tests/
 - **Body CSS:** `html-builder.js` body has width/height/overflow — effective only in Puppeteer; PREVIEW_STYLE overrides in browser preview (by design)
 - **Sidebar state:** `expandedNodes` Set (folder paths + project IDs) + `scrollTop` save/restore survive 3s polling; recursive `renderNode` for folder tree
 - **Sidebar API:** `/api/projects` returns `{ folders: [...], projects: [...] }` tree (not flat array)
+- **inheritStyle:** `screen.inheritStyle === false` → renderer skips style CSS entirely, wraps elements without `class="element"`, injects inline CSS from `properties` (color, backgroundColor, borderColor, fontSize, fontWeight, borderRadius, padding). Element-level flag takes precedence over screen-level. Supported in `mockup_add_screen`, `mockup_create_screen_full`, `mockup_create_project_full`.
+- **inheritStyle + rectangle:** component must use `p.backgroundColor ?? 'transparent'` as bg when `_style === null`, otherwise inner div covers wrapper's inline `background-color`
 
 ## Git
 
