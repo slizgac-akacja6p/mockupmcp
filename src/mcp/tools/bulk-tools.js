@@ -15,6 +15,8 @@ export function registerBulkTools(server, store) {
       background: z.string().optional().default('#FFFFFF').describe('Screen background color (default: #FFFFFF)'),
       style: z.enum(getAvailableStyles()).optional()
         .describe('Visual style for the screen'),
+      inheritStyle: z.boolean().optional()
+        .describe('When false, renderer skips style CSS classes — elements use inline styles from properties instead'),
       elements: z.array(z.object({
         type: z.string().describe('Element type (rectangle, text, button, card, etc.)'),
         x: z.number().describe('X position in pixels'),
@@ -32,7 +34,7 @@ export function registerBulkTools(server, store) {
           .describe('Transition animation type'),
       })).optional().default([]).describe('Navigation links between elements and screens'),
     },
-    async ({ project_id, name, width, height, background, style, elements, links }) => {
+    async ({ project_id, name, width, height, background, style, inheritStyle, elements, links }) => {
       try {
         const { screen, refMap } = await store.createScreenFull(project_id, {
           name,
@@ -40,6 +42,7 @@ export function registerBulkTools(server, store) {
           height,
           background: background || '#FFFFFF',
           style,
+          inheritStyle,
           elements: elements || [],
           links: links || [],
         });
@@ -83,6 +86,8 @@ export function registerBulkTools(server, store) {
         background: z.string().optional().default('#FFFFFF').describe('Screen background color'),
         style: z.enum(getAvailableStyles()).optional()
           .describe('Screen-specific style (overrides project style)'),
+        inheritStyle: z.boolean().optional()
+          .describe('When false, renderer skips style CSS classes for this screen'),
         elements: z.array(z.object({
           type: z.string().describe('Element type'),
           x: z.number().describe('X position'),

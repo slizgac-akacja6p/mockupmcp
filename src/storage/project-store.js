@@ -240,7 +240,7 @@ export class ProjectStore {
 
   // --- Screen methods ---
 
-  async addScreen(projectId, name, width, height, background = '#FFFFFF', style = null, color_scheme = null) {
+  async addScreen(projectId, name, width, height, background = '#FFFFFF', style = null, color_scheme = null, inheritStyle = undefined) {
     const project = await this.getProject(projectId);
 
     // Fall back to project viewport dimensions when caller omits explicit size.
@@ -260,6 +260,10 @@ export class ProjectStore {
       parent_screen_id: null,
       status: 'draft',
     };
+    // Only persist inheritStyle when explicitly set (backward compat: absent = true)
+    if (inheritStyle !== undefined) {
+      screen.inheritStyle = inheritStyle;
+    }
     project.screens.push(screen);
     await this._save(project);
     return screen;
@@ -666,7 +670,7 @@ export class ProjectStore {
     // Validate project exists before any mutations.
     const project = await this.getProject(projectId);
 
-    const { name, width, height, background = '#FFFFFF', style = null, elements = [], links = [] } = screenDef;
+    const { name, width, height, background = '#FFFFFF', style = null, inheritStyle, elements = [], links = [] } = screenDef;
 
     // Pre-validate everything (atomicity: fail-all).
     // Check all element types and links refs exist before creating anything.
@@ -699,6 +703,9 @@ export class ProjectStore {
       parent_screen_id: null,
       status: 'draft',
     };
+    if (inheritStyle !== undefined) {
+      screen.inheritStyle = inheritStyle;
+    }
 
     // Create elements and build refMap.
     const refMap = {};
@@ -797,7 +804,7 @@ export class ProjectStore {
     const elementRefMap = {};
 
     for (const screenDef of screens) {
-      const { name: screenName, width, height, background = '#FFFFFF', style: screenStyle = null, elements = [] } = screenDef;
+      const { name: screenName, width, height, background = '#FFFFFF', style: screenStyle = null, inheritStyle: screenInheritStyle, elements = [] } = screenDef;
 
       const resolvedWidth = width ?? project.viewport.width;
       const resolvedHeight = height ?? project.viewport.height;
@@ -815,6 +822,9 @@ export class ProjectStore {
         status: 'draft',
       };
 
+      if (screenInheritStyle !== undefined) {
+        screen.inheritStyle = screenInheritStyle;
+      }
       if (screenDef.ref) screenRefMap[screenDef.ref] = screen.id;
 
       // Create elements.
