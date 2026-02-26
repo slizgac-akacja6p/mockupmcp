@@ -5,8 +5,8 @@ import { getComponent, getAvailableTypes } from '../../src/renderer/components/i
 // ── Registry ─────────────────────────────────────────────────────────────────
 
 describe('component registry', () => {
-  it('has exactly 35 registered types', () => {
-    assert.strictEqual(getAvailableTypes().length, 35);
+  it('has exactly 36 registered types (35 + rect alias)', () => {
+    assert.strictEqual(getAvailableTypes().length, 36);
   });
 
   it('returns null for unknown type', () => {

@@ -46,7 +46,7 @@ import * as data_table        from './data_table.js';
 import * as chart_placeholder from './chart_placeholder.js';
 
 const components = {
-  text, rectangle, circle, line, image, icon,
+  text, rectangle, rect: rectangle, circle, line, image, icon,
   button, input, textarea, checkbox, radio, toggle, select, slider,
   navbar, tabbar, sidebar, breadcrumb,
   card, list, table, avatar, badge, chip,
