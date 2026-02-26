@@ -704,4 +704,88 @@ describe('ProjectStore', () => {
       }
     });
   });
+
+  describe('findProjectByName', () => {
+    let findDir;
+    let findStore;
+
+    before(async () => {
+      findDir = await mkdtemp(join(tmpdir(), 'mockupmcp-find-'));
+      findStore = new ProjectStore(findDir);
+      await findStore.init();
+    });
+
+    after(async () => {
+      await rm(findDir, { recursive: true, force: true });
+    });
+
+    it('returns project when name and folder match', async () => {
+      const project = await findStore.createProject('Target App', '', undefined, 'wireframe', 'TeamA');
+
+      const found = await findStore.findProjectByName('Target App', 'TeamA');
+
+      assert.ok(found, 'Project should be found');
+      assert.equal(found.id, project.id);
+      assert.equal(found.name, 'Target App');
+    });
+
+    it('returns null when project not found', async () => {
+      await findStore.createProject('Existing', '', undefined, 'wireframe', 'TeamB');
+
+      const found = await findStore.findProjectByName('Nonexistent', 'TeamB');
+
+      assert.equal(found, null);
+    });
+
+    it('matches null folder for root-level projects', async () => {
+      const project = await findStore.createProject('Root Project');
+
+      const found = await findStore.findProjectByName('Root Project', null);
+
+      assert.ok(found, 'Root project should match null folder');
+      assert.equal(found.id, project.id);
+    });
+
+    it('does not return project from different folder', async () => {
+      await findStore.createProject('Shared Name', '', undefined, 'wireframe', 'FolderA');
+
+      const found = await findStore.findProjectByName('Shared Name', 'FolderB');
+
+      assert.equal(found, null, 'Project from different folder must not be returned');
+    });
+
+    it('does not return root project when searching in folder', async () => {
+      await findStore.createProject('App Name');
+
+      const found = await findStore.findProjectByName('App Name', 'AnyFolder');
+
+      assert.equal(found, null, 'Root project must not match folder search');
+    });
+
+    it('does not return folder project when searching in root', async () => {
+      const isolatedDir = await mkdtemp(join(tmpdir(), 'mockupmcp-find-isolated-'));
+      try {
+        const isolatedStore = new ProjectStore(isolatedDir);
+        await isolatedStore.init();
+
+        await isolatedStore.createProject('App Name', '', undefined, 'wireframe', 'SomeFolder');
+
+        const found = await isolatedStore.findProjectByName('App Name', null);
+
+        assert.equal(found, null, 'Folder project must not match root search');
+      } finally {
+        await rm(isolatedDir, { recursive: true, force: true });
+      }
+    });
+
+    it('returns first project when multiple share name (same folder)', async () => {
+      // Although this shouldn't happen in practice, verify it returns the first match.
+      const project1 = await findStore.createProject('Duplicate', '', undefined, 'wireframe', 'FolderC');
+
+      const found = await findStore.findProjectByName('Duplicate', 'FolderC');
+
+      assert.ok(found, 'Should find a project with matching name and folder');
+      assert.equal(found.id, project1.id);
+    });
+  });
 });

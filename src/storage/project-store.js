@@ -221,6 +221,27 @@ export class ProjectStore {
     return root;
   }
 
+  async findProjectByName(name, folder = null) {
+    // Scan all projects in the index to find one matching both name and folder.
+    await this._buildIndex();
+    for (const [, relPath] of this._pathIndex) {
+      try {
+        const raw = await readFile(join(this.dataDir, relPath), 'utf-8');
+        const data = JSON.parse(raw);
+        // Derive folder from relative path: null if root, otherwise folder path.
+        const pathParts = relPath.split('/');
+        const projFolder = pathParts.length > 1 ? pathParts.slice(0, -1).join('/') : null;
+
+        if (data.name === name && projFolder === folder) {
+          return data;
+        }
+      } catch {
+        // Skip files that have become unreadable since the index was built.
+      }
+    }
+    return null;
+  }
+
   async deleteProject(projectId) {
     this._validateId(projectId);
     const filePath = this._path(projectId);

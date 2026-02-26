@@ -93,6 +93,62 @@ describe('MCP Tool Handlers (integration)', () => {
     });
   });
 
+  describe('mockup_get_or_create_project', () => {
+    it('creates a new project when none exists (created: true)', async () => {
+      const res = await server.callTool('mockup_get_or_create_project', {
+        name: 'GetOrCreate Fresh',
+      });
+      const data = parseResult(res);
+
+      assert.equal(data.created, true);
+      assert.ok(data.project.id.startsWith('proj_'));
+      assert.equal(data.project.name, 'GetOrCreate Fresh');
+    });
+
+    it('returns existing project when called twice with same name (created: false)', async () => {
+      const res1 = await server.callTool('mockup_get_or_create_project', {
+        name: 'GetOrCreate Idempotent',
+      });
+      const data1 = parseResult(res1);
+      assert.equal(data1.created, true);
+
+      const res2 = await server.callTool('mockup_get_or_create_project', {
+        name: 'GetOrCreate Idempotent',
+      });
+      const data2 = parseResult(res2);
+      assert.equal(data2.created, false);
+      // Same project ID on second call — no duplicate created.
+      assert.equal(data2.project.id, data1.project.id);
+    });
+
+    it('returns the same project_id on repeated calls', async () => {
+      const name = 'GetOrCreate Repeated';
+      const r1 = parseResult(await server.callTool('mockup_get_or_create_project', { name }));
+      const r2 = parseResult(await server.callTool('mockup_get_or_create_project', { name }));
+      const r3 = parseResult(await server.callTool('mockup_get_or_create_project', { name }));
+
+      assert.equal(r1.project.id, r2.project.id);
+      assert.equal(r2.project.id, r3.project.id);
+    });
+
+    it('treats same name in different folders as distinct projects', async () => {
+      const res1 = await server.callTool('mockup_get_or_create_project', {
+        name: 'Shared Name',
+        folder: 'folder-a',
+      });
+      const res2 = await server.callTool('mockup_get_or_create_project', {
+        name: 'Shared Name',
+        folder: 'folder-b',
+      });
+      const d1 = parseResult(res1);
+      const d2 = parseResult(res2);
+
+      assert.equal(d1.created, true);
+      assert.equal(d2.created, true);
+      assert.notEqual(d1.project.id, d2.project.id);
+    });
+  });
+
   describe('mockup_list_projects', () => {
     it('returns an array containing previously created projects', async () => {
       const res = await server.callTool('mockup_list_projects', {});
