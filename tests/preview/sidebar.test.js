@@ -214,6 +214,29 @@ describe('sidebar injection', () => {
     assert.ok(previewRes.body.includes('renderNode'), 'sidebar should use recursive renderNode');
     assert.ok(previewRes.body.includes('mockup-sidebar-folder'), 'sidebar CSS should include folder styles');
   });
+
+  it('sidebar JS uses firstLoad flag to prevent auto-expand on polls', async () => {
+    const apiRes = await get(port, '/api/projects');
+    const tree = JSON.parse(apiRes.body);
+    const proj = tree.projects[0];
+    const screenId = proj.screens[0].id;
+    const previewRes = await get(port, `/preview/${proj.id}/${screenId}`);
+    // firstLoad gate ensures ancestor auto-expand runs only once, not on every poll
+    assert.ok(previewRes.body.includes('firstLoad'), 'sidebar should use firstLoad flag');
+    assert.ok(previewRes.body.includes('firstLoad = false'), 'firstLoad should be cleared after first run');
+  });
+
+  it('sidebar JS uses escAttr for HTML attribute encoding', async () => {
+    const apiRes = await get(port, '/api/projects');
+    const tree = JSON.parse(apiRes.body);
+    const proj = tree.projects[0];
+    const screenId = proj.screens[0].id;
+    const previewRes = await get(port, `/preview/${proj.id}/${screenId}`);
+    // escAttr prevents broken data-folder-path attributes for paths with special chars,
+    // which would cause dataset.folderPath to mismatch expandedNodes keys
+    assert.ok(previewRes.body.includes('escAttr'), 'sidebar should use escAttr for attribute encoding');
+    assert.ok(previewRes.body.includes('data-folder-path="\'') && previewRes.body.includes('escAttr(folder.path)'), 'folder path attribute should use escAttr');
+  });
 });
 
 describe('landing page', () => {

@@ -123,3 +123,129 @@ function layoutGrid(layoutable, result, pad, spacing, availableWidth, startY, co
     }
   }
 }
+
+// --- Overlap resolution ---
+
+/**
+ * Check if two rectangles overlap (axis-aligned bounding box).
+ */
+function rectsOverlap(a, b) {
+  return a.x < b.x + b.width &&
+         a.x + a.width > b.x &&
+         a.y < b.y + b.height &&
+         a.y + a.height > b.y;
+}
+
+/**
+ * Check if `inner` is a visual child of `outer` — used to detect intentional
+ * nesting (e.g. text label on a background rectangle, icon inside a card).
+ *
+ * A "child" must be:
+ *   1. Geometrically contained within (or nearly within) the outer bounds
+ *   2. Smaller in BOTH dimensions — the inner element must be narrower than the
+ *      outer (width < 90% of outer width) to distinguish a real child from
+ *      a full-width sibling that merely overlaps vertically (e.g. a progress bar
+ *      with the same width as the card above it).
+ */
+function isChildOf(inner, outer) {
+  const margin = 4;
+  const contained = inner.x >= outer.x - margin &&
+                    inner.y >= outer.y - margin &&
+                    inner.x + inner.width <= outer.x + outer.width + margin &&
+                    inner.y + inner.height <= outer.y + outer.height + margin;
+  if (!contained) return false;
+
+  // Width check: a true child must be meaningfully narrower than its parent.
+  // Full-width elements (same width as parent) are siblings, not children.
+  if (inner.width >= outer.width * 0.9) return false;
+
+  return true;
+}
+
+/**
+ * Detect whether an overlap between two same-layer elements is intentional
+ * and should be preserved rather than resolved.
+ *
+ * Intentional patterns:
+ * 1. One element is a visual child of the other (text on background, icon inside card)
+ * 2. Elements share exact same position (progress bar fill on track)
+ * 3. A full-width background element (decorative backdrop)
+ */
+function isIntentionalOverlap(a, b, screenWidth) {
+  // Pattern 1: parent/child — small element inside a larger one
+  if (isChildOf(a, b) || isChildOf(b, a)) return true;
+
+  // Pattern 2: same origin — overlay elements (progress fill on track)
+  if (a.x === b.x && a.y === b.y) return true;
+
+  // Pattern 3: full-width backdrop — element spanning nearly the entire screen width
+  // is a decorative background layer, not a content element
+  const widthThreshold = screenWidth * 0.9;
+  const xThreshold = screenWidth * 0.05;
+  const isBackdropA = a.width >= widthThreshold && a.x <= xThreshold;
+  const isBackdropB = b.width >= widthThreshold && b.x <= xThreshold;
+  if (isBackdropA || isBackdropB) return true;
+
+  return false;
+}
+
+/**
+ * Resolve unintentional element overlaps by shifting colliding elements downward.
+ * Pure function: returns a new array with corrected positions, does NOT mutate input.
+ *
+ * Only resolves overlaps between elements on the SAME z_index layer.
+ * Pinned elements (z_index >= 10) are never moved.
+ * Intentional overlaps (containment, same-origin, backdrops) are preserved.
+ *
+ * @param {Array} elements - Array of element objects with {x, y, width, height, z_index, type}
+ * @param {number} screenWidth - Screen width (used for backdrop detection)
+ * @param {number} [gap=8] - Minimum gap between non-overlapping elements
+ * @returns {Array} New array with resolved positions
+ */
+export function resolveOverlaps(elements, screenWidth, gap = 8) {
+  if (elements.length <= 1) return elements.map(el => ({ ...el }));
+
+  const result = elements.map(el => ({ ...el }));
+
+  // Group by z_index — only check overlaps within the same layer
+  const layerMap = new Map();
+  for (let i = 0; i < result.length; i++) {
+    const z = result[i].z_index || 0;
+    if (!layerMap.has(z)) layerMap.set(z, []);
+    layerMap.get(z).push(i);
+  }
+
+  for (const [zIndex, indices] of layerMap) {
+    // Skip pinned elements — they are fixed chrome (navbars, tabbars)
+    if (zIndex >= 10) continue;
+    if (indices.length <= 1) continue;
+
+    // Sort by y position (top to bottom), then by x (left to right).
+    // Earlier elements in this order are "anchors" — later ones get shifted if needed.
+    indices.sort((a, b) => {
+      const dy = result[a].y - result[b].y;
+      if (dy !== 0) return dy;
+      return result[a].x - result[b].x;
+    });
+
+    // For each element, check against all previously processed elements in this layer.
+    // If an unintentional overlap is found, push the element down below the conflicting one.
+    for (let i = 1; i < indices.length; i++) {
+      const idx = indices[i];
+      const el = result[idx];
+
+      for (let j = 0; j < i; j++) {
+        const prevIdx = indices[j];
+        const prev = result[prevIdx];
+
+        if (!rectsOverlap(el, prev)) continue;
+        if (isIntentionalOverlap(el, prev, screenWidth)) continue;
+
+        // Unintentional overlap detected — push this element below the conflicting one
+        el.y = prev.y + prev.height + gap;
+      }
+    }
+  }
+
+  return result;
+}

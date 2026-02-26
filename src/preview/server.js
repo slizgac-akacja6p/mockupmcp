@@ -488,6 +488,33 @@ const ZOOM_JS = `
         fitToScreen();
       }
     });
+
+    // Pinch-to-zoom (trackpad) and Ctrl+scroll — prevents browser zoom and
+    // applies the scale only to the mockup .screen element. Uses continuous
+    // scale tracking so intermediate values between ZOOM_LEVELS are preserved.
+    // { passive: false } is required so preventDefault() is allowed.
+    var continuousScale = ZOOM_LEVELS[currentZoomIndex];
+    window.addEventListener('wheel', function(e) {
+      if (!e.ctrlKey) return; // only intercept pinch / ctrl+scroll
+      e.preventDefault();
+
+      // deltaY is negative when zooming in (pinch-open or scroll-up).
+      // Sensitivity 0.008 keeps pinch gesture feeling natural on macOS.
+      var delta = -e.deltaY * 0.008;
+      continuousScale = Math.max(0.25, Math.min(4.0, continuousScale + delta));
+
+      // Sync currentZoomIndex to the nearest ZOOM_LEVELS entry so button
+      // steps start from the right position after a pinch gesture.
+      var closest = 0;
+      var minDist = Math.abs(ZOOM_LEVELS[0] - continuousScale);
+      for (var i = 1; i < ZOOM_LEVELS.length; i++) {
+        var dist = Math.abs(ZOOM_LEVELS[i] - continuousScale);
+        if (dist < minDist) { minDist = dist; closest = i; }
+      }
+      currentZoomIndex = closest;
+
+      applyZoom(continuousScale);
+    }, { passive: false });
   }
 
   // Run after DOM is ready — may already be ready if deferred.
@@ -556,6 +583,9 @@ function buildReloadScript(projectId, updatedAt) {
   // Polling rather than WebSockets keeps the server stateless and avoids
   // connection management across MCP tool calls that mutate project data.
   // Redirect to /preview when the project has been deleted (404 response).
+  // On change: fetch the screen fragment and swap only the .screen element in-place
+  // so the sidebar, toolbar, and browser address bar are untouched. Full location.reload()
+  // was the root cause of the "sidebar resets on mockup refresh" bug.
   return `
 <script>
   let lastMod = '${updatedAt}';
@@ -564,7 +594,20 @@ function buildReloadScript(projectId, updatedAt) {
       const r = await fetch('/api/lastmod/${projectId}');
       if (r.status === 404) { window.location.href = '/preview'; return; }
       const data = await r.json();
-      if (data.updated_at !== lastMod) location.reload();
+      if (data.updated_at !== lastMod) {
+        lastMod = data.updated_at;
+        // Re-use swapScreen (defined by LINK_SCRIPT) if available — it handles
+        // the DOM swap, toolbar sync, and zoom state without a page reload.
+        // Fall back to location.reload() only when running outside preview context
+        // (e.g. editor mode which has its own refresh mechanism).
+        const parts = window.location.pathname.split('/');
+        const screenId = parts[3];
+        if (typeof swapScreen === 'function' && screenId) {
+          swapScreen('${projectId}', screenId, 'none', false, true);
+        } else {
+          location.reload();
+        }
+      }
     } catch (_) {}
   }, 2000);
 <\/script>`;
@@ -656,7 +699,10 @@ const SIDEBAR_JS = `
 
   // expandedNodes tracks both folder paths and project IDs so collapse/expand
   // state survives the periodic 3s re-render without losing user choices.
+  // firstLoad gates the auto-expand logic so it only runs once — subsequent
+  // polls must not force-expand folders the user intentionally collapsed.
   var expandedNodes = new Set();
+  var firstLoad = true;
   var collapsed = localStorage.getItem('mockup-sidebar-collapsed') === '1';
   if (collapsed) { sidebar.classList.add('collapsed'); document.body.classList.add('sidebar-collapsed'); toggle.textContent = '\\u203a'; }
 
@@ -677,7 +723,13 @@ const SIDEBAR_JS = `
     return { projectId: parts[2] || '', screenId: parts[3] || '' };
   }
 
-  function escName(s) { var d = document.createElement('div'); d.textContent = s; return d.textContent; }
+  // escName: encode text content inserted via innerHTML (encodes &, <, >).
+  // escAttr: encode values placed inside HTML attribute strings (also encodes ").
+  // Without escAttr, a folder path containing " would break the data-folder-path
+  // attribute and cause dataset.folderPath to return a different value than the
+  // key stored in expandedNodes, silently breaking expand/collapse state.
+  function escName(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+  function escAttr(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
   // Walk the tree to find ancestor folder paths for the active project so we
   // can auto-expand them on first load without user interaction.
@@ -710,7 +762,7 @@ const SIDEBAR_JS = `
       var isFolderExpanded = expandedNodes.has(folder.path);
       var pad = 12 + depth * 16;
       items.push('<div class="mockup-sidebar-folder">');
-      items.push('<div class="mockup-sidebar-folder-name" data-folder-path="' + escName(folder.path) + '" style="padding-left:' + pad + 'px">');
+      items.push('<div class="mockup-sidebar-folder-name" data-folder-path="' + escAttr(folder.path) + '" style="padding-left:' + pad + 'px">');
       items.push('<span class="arrow' + (isFolderExpanded ? ' open' : '') + '">\\u25b6<\\/span> ' + escName(folder.name));
       items.push('<\\/div>');
       if (isFolderExpanded) {
@@ -724,7 +776,7 @@ const SIDEBAR_JS = `
       var isProjExpanded = isActiveProj || expandedNodes.has(proj.id) || singleRoot;
       var projPad = 12 + depth * 16;
       items.push('<div class="mockup-sidebar-project">');
-      items.push('<div class="mockup-sidebar-project-name" data-proj="' + proj.id + '" style="padding-left:' + projPad + 'px">');
+      items.push('<div class="mockup-sidebar-project-name" data-proj="' + escAttr(proj.id) + '" style="padding-left:' + projPad + 'px">');
       items.push('<span class="arrow' + (isProjExpanded ? ' open' : '') + '">\\u25b6<\\/span> ' + escName(proj.name));
       items.push('<\\/div>');
       if (isProjExpanded) {
@@ -759,14 +811,17 @@ const SIDEBAR_JS = `
       var scrollTop = tree.scrollTop;
       var active = getActivePath();
 
-      // Auto-expand folder ancestors of the currently viewed project on load.
-      if (active.projectId) {
+      // Auto-expand folder ancestors of the active project only on the very first
+      // load. Running this on every poll would re-open folders the user collapsed,
+      // because add() to the Set is permanent and overrides the user's collapse click.
+      if (firstLoad && active.projectId) {
         var activePath = findActiveProjectPath(data, active.projectId);
         if (activePath) {
           for (var a = 0; a < activePath.length; a++) {
             expandedNodes.add(activePath[a]);
           }
         }
+        firstLoad = false;
       }
 
       var totalProjects = countProjects(data);

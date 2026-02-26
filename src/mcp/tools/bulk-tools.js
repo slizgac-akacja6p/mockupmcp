@@ -132,7 +132,7 @@ export function registerBulkTools(server, store) {
               project_name: project.name,
               screen_count: project.screens.length,
               total_elements,
-              screenRefMap: Object.fromEntries(screenRefMap),
+              screenRefMap: { ...screenRefMap },
             }, null, 2),
           }],
         };

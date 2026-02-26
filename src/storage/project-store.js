@@ -3,6 +3,7 @@ import { mkdirSync } from 'fs';
 import { join, dirname, relative, sep } from 'path';
 import { generateId, validateId } from './id-generator.js';
 import { scanProjectFiles } from './folder-scanner.js';
+import { resolveOverlaps } from '../renderer/layout.js';
 
 export class ProjectStore {
   constructor(dataDir) {
@@ -352,6 +353,9 @@ export class ProjectStore {
       });
     }
 
+    // Resolve unintentional overlaps after bulk element insertion
+    screen.elements = resolveOverlaps(screen.elements, screen.width);
+
     await this._save(project);
     return screen;
   }
@@ -398,6 +402,14 @@ export class ProjectStore {
       };
       screen.elements.push(element);
       added.push(element);
+    }
+
+    // Resolve unintentional overlaps after bulk element insertion
+    screen.elements = resolveOverlaps(screen.elements, screen.width);
+    // Update added references to reflect resolved positions
+    for (const el of added) {
+      const resolved = screen.elements.find(e => e.id === el.id);
+      if (resolved) { el.x = resolved.x; el.y = resolved.y; }
     }
 
     await this._save(project);
@@ -717,6 +729,9 @@ export class ProjectStore {
       }
     }
 
+    // Resolve unintentional overlaps before persisting
+    screen.elements = resolveOverlaps(screen.elements, screen.width);
+
     project.screens.push(screen);
     await this._save(project);
 
@@ -820,6 +835,9 @@ export class ProjectStore {
         }
         screen.elements.push(element);
       }
+
+      // Resolve unintentional overlaps per screen
+      screen.elements = resolveOverlaps(screen.elements, screen.width);
 
       project.screens.push(screen);
     }
