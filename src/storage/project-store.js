@@ -191,7 +191,7 @@ export class ProjectStore {
           id: project.id,
           name: project.name,
           style: project.style,
-          screens: (project.screens || []).map((s) => ({ id: s.id, name: s.name })),
+          screens: (project.screens || []).map((s) => ({ id: s.id, name: s.name, status: s.status, version: s.version })),
         };
 
         if (parts.length === 1) {

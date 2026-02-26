@@ -221,6 +221,15 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
       await api.addElement(projectId, screenId, op.after);
     }
     await reRender();
+
+    // Refresh the property panel so it reflects the post-undo/redo state.
+    // reRender() restores canvas visuals and selection highlights but does
+    // not rebuild the panel fields — without this the panel would show stale
+    // values from before the operation was reversed/reapplied.
+    const selectedId = selectionState.getSelectedId();
+    if (selectedId) {
+      onSelect(selectedId);
+    }
   }
 
   // --- property-panel save handler ---
@@ -228,9 +237,28 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
     const selectedId = selectionState.getSelectedId();
     if (!selectedId) return;
 
+    // Capture the current values of the changed fields before the update so
+    // undo can restore them. We only snapshot the keys that are changing —
+    // consistent with how move/resize record positional diffs only.
+    const data = editorState.getScreenData();
+    const element = findElementInScreen(data, selectedId);
+    const before = {};
+    if (element) {
+      for (const key of Object.keys(changes)) {
+        // Properties are nested under element.properties; positional fields
+        // (x, y, width, height) live at the top level.
+        before[key] = key in element ? element[key] : element.properties?.[key];
+      }
+    }
+
     const payload = buildUpdatePayload(changes);
     await api.updateElement(projectId, screenId, selectedId, payload);
     await reRender();
+
+    // Push after re-render so editorState reflects the new server state;
+    // applyOperation(invertOperation) will re-apply the snapshot on undo.
+    history.push({ type: 'update', elementId: selectedId, before, after: changes });
+    updateUndoRedoButtons();
   }
 
   // --- selection callbacks ---
@@ -255,24 +283,45 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
   function onDeselect() {
     // Show screen properties (including style override) when nothing is selected.
     // renderScreenStyleHtml produces controlled markup, not user input — safe for innerHTML.
+    // Use hasOwnProperty check so explicit null (inherited) is preserved vs undefined.
+    const currentScreenStyle = Object.prototype.hasOwnProperty.call(window, '__SCREEN_STYLE__')
+      ? window.__SCREEN_STYLE__
+      : null;
     const screenStyleHtml = renderScreenStyleHtml(
-      window.__SCREEN_STYLE__ || null,
+      currentScreenStyle,
       window.__STYLE_OPTIONS__ || [],
+      window.__PROJECT_STYLE__ || 'wireframe',
     );
     // eslint-disable-next-line no-unsanitized/property
     panel.innerHTML = screenStyleHtml;
 
-    // Wire up the screen style dropdown change handler
+    const inheritCheckbox = panel.querySelector('#screen-style-inherit');
     const screenStyleSelect = panel.querySelector('#screen-style-select');
-    if (screenStyleSelect) {
-      screenStyleSelect.addEventListener('change', async (e) => {
-        const val = e.target.value;
-        const newStyle = val === '' ? null : val;
+
+    // Inherit checkbox: toggles between null (inherit project style) and an explicit override.
+    if (inheritCheckbox) {
+      inheritCheckbox.addEventListener('change', async (e) => {
+        const nowInherited = e.target.checked;
+        const newStyle = nowInherited
+          ? null
+          : (screenStyleSelect?.value || window.__PROJECT_STYLE__ || 'wireframe');
         try {
           await api.updateScreen(projectId, screenId, { style: newStyle });
-          // Update local state so re-deselect shows the correct value
           window.__SCREEN_STYLE__ = newStyle;
-          // Full page reload to re-render with new style CSS
+          window.location.reload();
+        } catch (err) {
+          console.error('[editor] update screen style (inherit toggle) failed', err);
+        }
+      });
+    }
+
+    // Dropdown: only active when inherit is unchecked.
+    if (screenStyleSelect) {
+      screenStyleSelect.addEventListener('change', async (e) => {
+        const newStyle = e.target.value || null;
+        try {
+          await api.updateScreen(projectId, screenId, { style: newStyle });
+          window.__SCREEN_STYLE__ = newStyle;
           window.location.reload();
         } catch (err) {
           console.error('[editor] update screen style failed', err);
@@ -360,6 +409,68 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
     exitAddMode();
   });
 
+  // --- drag-and-drop from palette onto canvas ---
+  // Complements click-to-add: users can drag a component from the sidebar
+  // palette and drop it onto the canvas to place an element at the drop point.
+  canvas.addEventListener('dragover', (e) => {
+    if (e.dataTransfer.types.includes('component/type')) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+    }
+  });
+
+  canvas.addEventListener('drop', async (e) => {
+    const compType = e.dataTransfer.getData('component/type');
+    if (!compType) return;
+    e.preventDefault();
+
+    const screenEl = canvas.querySelector('.screen');
+    const refEl = screenEl || canvas;
+    const rect = refEl.getBoundingClientRect();
+
+    // Account for zoom so the element lands at the correct mockup coordinate.
+    const zoomMatch = screenEl?.style.transform?.match(/scale\(([^)]+)\)/);
+    const zoom = zoomMatch ? parseFloat(zoomMatch[1]) : 1;
+
+    const { width: w, height: h } = getComponentDefaults(compType);
+
+    const data = editorState.getScreenData();
+    const screenWidth = data?.width || 375;
+    const screenHeight = data?.height || 812;
+    const rawX = Math.round((e.clientX - rect.left) / zoom);
+    const rawY = Math.round((e.clientY - rect.top) / zoom);
+    const x = Math.max(0, Math.min(rawX, screenWidth - w));
+    const y = Math.max(0, Math.min(rawY, screenHeight - h));
+
+    try {
+      const created = await api.addElement(projectId, screenId, { type: compType, x, y, width: w, height: h });
+      await reRender();
+
+      history.push({
+        type: 'add',
+        elementId: created.id,
+        before: null,
+        after: { type: compType, x, y, width: w, height: h, properties: created.properties ?? {} },
+      });
+      updateUndoRedoButtons();
+
+      showToast(_t('toast.added', 'Added') + ' ' + compType);
+    } catch (err) {
+      console.error('[editor] drop element failed', err);
+    }
+  });
+
+  // --- scroll containment (JS-level defense) ---
+  // Prevent wheel events on side panels from bubbling up and scrolling the
+  // canvas or body. CSS overscroll-behavior:contain handles most cases but
+  // this catches edge cases where the panel content is not scrollable.
+  for (const panelId of ['mockup-sidebar', 'editor-right-panel']) {
+    const panelEl = document.getElementById(panelId);
+    if (panelEl) {
+      panelEl.addEventListener('wheel', (e) => { e.stopPropagation(); }, { passive: true });
+    }
+  }
+
   // Palette sidebar — handles category rendering, search, recent list, and
   // entering add mode when the user clicks a component type in the sidebar.
   initPalette({
@@ -375,6 +486,7 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
     apiClient: api,
     selectionModule: selectionState,
     screenData: initialData,
+    reRender,
   });
 
   // --- drag ---
@@ -718,7 +830,7 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
   const langSelect = document.getElementById('lang-select');
   if (langSelect) {
     // Set initial value from current language
-    langSelect.value = localStorage.getItem('mockup-lang') || 'en';
+    langSelect.value = localStorage.getItem('editor-lang') || 'en';
     langSelect.addEventListener('change', async (e) => {
       const lang = e.target.value;
       if (typeof window.setLanguage === 'function') {
@@ -771,6 +883,89 @@ export async function initEditor({ projectId, screenId, canvas, panel }) {
       applyCollapse(nowCollapsed);
     });
   }
+
+  // --- read-only mode (approved / rejected screens) ---
+  // Disables all editing interactions to prevent accidental changes after a
+  // screen has been signed off by a reviewer. Banner replaces the add-mode
+  // badge area to make the locked state visually obvious at a glance.
+  function setReadOnlyMode(isReadOnly) {
+    // Toolbar action buttons — undo/redo intentionally kept readable for audit.
+    const editBtns = [
+      document.getElementById('btn-delete-selected'),
+      document.getElementById('add-mode-badge'),
+    ];
+    // Palette items — disable click-to-add in the component sidebar.
+    document.querySelectorAll('.palette-item').forEach(el => {
+      el.style.pointerEvents = isReadOnly ? 'none' : '';
+      el.style.opacity = isReadOnly ? '0.4' : '';
+    });
+
+    // Disable / re-enable all property-panel form controls so values are
+    // visible but not editable (read-only audit view).
+    panel.querySelectorAll('input, select, textarea, button').forEach(el => {
+      el.disabled = isReadOnly;
+    });
+
+    // Show or remove the read-only banner above the canvas.
+    const BANNER_ID = 'editor-readonly-banner';
+    const existing = document.getElementById(BANNER_ID);
+    if (isReadOnly && !existing) {
+      const banner = document.createElement('div');
+      banner.id = BANNER_ID;
+      // Inline styles — no new CSS file to keep the change self-contained.
+      banner.style.cssText = [
+        'position:sticky',
+        'top:0',
+        'z-index:100',
+        'background:#92400E',
+        'color:#FEF3C7',
+        'text-align:center',
+        'padding:6px 12px',
+        'font-size:12px',
+        'font-weight:600',
+        'letter-spacing:0.02em',
+        'flex-shrink:0',
+      ].join(';');
+      banner.textContent = _t('editor.readOnly', 'Screen approved — read only');
+      canvas.parentElement?.insertBefore(banner, canvas);
+    } else if (!isReadOnly && existing) {
+      existing.remove();
+    }
+
+    // Prevent drag and resize by clamping pointer events on the canvas itself.
+    // Selection (click-to-inspect) is still allowed because the cursor changes
+    // to default, making it clear that dragging is disabled.
+    canvas.style.userSelect = isReadOnly ? 'none' : '';
+    // Override drag.js and resize.js: they check addModeType but not readonly,
+    // so we block their mousedown at the canvas level via a capture listener.
+    if (isReadOnly) {
+      canvas._readOnlyBlocker = (e) => {
+        // Allow clicks for selection; block mousedown-driven drag/resize.
+        if (e.type === 'mousedown') e.stopImmediatePropagation();
+      };
+      canvas.addEventListener('mousedown', canvas._readOnlyBlocker, true);
+    } else if (canvas._readOnlyBlocker) {
+      canvas.removeEventListener('mousedown', canvas._readOnlyBlocker, true);
+      canvas._readOnlyBlocker = null;
+    }
+  }
+
+  // Apply read-only mode immediately if the screen is already in a terminal state.
+  // window.__SCREEN_STATUS__ is injected by server.js at page-build time.
+  const initialStatus = typeof window !== 'undefined' ? window.__SCREEN_STATUS__ : null;
+  if (initialStatus === 'approved' || initialStatus === 'rejected') {
+    setReadOnlyMode(true);
+  }
+
+  // React to approval actions taken during the current editor session so the
+  // lock engages without a page reload.
+  document.addEventListener('approvalSubmitted', (e) => {
+    const { status, screenId: eventScreenId } = e.detail ?? {};
+    if (eventScreenId !== screenId) return; // Only lock current screen, not others
+    if (status === 'approved' || status === 'rejected') {
+      setReadOnlyMode(true);
+    }
+  });
 
   // --- polling (3 s) ---
   // Detects external edits (e.g. from Claude via MCP tools) and refreshes the

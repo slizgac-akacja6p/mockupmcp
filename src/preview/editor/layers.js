@@ -103,6 +103,7 @@ let _selectionModule = null;
 let _screenData = null;
 let _projectId = null;
 let _screenId = null;
+let _reRender = null;
 let _dragSourceIndex = null;
 let _dragSourceElement = null;
 let _keydownListener = null;
@@ -125,14 +126,17 @@ export function getCurrentScreenData() {
  *   apiClient: object,
  *   selectionModule: object,
  *   screenData: object,
+ *   reRender: function,
  * }} options
  */
-export function initLayers({ projectId, screenId, apiClient, selectionModule, screenData }) {
+export function initLayers({ projectId, screenId, apiClient, selectionModule, screenData, reRender }) {
   _projectId = projectId;
   _screenId = screenId;
   _apiClient = apiClient;
   _selectionModule = selectionModule;
   _screenData = screenData;
+  // reRender triggers a canvas refresh after mutations (e.g. visibility toggle)
+  _reRender = reRender ?? null;
 
   const container = document.getElementById('layers-container');
   if (!container) return;
@@ -316,13 +320,14 @@ async function handleVisibilityToggle(element) {
     const isCurrentlyVisible = element.properties?.opacity !== 0;
     const newOpacity = isCurrentlyVisible ? 0 : 1;
 
-    // Update element via API
+    // Update element via API — send only the changed field so the server's
+    // shallow merge preserves all other properties unchanged. Spreading the
+    // full local cache here would risk overwriting properties that were
+    // updated elsewhere (e.g. via MCP tools or the property panel) since the
+    // last time _screenData was refreshed.
     if (_apiClient && _projectId && _screenId) {
       const payload = {
-        properties: {
-          ...(element.properties || {}),
-          opacity: newOpacity,
-        },
+        properties: { opacity: newOpacity },
       };
 
       await _apiClient.updateElement(_projectId, _screenId, element.id, payload);
@@ -331,6 +336,9 @@ async function handleVisibilityToggle(element) {
       element.properties = element.properties || {};
       element.properties.opacity = newOpacity;
       renderLayers();
+
+      // Refresh canvas so the opacity change is visible immediately
+      if (_reRender) await _reRender();
     }
   } catch (err) {
     console.error('[layers] visibility toggle failed', err);

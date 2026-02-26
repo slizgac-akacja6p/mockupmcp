@@ -15,10 +15,16 @@ export function buildScreenHtml(screen, style = 'wireframe') {
       // Build inline style for the element wrapper
       let inlineStyle = `position:absolute;left:${el.x}px;top:${el.y}px;width:${el.width}px;height:${el.height}px;z-index:${el.z_index || 0};overflow:hidden;`;
 
-      // Opacity support — skip when undefined, null, or fully opaque (1)
+      // Opacity support — skip when undefined, null, or fully opaque (1).
+      // When fully hidden (0), also set visibility:hidden and pointer-events:none
+      // so the element is non-interactive and invisible even if CSS animations
+      // or style overrides would otherwise reveal it.
       const opacity = el.properties?.opacity;
       if (opacity !== undefined && opacity !== null && opacity !== 1) {
         inlineStyle += `opacity:${opacity};`;
+        if (opacity === 0) {
+          inlineStyle += 'visibility:hidden;pointer-events:none;';
+        }
       }
 
       // Link support — data attributes enable navigation in the preview layer

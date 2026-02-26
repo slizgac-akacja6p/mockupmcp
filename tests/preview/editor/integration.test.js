@@ -60,4 +60,16 @@ describe('Editor integration', () => {
     assert.ok(res.body.includes(`data-project-id="${projectId}"`));
     assert.ok(res.body.includes(`data-screen-id="${screenId}"`));
   });
+
+  it('undo and redo buttons are present in the editor toolbar HTML', async () => {
+    const res = await get(port, `/editor/${projectId}/${screenId}`);
+    // Verify both buttons have their IDs so getElementById('btn-undo/redo') succeeds
+    // at runtime — the buttons must be in the static HTML before initEditor runs.
+    assert.ok(res.body.includes('id="btn-undo"'), 'btn-undo missing from editor HTML');
+    assert.ok(res.body.includes('id="btn-redo"'), 'btn-redo missing from editor HTML');
+    // Verify the module script that calls initEditor comes after the toolbar HTML
+    const undoPos   = res.body.indexOf('id="btn-undo"');
+    const modulePos = res.body.indexOf('type="module"');
+    assert.ok(undoPos < modulePos, 'btn-undo must appear before the module script in HTML');
+  });
 });

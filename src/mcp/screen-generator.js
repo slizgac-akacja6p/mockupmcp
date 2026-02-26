@@ -309,11 +309,25 @@ export function generateScreen(description, screenWidth, screenHeight, style) {
   // Discard elements that overflow screen height after augmentation
   elements = elements.filter(el => el.y + el.height <= screenHeight);
 
+  // Layout and component guidelines returned to the LLM alongside the generated screen.
+  // These steer follow-up element additions (mockup_add_element / mockup_bulk_add_elements)
+  // so the AI respects spacing rules and uses proper component types instead of primitives.
+  const guidelines = [
+    'Elements MUST NOT overlap each other. Use adequate spacing (minimum 8px gap between elements).',
+    'Plan element positions carefully: calculate that no two elements share the same coordinates area.',
+    'ALWAYS use the `button` component type for clickable actions. NEVER simulate a button using rectangle + text combination.',
+    'Available interactive components: button, input, checkbox, select. Use them instead of combining primitives.',
+    "text elements use 'content' field (NOT 'text', NOT 'label')",
+    "button elements use 'label' field (NOT 'text')",
+    "card/badge/chip/checkbox/toggle/radio use 'label' for display text",
+  ];
+
   const matchInfo = {
     template: match.template,
     confidence: match.confidence,
     score: match.score,
     augmentations,
+    guidelines,
   };
   if (match.confidence === 'low') {
     matchInfo.suggestions = getAvailableTemplates();

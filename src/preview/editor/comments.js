@@ -1,7 +1,18 @@
-// Editor comments module — render pins for unresolved comments
-// and provide a panel to view comment details.
+// Editor comments module — render pins for unresolved comments,
+// provide a panel to view/create comments, and handle resolve actions.
 
-export async function initComments(apiClient) {
+import * as api from './api-client.js';
+
+// Module-level state for the comment panel controller.
+let _projectId = null;
+let _screenId = null;
+let _localize = (key, fallback) => fallback ?? key;
+
+export async function initComments({ projectId, screenId, localize }) {
+  _projectId = projectId;
+  _screenId = screenId;
+  if (localize) _localize = localize;
+
   // Set up event listeners for comment pin clicks.
   // Each pin can be clicked to highlight the associated element on the canvas.
   document.addEventListener('click', (e) => {
@@ -10,31 +21,166 @@ export async function initComments(apiClient) {
       const commentId = e.target.dataset.commentId;
 
       if (elementId) {
-        // Highlight the element on canvas by triggering selection.
         const event = new CustomEvent('selectElement', { detail: { elementId } });
         document.dispatchEvent(event);
       }
 
-      // Optionally, show/focus the comment in a sidebar panel.
       const event = new CustomEvent('focusComment', { detail: { commentId } });
       document.dispatchEvent(event);
+    }
+  });
+
+  // Listen for commentsUpdated events (fired after resolve or add) to refresh the panel.
+  document.addEventListener('commentsUpdated', () => {
+    refreshCommentPanel();
+  });
+
+  // Initial load of comments into the panel.
+  await refreshCommentPanel();
+}
+
+/**
+ * Fetch comments from the API and re-render the panel contents.
+ */
+async function refreshCommentPanel() {
+  const container = document.getElementById('comments-container');
+  if (!container || !_projectId || !_screenId) return;
+
+  try {
+    const comments = await api.listComments(_projectId, _screenId);
+    // Build panel DOM using safe helpers — all user text goes through escapeHtml.
+    const wrapper = document.createElement('div');
+    appendCommentForm(wrapper);
+    appendCommentList(wrapper, comments);
+    container.textContent = '';
+    while (wrapper.firstChild) container.appendChild(wrapper.firstChild);
+    attachCommentFormHandler();
+    attachCommentResolveHandlers();
+  } catch (err) {
+    console.error('[comments] failed to refresh panel:', err);
+  }
+}
+
+/**
+ * Build the inline "add comment" form and append it to parent.
+ */
+function appendCommentForm(parent) {
+  const form = document.createElement('div');
+  form.className = 'comment-form';
+
+  const textarea = document.createElement('textarea');
+  textarea.id = 'comment-new-text';
+  textarea.className = 'comment-textarea';
+  textarea.placeholder = _localize('comments.placeholder', 'Write a comment...');
+  textarea.rows = 2;
+
+  const btn = document.createElement('button');
+  btn.id = 'comment-add-btn';
+  btn.className = 'comment-add-btn';
+  btn.disabled = true;
+  btn.textContent = _localize('comments.add', 'Add comment');
+
+  form.appendChild(textarea);
+  form.appendChild(btn);
+  parent.appendChild(form);
+}
+
+/**
+ * Build the comment list and append to parent. Uses DOM methods for safety.
+ */
+function appendCommentList(parent, comments) {
+  const unresolved = (comments || []).filter(c => !c.resolved);
+
+  if (unresolved.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'comments-panel-empty';
+    empty.textContent = _localize('noComments', 'No comments yet');
+    parent.appendChild(empty);
+    return;
+  }
+
+  const panel = document.createElement('div');
+  panel.className = 'comments-panel';
+
+  for (const c of unresolved) {
+    const item = document.createElement('div');
+    item.className = 'comment-item';
+    item.dataset.commentId = c.id;
+
+    const badge = document.createElement('div');
+    badge.className = 'comment-pin-badge';
+    badge.textContent = String(c.pin_number);
+
+    const content = document.createElement('div');
+    content.className = 'comment-content';
+
+    const text = document.createElement('div');
+    text.className = 'comment-text';
+    text.textContent = c.text;
+
+    const meta = document.createElement('div');
+    meta.className = 'comment-meta';
+    const author = c.author === 'ai' ? 'AI' : 'User';
+    meta.textContent = `${author} \u2022 ${new Date(c.created_at).toLocaleDateString()}`;
+
+    content.appendChild(text);
+    content.appendChild(meta);
+
+    const resolveBtn = document.createElement('button');
+    resolveBtn.className = 'comment-resolve-btn';
+    resolveBtn.dataset.commentId = c.id;
+    resolveBtn.title = _localize('resolveComment', 'Resolve');
+    resolveBtn.textContent = '\u2713';
+
+    item.appendChild(badge);
+    item.appendChild(content);
+    item.appendChild(resolveBtn);
+    panel.appendChild(item);
+  }
+
+  parent.appendChild(panel);
+}
+
+/**
+ * Wire up the add-comment form submit and textarea validation.
+ */
+function attachCommentFormHandler() {
+  const textarea = document.getElementById('comment-new-text');
+  const addBtn = document.getElementById('comment-add-btn');
+  if (!textarea || !addBtn) return;
+
+  // Enable button only when there is non-whitespace text.
+  textarea.addEventListener('input', () => {
+    addBtn.disabled = !textarea.value.trim();
+  });
+
+  addBtn.addEventListener('click', async () => {
+    const text = textarea.value.trim();
+    if (!text) return;
+
+    addBtn.disabled = true;
+    try {
+      await api.addComment(_projectId, _screenId, { text, author: 'user' });
+      // Trigger full refresh so the new comment appears in the list and pin overlay.
+      const event = new CustomEvent('commentsUpdated');
+      document.dispatchEvent(event);
+    } catch (err) {
+      console.error('[comments] failed to add comment:', err);
+      addBtn.disabled = false;
     }
   });
 }
 
 export function renderCommentPins(comments = [], screen) {
   // Render overlay pins for unresolved comments on screen elements.
-  // Returns HTML string for comment pin divs.
   const unresolved = comments.filter(c => !c.resolved);
   const html = [];
 
   for (const comment of unresolved) {
     if (!comment.element_id || !screen) continue;
 
-    // Find element on canvas to determine pin position.
-    // This will be positioned by the editor after elements are rendered.
     html.push(
-      `<div class="comment-pin" data-element-id="${escapeHtml(comment.element_id)}" data-comment-id="${escapeHtml(comment.id)}" ` +
+      `<div class="comment-pin" data-element-id="${escapeAttr(comment.element_id)}" data-comment-id="${escapeAttr(comment.id)}" ` +
       `style="position: absolute; width: 20px; height: 20px; border-radius: 50%; ` +
       `background: #FCD34D; color: #111; font-size: 11px; font-weight: 600; ` +
       `display: flex; align-items: center; justify-content: center; cursor: pointer; ` +
@@ -45,52 +191,45 @@ export function renderCommentPins(comments = [], screen) {
   return html.join('');
 }
 
+// Legacy export kept for backward compatibility — panel rendering now uses DOM methods.
 export function renderCommentPanel(comments = [], localize) {
-  // Render comment list panel in sidebar.
-  const unresolved = comments.filter(c => !c.resolved);
-
+  const unresolved = (comments || []).filter(c => !c.resolved);
   if (unresolved.length === 0) {
-    return `<div class="comments-panel-empty">${localize('noComments', 'No comments')}</div>`;
+    return `<div class="comments-panel-empty">${escapeAttr(localize('noComments', 'No comments yet'))}</div>`;
   }
-
-  const html = unresolved.map(c => {
+  return `<div class="comments-panel">${unresolved.map(c => {
     const author = c.author === 'ai' ? 'AI' : 'User';
-    return `
-      <div class="comment-item" data-comment-id="${escapeHtml(c.id)}">
-        <div class="comment-pin-badge">${c.pin_number}</div>
-        <div class="comment-content">
-          <div class="comment-text">${escapeHtml(c.text)}</div>
-          <div class="comment-meta">${author} • ${new Date(c.created_at).toLocaleDateString()}</div>
-        </div>
-        <button class="comment-resolve-btn" data-comment-id="${escapeHtml(c.id)}"
-          title="${localize('resolveComment', 'Resolve')}">✓</button>
-      </div>
-    `;
-  }).join('');
-
-  return `<div class="comments-panel">${html}</div>`;
+    return `<div class="comment-item" data-comment-id="${escapeAttr(c.id)}">` +
+      `<div class="comment-pin-badge">${c.pin_number}</div>` +
+      `<div class="comment-content">` +
+      `<div class="comment-text">${escapeAttr(c.text)}</div>` +
+      `<div class="comment-meta">${author} \u2022 ${new Date(c.created_at).toLocaleDateString()}</div>` +
+      `</div>` +
+      `<button class="comment-resolve-btn" data-comment-id="${escapeAttr(c.id)}" title="${escapeAttr(localize('resolveComment', 'Resolve'))}">\u2713</button>` +
+      `</div>`;
+  }).join('')}</div>`;
 }
 
-function escapeHtml(str) {
-  // Prevent XSS in comment text.
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
+/**
+ * Escape a string for safe insertion into HTML attributes and text content.
+ */
+function escapeAttr(str) {
+  if (typeof str !== 'string') return '';
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
-export function attachCommentResolveHandlers(apiClient, projectId, screenId) {
-  // Attach click handlers to resolve buttons in comment panel.
+function attachCommentResolveHandlers() {
   document.querySelectorAll('.comment-resolve-btn').forEach(btn => {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const commentId = btn.dataset.commentId;
       try {
-        await apiClient.patch(`/api/screens/${projectId}/${screenId}/comments/${commentId}/resolve`, {});
-        // Trigger reload of comment panel.
+        await api.resolveComment(_projectId, _screenId, commentId);
         const event = new CustomEvent('commentsUpdated');
         document.dispatchEvent(event);
       } catch (err) {
-        console.error('Failed to resolve comment:', err);
+        console.error('[comments] failed to resolve comment:', err);
       }
     });
   });
