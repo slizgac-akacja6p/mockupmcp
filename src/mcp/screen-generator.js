@@ -307,7 +307,9 @@ export function generateScreen(description, screenWidth, screenHeight, style) {
   elements = augmented;
 
   // Discard elements that overflow screen height after augmentation
-  elements = elements.filter(el => el.y + el.height <= screenHeight);
+  // Fallback: if filtering removes all elements, keep the original array to avoid empty screens
+  const filtered = elements.filter(el => el.y + el.height <= screenHeight);
+  elements = filtered.length > 0 ? filtered : elements;
 
   // Layout and component guidelines returned to the LLM alongside the generated screen.
   // These steer follow-up element additions (mockup_add_element / mockup_bulk_add_elements)

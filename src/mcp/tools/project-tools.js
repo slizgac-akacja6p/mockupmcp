@@ -19,7 +19,7 @@ export function registerProjectTools(server, store) {
         .optional()
         .default('wireframe')
         .describe('Visual style for the project (inherited by screens unless overridden)'),
-      folder: z.string().optional().describe('Optional folder path to organize the project (e.g. "MGGS/Audiobook Maker")'),
+      folder: z.string().optional().describe('Always provide this parameter — if omitted, project is created in root data directory with no folder organization. Recommended: use a meaningful folder name (e.g. "MGGS/Audiobook Maker")'),
     },
     async ({ name, description, viewport, style, folder }) => {
       try {
