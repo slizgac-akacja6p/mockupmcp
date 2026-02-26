@@ -1,6 +1,7 @@
 // Basic
 import * as text      from './text.js';
 import * as rectangle from './rectangle.js';
+import * as container from './container.js';
 import * as circle    from './circle.js';
 import * as line      from './line.js';
 import * as image     from './image.js';
@@ -46,7 +47,7 @@ import * as data_table        from './data_table.js';
 import * as chart_placeholder from './chart_placeholder.js';
 
 const components = {
-  text, rectangle, rect: rectangle, circle, line, image, icon,
+  text, rectangle, rect: rectangle, container, circle, line, image, icon,
   button, input, textarea, checkbox, radio, toggle, select, slider,
   navbar, tabbar, sidebar, breadcrumb,
   card, list, table, avatar, badge, chip,
