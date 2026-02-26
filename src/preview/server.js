@@ -702,8 +702,11 @@ const SIDEBAR_JS = `
 
   function renderNode(node, depth, items, active, singleRoot) {
     // Render folders before projects so hierarchy is visually grouped.
-    for (var i = 0; i < node.folders.length; i++) {
-      var folder = node.folders[i];
+    // Sort both alphabetically for a stable, predictable order across polls.
+    var folders = node.folders.slice().sort(function(a, b) { return a.name.localeCompare(b.name); });
+    var projects = node.projects.slice().sort(function(a, b) { return a.name.localeCompare(b.name); });
+    for (var i = 0; i < folders.length; i++) {
+      var folder = folders[i];
       var isFolderExpanded = expandedNodes.has(folder.path);
       var pad = 12 + depth * 16;
       items.push('<div class="mockup-sidebar-folder">');
@@ -715,8 +718,8 @@ const SIDEBAR_JS = `
       }
       items.push('<\\/div>');
     }
-    for (var j = 0; j < node.projects.length; j++) {
-      var proj = node.projects[j];
+    for (var j = 0; j < projects.length; j++) {
+      var proj = projects[j];
       var isActiveProj = proj.id === active.projectId;
       var isProjExpanded = isActiveProj || expandedNodes.has(proj.id) || singleRoot;
       var projPad = 12 + depth * 16;
@@ -751,8 +754,9 @@ const SIDEBAR_JS = `
 
   function loadTree() {
     fetch('/api/projects').then(function(res) { return res.json(); }).then(function(data) {
-      // Read scroll right before DOM write so it reflects the latest position.
-      var scrollTop = sidebar.scrollTop;
+      // Read scroll from the scrollable tree div (not the sidebar wrapper which
+      // has overflow:hidden) so position survives the periodic re-render.
+      var scrollTop = tree.scrollTop;
       var active = getActivePath();
 
       // Auto-expand folder ancestors of the currently viewed project on load.
@@ -770,7 +774,8 @@ const SIDEBAR_JS = `
       var items = [];
       renderNode(data, 0, items, active, singleRoot);
       tree.innerHTML = items.join('');
-      sidebar.scrollTop = scrollTop;
+      // Restore to the same element we read from.
+      tree.scrollTop = scrollTop;
     }).catch(function() {});
   }
 
