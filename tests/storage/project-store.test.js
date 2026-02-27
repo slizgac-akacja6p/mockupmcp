@@ -704,4 +704,133 @@ describe('ProjectStore', () => {
       }
     });
   });
+
+  describe('findProjectByName', () => {
+    let findDir;
+    let findStore;
+
+    before(async () => {
+      findDir = await mkdtemp(join(tmpdir(), 'mockupmcp-find-'));
+      findStore = new ProjectStore(findDir);
+      await findStore.init();
+    });
+
+    after(async () => {
+      await rm(findDir, { recursive: true, force: true });
+    });
+
+    it('returns project when name and folder match', async () => {
+      const project = await findStore.createProject('Target App', '', undefined, 'wireframe', 'TeamA');
+
+      const found = await findStore.findProjectByName('Target App', 'TeamA');
+
+      assert.ok(found, 'Project should be found');
+      assert.equal(found.id, project.id);
+      assert.equal(found.name, 'Target App');
+    });
+
+    it('returns null when project not found', async () => {
+      await findStore.createProject('Existing', '', undefined, 'wireframe', 'TeamB');
+
+      const found = await findStore.findProjectByName('Nonexistent', 'TeamB');
+
+      assert.equal(found, null);
+    });
+
+    it('matches null folder for root-level projects', async () => {
+      const project = await findStore.createProject('Root Project');
+
+      const found = await findStore.findProjectByName('Root Project', null);
+
+      assert.ok(found, 'Root project should match null folder');
+      assert.equal(found.id, project.id);
+    });
+
+    it('does not return project from different folder', async () => {
+      await findStore.createProject('Shared Name', '', undefined, 'wireframe', 'FolderA');
+
+      const found = await findStore.findProjectByName('Shared Name', 'FolderB');
+
+      assert.equal(found, null, 'Project from different folder must not be returned');
+    });
+
+    it('does not return root project when searching in folder', async () => {
+      await findStore.createProject('App Name');
+
+      const found = await findStore.findProjectByName('App Name', 'AnyFolder');
+
+      assert.equal(found, null, 'Root project must not match folder search');
+    });
+
+    it('does not return folder project when searching in root', async () => {
+      const isolatedDir = await mkdtemp(join(tmpdir(), 'mockupmcp-find-isolated-'));
+      try {
+        const isolatedStore = new ProjectStore(isolatedDir);
+        await isolatedStore.init();
+
+        await isolatedStore.createProject('App Name', '', undefined, 'wireframe', 'SomeFolder');
+
+        const found = await isolatedStore.findProjectByName('App Name', null);
+
+        assert.equal(found, null, 'Folder project must not match root search');
+      } finally {
+        await rm(isolatedDir, { recursive: true, force: true });
+      }
+    });
+
+    it('returns first project when multiple share name (same folder)', async () => {
+      // Although this shouldn't happen in practice, verify it returns the first match.
+      const project1 = await findStore.createProject('Duplicate', '', undefined, 'wireframe', 'FolderC');
+
+      const found = await findStore.findProjectByName('Duplicate', 'FolderC');
+
+      assert.ok(found, 'Should find a project with matching name and folder');
+      assert.equal(found.id, project1.id);
+    });
+  });
+
+  describe('findScreenByName', () => {
+    let projectId;
+
+    before(async () => {
+      const project = await store.createProject('FindScreen Test');
+      projectId = project.id;
+    });
+
+    it('returns screen when name matches', async () => {
+      await store.addScreen(projectId, 'Login Screen');
+
+      const found = await store.findScreenByName(projectId, 'Login Screen');
+
+      assert.ok(found, 'Screen should be found');
+      assert.equal(found.name, 'Login Screen');
+      assert.ok(found.id.startsWith('scr_'));
+    });
+
+    it('returns null when screen name does not exist', async () => {
+      const found = await store.findScreenByName(projectId, 'Nonexistent Screen');
+
+      assert.equal(found, null);
+    });
+
+    it('returns null when project has no screens', async () => {
+      const emptyProject = await store.createProject('Empty Project');
+      const found = await store.findScreenByName(emptyProject.id, 'Any Screen');
+
+      assert.equal(found, null);
+    });
+
+    it('returns correct screen when project has multiple screens', async () => {
+      const project = await store.createProject('Multi Screen Project');
+      await store.addScreen(project.id, 'Home');
+      const target = await store.addScreen(project.id, 'Settings');
+      await store.addScreen(project.id, 'Profile');
+
+      const found = await store.findScreenByName(project.id, 'Settings');
+
+      assert.ok(found, 'Settings screen should be found');
+      assert.equal(found.id, target.id);
+      assert.equal(found.name, 'Settings');
+    });
+  });
 });

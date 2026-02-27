@@ -59,10 +59,10 @@ describe('MCP Resources — static', () => {
     assert.ok(data.every(t => t.description));
   });
 
-  it('components resource returns 36 component types', async () => {
+  it('components resource returns 37 component types', async () => {
     const result = await client.readResource({ uri: 'mockup://components' });
     const data = JSON.parse(result.contents[0].text);
-    assert.equal(data.length, 36);
+    assert.equal(data.length, 37);
     assert.ok(data.some(c => c.type === 'button'));
     assert.ok(data.every(c => c.defaults));
   });

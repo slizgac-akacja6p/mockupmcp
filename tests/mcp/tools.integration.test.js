@@ -93,6 +93,62 @@ describe('MCP Tool Handlers (integration)', () => {
     });
   });
 
+  describe('mockup_get_or_create_project', () => {
+    it('creates a new project when none exists (created: true)', async () => {
+      const res = await server.callTool('mockup_get_or_create_project', {
+        name: 'GetOrCreate Fresh',
+      });
+      const data = parseResult(res);
+
+      assert.equal(data.created, true);
+      assert.ok(data.project.id.startsWith('proj_'));
+      assert.equal(data.project.name, 'GetOrCreate Fresh');
+    });
+
+    it('returns existing project when called twice with same name (created: false)', async () => {
+      const res1 = await server.callTool('mockup_get_or_create_project', {
+        name: 'GetOrCreate Idempotent',
+      });
+      const data1 = parseResult(res1);
+      assert.equal(data1.created, true);
+
+      const res2 = await server.callTool('mockup_get_or_create_project', {
+        name: 'GetOrCreate Idempotent',
+      });
+      const data2 = parseResult(res2);
+      assert.equal(data2.created, false);
+      // Same project ID on second call — no duplicate created.
+      assert.equal(data2.project.id, data1.project.id);
+    });
+
+    it('returns the same project_id on repeated calls', async () => {
+      const name = 'GetOrCreate Repeated';
+      const r1 = parseResult(await server.callTool('mockup_get_or_create_project', { name }));
+      const r2 = parseResult(await server.callTool('mockup_get_or_create_project', { name }));
+      const r3 = parseResult(await server.callTool('mockup_get_or_create_project', { name }));
+
+      assert.equal(r1.project.id, r2.project.id);
+      assert.equal(r2.project.id, r3.project.id);
+    });
+
+    it('treats same name in different folders as distinct projects', async () => {
+      const res1 = await server.callTool('mockup_get_or_create_project', {
+        name: 'Shared Name',
+        folder: 'folder-a',
+      });
+      const res2 = await server.callTool('mockup_get_or_create_project', {
+        name: 'Shared Name',
+        folder: 'folder-b',
+      });
+      const d1 = parseResult(res1);
+      const d2 = parseResult(res2);
+
+      assert.equal(d1.created, true);
+      assert.equal(d2.created, true);
+      assert.notEqual(d1.project.id, d2.project.id);
+    });
+  });
+
   describe('mockup_list_projects', () => {
     it('returns an array containing previously created projects', async () => {
       const res = await server.callTool('mockup_list_projects', {});
@@ -165,6 +221,72 @@ describe('MCP Tool Handlers (integration)', () => {
       assert.equal(screens[0].name, 'S1');
       assert.equal(screens[1].name, 'S2');
       assert.equal(screens[0].elements, 0);
+    });
+  });
+
+  describe('mockup_get_or_create_screen', () => {
+    let projectId;
+
+    before(async () => {
+      const res = await server.callTool('mockup_create_project', { name: 'GetOrCreateScreen Test' });
+      projectId = parseResult(res).id;
+    });
+
+    it('creates screen when it does not exist (created: true)', async () => {
+      const res = await server.callTool('mockup_get_or_create_screen', {
+        project_id: projectId,
+        name: 'Login',
+      });
+      const data = parseResult(res);
+
+      assert.equal(data.created, true);
+      assert.ok(data.screen.id.startsWith('scr_'));
+      assert.equal(data.screen.name, 'Login');
+    });
+
+    it('returns existing screen when called twice (created: false, same id)', async () => {
+      const res1 = await server.callTool('mockup_get_or_create_screen', {
+        project_id: projectId,
+        name: 'Dashboard',
+      });
+      const data1 = parseResult(res1);
+      assert.equal(data1.created, true);
+
+      const res2 = await server.callTool('mockup_get_or_create_screen', {
+        project_id: projectId,
+        name: 'Dashboard',
+      });
+      const data2 = parseResult(res2);
+
+      assert.equal(data2.created, false);
+      // Same screen ID — no duplicate created.
+      assert.equal(data2.screen.id, data1.screen.id);
+    });
+
+    it('two calls with same name yield the same screen_id', async () => {
+      const name = 'Settings';
+      const r1 = parseResult(await server.callTool('mockup_get_or_create_screen', { project_id: projectId, name }));
+      const r2 = parseResult(await server.callTool('mockup_get_or_create_screen', { project_id: projectId, name }));
+
+      assert.equal(r1.screen.id, r2.screen.id);
+    });
+
+    it('treats same name in different projects as distinct screens', async () => {
+      const projRes = await server.callTool('mockup_create_project', { name: 'Second Project' });
+      const otherProjectId = parseResult(projRes).id;
+
+      const r1 = parseResult(await server.callTool('mockup_get_or_create_screen', {
+        project_id: projectId,
+        name: 'Shared Screen Name',
+      }));
+      const r2 = parseResult(await server.callTool('mockup_get_or_create_screen', {
+        project_id: otherProjectId,
+        name: 'Shared Screen Name',
+      }));
+
+      assert.equal(r1.created, true);
+      assert.equal(r2.created, true);
+      assert.notEqual(r1.screen.id, r2.screen.id);
     });
   });
 
