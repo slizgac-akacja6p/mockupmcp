@@ -788,4 +788,49 @@ describe('ProjectStore', () => {
       assert.equal(found.id, project1.id);
     });
   });
+
+  describe('findScreenByName', () => {
+    let projectId;
+
+    before(async () => {
+      const project = await store.createProject('FindScreen Test');
+      projectId = project.id;
+    });
+
+    it('returns screen when name matches', async () => {
+      await store.addScreen(projectId, 'Login Screen');
+
+      const found = await store.findScreenByName(projectId, 'Login Screen');
+
+      assert.ok(found, 'Screen should be found');
+      assert.equal(found.name, 'Login Screen');
+      assert.ok(found.id.startsWith('scr_'));
+    });
+
+    it('returns null when screen name does not exist', async () => {
+      const found = await store.findScreenByName(projectId, 'Nonexistent Screen');
+
+      assert.equal(found, null);
+    });
+
+    it('returns null when project has no screens', async () => {
+      const emptyProject = await store.createProject('Empty Project');
+      const found = await store.findScreenByName(emptyProject.id, 'Any Screen');
+
+      assert.equal(found, null);
+    });
+
+    it('returns correct screen when project has multiple screens', async () => {
+      const project = await store.createProject('Multi Screen Project');
+      await store.addScreen(project.id, 'Home');
+      const target = await store.addScreen(project.id, 'Settings');
+      await store.addScreen(project.id, 'Profile');
+
+      const found = await store.findScreenByName(project.id, 'Settings');
+
+      assert.ok(found, 'Settings screen should be found');
+      assert.equal(found.id, target.id);
+      assert.equal(found.name, 'Settings');
+    });
+  });
 });

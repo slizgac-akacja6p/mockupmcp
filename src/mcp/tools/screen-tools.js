@@ -32,6 +32,23 @@ export async function registerScreenTools(server, store) {
     async ({ project_id, name, width, height, background, style, color_scheme, inheritStyle }) => {
       try {
         const screen = await store.addScreen(project_id, name, width, height, background, style, color_scheme, inheritStyle);
+
+        // Warn agent when a screen with the same name already exists in this project —
+        // signal to prefer mockup_get_or_create_screen for idempotent workflows.
+        const project = await store.getProject(project_id);
+        const sameNameScreens = project.screens.filter(s => s.name === name && s.id !== screen.id);
+        if (sameNameScreens.length > 0) {
+          return {
+            content: [{
+              type: 'text',
+              text: JSON.stringify({
+                ...screen,
+                warning: `Screen "${name}" already exists ${sameNameScreens.length} time(s) in this project. Consider using mockup_get_or_create_screen to avoid duplicates.`,
+              }, null, 2),
+            }],
+          };
+        }
+
         return {
           content: [{ type: 'text', text: JSON.stringify(screen, null, 2) }],
         };
@@ -40,6 +57,37 @@ export async function registerScreenTools(server, store) {
           content: [{ type: 'text', text: `Error: ${error.message}` }],
           isError: true,
         };
+      }
+    }
+  );
+
+  server.tool(
+    'mockup_get_or_create_screen',
+    'Get existing screen by name or create new one. Idempotent — safe to call multiple times. Returns { screen, created: boolean }. PREFER this over mockup_add_screen to avoid duplicates.',
+    {
+      project_id: z.string().describe('Project ID'),
+      name: z.string().describe('Screen name'),
+      width: z.number().optional().describe('Screen width in pixels (defaults to project viewport, used only when creating)'),
+      height: z.number().optional().describe('Screen height in pixels (defaults to project viewport, used only when creating)'),
+      background: z.string().optional().default('#FFFFFF').describe('Background color (hex), used only when creating'),
+      style: z.enum(getAvailableStyles()).optional().describe('Style override for this screen, used only when creating'),
+      color_scheme: z.enum(['dark', 'light']).nullable().optional().describe('Color scheme, used only when creating'),
+      inheritStyle: z.boolean().optional().describe('When false, renderer skips style CSS classes, used only when creating'),
+    },
+    async ({ project_id, name, width, height, background, style, color_scheme, inheritStyle }) => {
+      try {
+        const existing = await store.findScreenByName(project_id, name);
+        if (existing) {
+          return {
+            content: [{ type: 'text', text: JSON.stringify({ screen: existing, created: false }, null, 2) }],
+          };
+        }
+        const screen = await store.addScreen(project_id, name, width, height, background, style, color_scheme, inheritStyle);
+        return {
+          content: [{ type: 'text', text: JSON.stringify({ screen, created: true }, null, 2) }],
+        };
+      } catch (error) {
+        return { content: [{ type: 'text', text: `Error: ${error.message}` }], isError: true };
       }
     }
   );

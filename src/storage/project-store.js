@@ -242,6 +242,11 @@ export class ProjectStore {
     return null;
   }
 
+  async findScreenByName(projectId, name) {
+    const project = await this.getProject(projectId);
+    return project.screens.find(s => s.name === name) ?? null;
+  }
+
   async deleteProject(projectId) {
     this._validateId(projectId);
     const filePath = this._path(projectId);
