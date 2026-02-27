@@ -941,7 +941,21 @@ export class ProjectStore {
         background: oldScreen.background || '#FFFFFF',
         style: oldScreen.style || null,
         elements: [],
+        version: oldScreen.version || 1,
+        parent_screen_id: oldScreen.parent_screen_id || null,
+        status: oldScreen.status || 'draft',
+        color_scheme: oldScreen.color_scheme || null,
       };
+
+      // Copy optional inheritStyle field if present (backward compat: absent = true)
+      if (oldScreen.inheritStyle !== undefined) {
+        newScreen.inheritStyle = oldScreen.inheritStyle;
+      }
+
+      // Copy comments array if present
+      if (oldScreen.comments) {
+        newScreen.comments = structuredClone(oldScreen.comments);
+      }
 
       // Import elements with new IDs.
       for (const oldElement of oldScreen.elements || []) {

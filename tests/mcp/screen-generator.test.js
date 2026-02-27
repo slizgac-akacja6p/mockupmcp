@@ -380,4 +380,21 @@ describe('generateScreen', () => {
     assert.equal(tabbar.y, 852 - 56);
     assert.equal(tabbar.z_index, 10);
   });
+
+  it('dashboard desktop (1440px) generates at least 12 elements with sidebar', () => {
+    const result = generateScreen('dashboard with stats', 1440, 800, 'wireframe');
+    assert.ok(result.elements.length >= 12, `expected >=12 elements, got ${result.elements.length}`);
+    // Sidebar nav present on desktop
+    const sidebar = result.elements.find(el => el.type === 'list' && el.x === 0);
+    assert.ok(sidebar, 'desktop dashboard should include sidebar nav');
+    // No tabbar on desktop — sidebar replaces it
+    const tabbar = result.elements.find(el => el.type === 'tabbar');
+    assert.equal(tabbar, undefined, 'desktop dashboard should not include tabbar');
+    // 4 stat cards in single row
+    const cards = result.elements.filter(el => el.type === 'card');
+    assert.equal(cards.length, 4, 'desktop dashboard should have 4 stat cards');
+    // Two charts side by side
+    const charts = result.elements.filter(el => el.type === 'chart_placeholder');
+    assert.equal(charts.length, 2, 'desktop dashboard should have 2 chart placeholders');
+  });
 });

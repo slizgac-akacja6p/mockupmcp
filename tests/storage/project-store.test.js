@@ -833,4 +833,193 @@ describe('ProjectStore', () => {
       assert.equal(found.name, 'Settings');
     });
   });
+
+  describe('importProject', () => {
+    it('preserves inheritStyle: false on imported screens', async () => {
+      const sourceProject = {
+        name: 'Source Project',
+        description: 'Source for import',
+        viewport: { width: 393, height: 852, preset: 'mobile' },
+        style: 'flat',
+        screens: [
+          {
+            id: 'scr_source1',
+            name: 'Screen 1',
+            width: 393,
+            height: 852,
+            background: '#FFFFFF',
+            style: 'ios',
+            inheritStyle: false,
+            elements: [],
+          },
+          {
+            id: 'scr_source2',
+            name: 'Screen 2',
+            width: 393,
+            height: 852,
+            background: '#FFFFFF',
+            inheritStyle: false,
+            elements: [],
+          },
+        ],
+      };
+
+      const result = await store.importProject(sourceProject, 'Imported Project');
+
+      assert.equal(result.project.screens.length, 2);
+      assert.equal(result.project.screens[0].inheritStyle, false, 'Screen 1 should preserve inheritStyle: false');
+      assert.equal(result.project.screens[1].inheritStyle, false, 'Screen 2 should preserve inheritStyle: false');
+    });
+
+    it('preserves other optional screen fields during import', async () => {
+      const sourceProject = {
+        name: 'Source with Fields',
+        viewport: { width: 1440, height: 900, preset: 'desktop' },
+        style: 'material',
+        screens: [
+          {
+            id: 'scr_old1',
+            name: 'Versioned Screen',
+            width: 1440,
+            height: 900,
+            background: '#F0F0F0',
+            style: 'material',
+            version: 3,
+            status: 'approved',
+            parent_screen_id: 'scr_parent123',
+            color_scheme: 'dark',
+            inheritStyle: true,
+            elements: [],
+            comments: [
+              {
+                id: 'cmt_test',
+                text: 'Important feedback',
+                author: 'user',
+                resolved: false,
+              },
+            ],
+          },
+        ],
+      };
+
+      const result = await store.importProject(sourceProject, 'Imported Versioned');
+
+      const screen = result.project.screens[0];
+      assert.equal(screen.version, 3, 'Should preserve version');
+      assert.equal(screen.status, 'approved', 'Should preserve status');
+      assert.equal(screen.parent_screen_id, 'scr_parent123', 'Should preserve parent_screen_id');
+      assert.equal(screen.color_scheme, 'dark', 'Should preserve color_scheme');
+      assert.equal(screen.inheritStyle, true, 'Should preserve inheritStyle');
+      assert.ok(Array.isArray(screen.comments), 'Should copy comments array');
+      assert.equal(screen.comments.length, 1, 'Should preserve all comments');
+      assert.equal(screen.comments[0].text, 'Important feedback', 'Comments should be deep cloned');
+    });
+
+    it('handles screens missing optional fields gracefully', async () => {
+      const sourceProject = {
+        name: 'Minimal Source',
+        screens: [
+          {
+            id: 'scr_minimal',
+            name: 'Minimal Screen',
+            width: 393,
+            height: 852,
+            background: '#FFFFFF',
+            elements: [],
+            // Deliberately omit: inheritStyle, version, status, color_scheme, comments
+          },
+        ],
+      };
+
+      const result = await store.importProject(sourceProject, 'Imported Minimal');
+
+      const screen = result.project.screens[0];
+      // Should have defaults but NOT inheritStyle (backward compat)
+      assert.equal(screen.version, 1, 'Should default version to 1');
+      assert.equal(screen.status, 'draft', 'Should default status to draft');
+      assert.equal(screen.color_scheme, null, 'Should default color_scheme to null');
+      assert.equal(screen.inheritStyle, undefined, 'Should NOT have inheritStyle if source omitted it');
+    });
+
+    it('rewrites link_to screen_id references correctly during import', async () => {
+      const sourceProject = {
+        name: 'Linked Source',
+        screens: [
+          {
+            id: 'scr_src_home',
+            name: 'Home',
+            width: 393,
+            height: 852,
+            background: '#FFFFFF',
+            elements: [
+              {
+                id: 'el_button',
+                type: 'button',
+                x: 10,
+                y: 20,
+                width: 100,
+                height: 40,
+                z_index: 0,
+                properties: {
+                  label: 'Go to Settings',
+                  link_to: {
+                    screen_id: 'scr_src_settings',
+                    transition: 'push',
+                  },
+                },
+              },
+            ],
+          },
+          {
+            id: 'scr_src_settings',
+            name: 'Settings',
+            width: 393,
+            height: 852,
+            background: '#FFFFFF',
+            elements: [],
+          },
+        ],
+      };
+
+      const result = await store.importProject(sourceProject, 'Imported Linked');
+
+      const homeScreen = result.project.screens[0];
+      const settingsScreen = result.project.screens[1];
+      const button = homeScreen.elements[0];
+
+      // Verify link_to was rewritten to the new screen ID (not the old one)
+      assert.notEqual(button.properties.link_to.screen_id, 'scr_src_settings', 'Link should not reference old ID');
+      assert.equal(button.properties.link_to.screen_id, settingsScreen.id, 'Link should reference imported screen');
+    });
+  });
+
+  describe('duplicateScreen preserves inheritStyle', () => {
+    it('preserves inheritStyle: false when duplicating', async () => {
+      const project = await store.createProject('Dup Style Test');
+      const screen = await store.addScreen(project.id, 'Original', 393, 852, '#FFFFFF', 'ios', null, false);
+
+      const copy = await store.duplicateScreen(project.id, screen.id, 'Duplicate');
+
+      assert.equal(copy.inheritStyle, false, 'Duplicate should preserve inheritStyle: false');
+    });
+
+    it('preserves inheritStyle: true when duplicating', async () => {
+      const project = await store.createProject('Dup Style Test 2');
+      const screen = await store.addScreen(project.id, 'Original', 393, 852, '#FFFFFF', 'material', null, true);
+
+      const copy = await store.duplicateScreen(project.id, screen.id, 'Duplicate');
+
+      assert.equal(copy.inheritStyle, true, 'Duplicate should preserve inheritStyle: true');
+    });
+
+    it('does not add inheritStyle if source omits it', async () => {
+      const project = await store.createProject('Dup No Style Test');
+      const screen = await store.addScreen(project.id, 'Original', 393, 852);
+      // screen.inheritStyle should be undefined
+
+      const copy = await store.duplicateScreen(project.id, screen.id, 'Duplicate');
+
+      assert.equal(copy.inheritStyle, undefined, 'Duplicate should not have inheritStyle if source omits it');
+    });
+  });
 });
